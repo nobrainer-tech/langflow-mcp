@@ -14,9 +14,15 @@ const LOG_LEVEL_MAP: Record<string, LogLevel> = {
   silent: LogLevel.SILENT
 };
 
-function getCurrentLogLevel(): LogLevel {
+function initLogLevel(): LogLevel {
   const level = process.env.LOG_LEVEL?.toLowerCase() || 'info';
   return LOG_LEVEL_MAP[level] ?? LogLevel.INFO;
+}
+
+let currentLogLevel: LogLevel = initLogLevel();
+
+function getCurrentLogLevel(): LogLevel {
+  return currentLogLevel;
 }
 
 function formatMessage(level: string, message: string, args: unknown[]): string {
@@ -24,7 +30,9 @@ function formatMessage(level: string, message: string, args: unknown[]): string 
   if (!args || args.length === 0) {
     return `[${timestamp}] [${level}] ${message}`;
   }
+
   const seen = new WeakSet<object>();
+
   const serialize = (arg: unknown): string => {
     if (arg instanceof Error) return arg.stack || `${arg.name}: ${arg.message}`;
     if (typeof arg === 'bigint') return arg.toString();
@@ -44,12 +52,17 @@ function formatMessage(level: string, message: string, args: unknown[]): string 
     }
     return String(arg);
   };
+
   const formattedArgs = ' ' + args.map(serialize).join(' ');
   return `[${timestamp}] [${level}] ${message}${formattedArgs}`;
 }
 
 function shouldLog(level: LogLevel): boolean {
-  return level >= getCurrentLogLevel();
+  return level >= currentLogLevel;
+}
+
+export function setLogLevel(level: string): void {
+  currentLogLevel = LOG_LEVEL_MAP[level.toLowerCase()] ?? LogLevel.INFO;
 }
 
 export const logger = {

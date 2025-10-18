@@ -11,9 +11,14 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively. It provides structured access to:
 
-- **Flow Management** - Create, read, update, and delete Langflow flows
+- **Flow Management** - Create, read, update, delete, and execute Langflow flows
+- **Flow Execution** - Run flows with inputs and trigger webhooks
+- **Build Operations** - Compile, validate, and monitor flow builds
+- **Import/Export** - Upload and download flows and projects
+- **Organization** - Manage folders and projects
+- **Configuration** - Manage global variables
+- **Knowledge Bases** - Manage RAG document collections
 - **Component Discovery** - List all available Langflow components
-- **Workflow Automation** - Integrate Langflow with AI assistants like Claude
 
 ## Quick Start
 
@@ -102,9 +107,9 @@ Restart Claude Desktop after updating configuration.
 
 ## Available MCP Tools
 
-Once connected, Claude can use these tools:
+Once connected, Claude can use these 35 tools:
 
-### Flow Management
+### Flow Management (6 tools)
 - **`create_flow`** - Create a new Langflow flow
 - **`list_flows`** - List all flows with pagination and filtering
 - **`get_flow`** - Get details of a specific flow by ID
@@ -112,7 +117,49 @@ Once connected, Claude can use these tools:
 - **`delete_flow`** - Delete a single flow
 - **`delete_flows`** - Delete multiple flows at once
 
-### Component Discovery
+### Flow Execution (2 tools)
+- **`run_flow`** - Execute a flow with input configuration (supports streaming)
+- **`trigger_webhook`** - Trigger a flow via webhook endpoint
+
+### Import/Export (3 tools)
+- **`upload_flow`** - Upload a flow from JSON data
+- **`download_flows`** - Download multiple flows as JSON export
+- **`get_basic_examples`** - Get pre-built example flows
+
+### Folder Management (5 tools)
+- **`list_folders`** - List all folders with pagination
+- **`create_folder`** - Create a new folder
+- **`get_folder`** - Get folder details by ID
+- **`update_folder`** - Update folder name, description, or parent
+- **`delete_folder`** - Delete a folder
+
+### Project Management (7 tools)
+- **`list_projects`** - List all projects with pagination
+- **`create_project`** - Create a new project
+- **`get_project`** - Get project details by ID
+- **`update_project`** - Update project name or description
+- **`delete_project`** - Delete a project
+- **`upload_project`** - Upload a project from JSON data
+- **`download_project`** - Download a project as JSON export
+
+### Variable Management (4 tools)
+- **`list_variables`** - List all global variables
+- **`create_variable`** - Create a new variable
+- **`update_variable`** - Update variable properties
+- **`delete_variable`** - Delete a variable
+
+### Build Operations (3 tools)
+- **`build_flow`** - Build/compile a flow and return job_id for async execution
+- **`get_build_status`** - Poll build status and events for a specific job
+- **`cancel_build`** - Cancel a running build job
+
+### Knowledge Base Management (4 tools)
+- **`list_knowledge_bases`** - List all available knowledge bases
+- **`get_knowledge_base`** - Get detailed information about a specific knowledge base
+- **`delete_knowledge_base`** - Delete a specific knowledge base
+- **`bulk_delete_knowledge_bases`** - Delete multiple knowledge bases at once
+
+### Component Discovery (1 tool)
 - **`list_components`** - List all available Langflow components
 
 ## Example Usage
@@ -140,6 +187,68 @@ update_flow({
   flow_id: "flow-uuid-here",
   name: "Updated Flow Name"
 })
+
+// Execute a flow
+run_flow({
+  flow_id_or_name: "my-flow-name",
+  input_request: {
+    input_value: "Hello World",
+    output_type: "chat",
+    input_type: "chat"
+  },
+  stream: false
+})
+
+// Trigger via webhook
+trigger_webhook({
+  flow_id_or_name: "my-flow",
+  input_request: {
+    input_value: "Process this data"
+  }
+})
+
+// Build a flow (compile/validate)
+build_flow({
+  flow_id: "flow-uuid-here",
+  log_builds: true,
+  event_delivery: "polling"
+})
+
+// Check build status
+get_build_status({
+  job_id: "job-uuid-from-build",
+  event_delivery: "polling"
+})
+
+// List knowledge bases (RAG)
+list_knowledge_bases()
+
+// Get knowledge base details
+get_knowledge_base({
+  kb_name: "my-documents"
+})
+
+// Create a folder
+create_folder({
+  name: "My Flows",
+  description: "Organized flows"
+})
+
+// Create a project
+create_project({
+  name: "My Project",
+  description: "Project description"
+})
+
+// Manage variables
+create_variable({
+  name: "API_KEY",
+  value: "secret-key",
+  type: "string"
+})
+
+// Get basic examples
+get_basic_examples()
 
 // List all components
 list_components()
