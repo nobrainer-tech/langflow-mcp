@@ -1,183 +1,183 @@
-# Langflow MCP Server
+# langflow-mcp
 
-Production-ready MCP server for programmatically managing Langflow flows through Claude Desktop.
+A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform. Inspired by [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp).
 
-## Features
+## Overview
 
-- **Create flows** - Create new flows with custom names and descriptions
-- **List flows** - View all flows with filtering options
-- **Get flow** - Retrieve detailed flow information
-- **Update flow** - Modify existing flows (name, description, components, MCP settings)
-- **Delete flow** - Remove flows by ID
-- **List components** - View available Langflow components
+langflow-mcp serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively. It provides structured access to:
 
-## Architecture
+- **Flow Management** - Create, read, update, and delete Langflow flows
+- **Component Discovery** - List all available Langflow components
+- **Workflow Automation** - Integrate Langflow with AI assistants like Claude
 
-Built following SOLID principles with clear separation of concerns:
-
-- `LangflowConfig` - Immutable configuration from environment
-- `LangflowApiClient` - HTTP communication layer
-- `FlowManager` - Flow operations business logic
-- `ComponentManager` - Component operations
-- `LangflowMcpServer` - MCP protocol implementation
-
-## Installation
+## Quick Start
 
 ### Prerequisites
 
+- Node.js installed on your system
+- A running Langflow instance
+- Langflow API key
+
+### Installation
+
 ```bash
-pip install mcp httpx python-dotenv
+# Clone the repository
+git clone https://github.com/aras88/langflow-mcp.git
+cd langflow-mcp
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your Langflow instance URL and API key
 ```
 
 ### Configuration
 
-1. Copy environment template:
-```bash
-cp .env.template .env
-```
+Edit `.env` file:
 
-2. Edit `.env`:
-```bash
-LANGFLOW_BASE_URL=https://your-instance.wykr.es
+```env
+LANGFLOW_BASE_URL=http://localhost:7860
 LANGFLOW_API_KEY=your-api-key-here
+MCP_MODE=stdio
+LOG_LEVEL=info
 ```
-
-Generate API key at: `https://your-instance/settings/api-keys`
 
 ### Claude Desktop Setup
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Add to your Claude Desktop config file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
-    "langflow": {
-      "command": "python3",
-      "args": ["/absolute/path/to/langflow_mcp_server.py"],
+    "langflow-mcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/langflow-mcp/dist/mcp/index.js"],
       "env": {
-        "LANGFLOW_API_KEY": "your-api-key",
-        "LANGFLOW_BASE_URL": "https://your-instance.wykr.es"
+        "LANGFLOW_BASE_URL": "http://localhost:7860",
+        "LANGFLOW_API_KEY": "your-api-key-here",
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error"
       }
     }
   }
 }
 ```
 
-Restart Claude Desktop:
-```bash
-pkill -9 "Claude" && open -a Claude
-```
+Restart Claude Desktop after updating configuration.
 
-## Usage Examples
+## Available MCP Tools
 
-### Create Flow
-```
-Create a new flow called "Customer Support Bot" for handling customer inquiries
-```
+Once connected, Claude can use these tools:
 
-### List Flows
-```
-Show me all my flows
-```
+### Flow Management
+- **`create_flow`** - Create a new Langflow flow
+- **`list_flows`** - List all flows with pagination and filtering
+- **`get_flow`** - Get details of a specific flow by ID
+- **`update_flow`** - Update an existing flow
+- **`delete_flow`** - Delete a single flow
+- **`delete_flows`** - Delete multiple flows at once
 
-### Update Flow
-```
-Enable MCP for the flow "Data Analyzer"
-```
+### Component Discovery
+- **`list_components`** - List all available Langflow components
 
-### Get Flow Details
-```
-Show details for flow ID abc-123-def
-```
+## Example Usage
 
-### Delete Flow
-```
-Delete flow abc-123-def
-```
+```typescript
+// Create a new flow
+create_flow({
+  name: "My Automation Flow",
+  description: "A flow that processes data"
+})
 
-### List Components
-```
-What components are available in Langflow?
+// List all flows
+list_flows({
+  page: 1,
+  size: 50
+})
+
+// Get flow details
+get_flow({
+  flow_id: "flow-uuid-here"
+})
+
+// Update a flow
+update_flow({
+  flow_id: "flow-uuid-here",
+  name: "Updated Flow Name"
+})
+
+// List all components
+list_components()
 ```
 
 ## Development
 
-### Code Quality
+```bash
+# Build
+npm run build
 
-This codebase follows:
-- **SOLID** principles
-- **DRY** (Don't Repeat Yourself)
-- **KISS** (Keep It Simple)
-- **Clean Code** practices
-- Type hints throughout
-- Comprehensive docstrings
-- Separation of concerns
-- Dependency injection
+# Run in development mode
+npm run dev
 
-### Project Structure
+# Run tests
+npm test
+
+# Type checking
+npm run typecheck
+```
+
+## Project Structure
 
 ```
 langflow-mcp/
-├── langflow_mcp_server.py  # Main server (production-ready)
-├── .env.template            # Environment template
-├── .env                     # Your config (gitignored)
-├── .gitignore              # Git ignore rules
-├── requirements.txt        # Python dependencies
-└── README.md              # This file
+├── src/
+│   ├── mcp/
+│   │   ├── index.ts       # MCP server entry point
+│   │   ├── server.ts      # MCP server implementation
+│   │   └── tools.ts       # Tool definitions
+│   ├── services/
+│   │   └── langflow-client.ts  # Langflow API client
+│   ├── types/
+│   │   └── index.ts       # TypeScript types
+│   └── utils/
+│       └── logger.ts      # Logging utility
+├── .env.example           # Example configuration
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-### Security
+## Attribution
 
-- API keys stored in environment variables
-- `.env` file excluded from git
-- Use `.env.template` for sharing configuration structure
-- Immutable configuration objects
-
-## API Reference
-
-Based on Langflow OpenAPI specification (v1.6.4).
-
-### Endpoints Used
-
-- `POST /api/v1/flows/` - Create flow
-- `GET /api/v1/flows/` - List flows
-- `GET /api/v1/flows/{flow_id}` - Get flow
-- `PATCH /api/v1/flows/{flow_id}` - Update flow
-- `DELETE /api/v1/flows/{flow_id}` - Delete flow
-- `GET /api/v1/all` - List components
-
-## Troubleshooting
-
-### Configuration Error
-```
-Configuration error: LANGFLOW_API_KEY environment variable is required
-```
-**Solution**: Set `LANGFLOW_API_KEY` in `.env` file
-
-### Import Error
-```
-ModuleNotFoundError: No module named 'mcp'
-```
-**Solution**: `pip install mcp httpx python-dotenv`
-
-### HTTP 401 Unauthorized
-**Solution**: Generate new API key at `https://your-instance/settings/api-keys`
-
-### Server Not Appearing in Claude Desktop
-**Solution**:
-1. Verify JSON syntax in config file
-2. Use absolute path to `langflow_mcp_server.py`
-3. Restart Claude Desktop
+This project is inspired by and follows the structure of [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) by Romuald Czlonkowski. Special thanks to the n8n-mcp project for the excellent MCP server architecture and implementation patterns.
 
 ## License
 
-MIT
+MIT License - see LICENSE for details.
 
 ## Contributing
 
-Production-ready code only. Follow existing patterns:
-- Type hints required
-- Docstrings for all public methods
-- SOLID principles
-- No magic numbers
-- Clear naming conventions
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Run tests (`npm test`)
+4. Submit a pull request
+
+## Acknowledgments
+
+- [Langflow](https://github.com/logspace-ai/langflow) team for the workflow automation platform
+- [Anthropic](https://anthropic.com) for the Model Context Protocol
+- [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp) for the inspiration and architecture
+
+---
+
+Built with ❤️ for the Langflow community
