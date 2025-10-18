@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "langflow-manager": {
+      "command": "python3",
+      "args": [
+        "/Users/aras88/GitHub/LangFlow/langflow_mcp_server.py"
+      ],
+      "env": {
+        "LANGFLOW_API_KEY": "sk-LpN17IPEE-rhjYFOHXStcyWLIGLzpExnM_bRbk3EFDs",
+        "LANGFLOW_BASE_URL": "https://kevin119-40173.wykr.es"
+      }
+    }
+  }
+}

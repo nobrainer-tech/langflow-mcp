@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "langflow": {
+      "command": "uvx",
+      "args": [
+        "mcp-proxy",
+        "https://kevin119-40173.wykr.es/api/v1/mcp/project/YOUR_PROJECT_ID/sse"
+      ],
+      "env": {
+        "LANGFLOW_API_KEY": "sk-LpN17IPEE-rhjYFOHXStcyWLIGLzpExnM_bRbk3EFDs"
+      }
+    }
+  }
+}
