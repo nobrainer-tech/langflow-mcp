@@ -1,0 +1,5 @@
+# Code Owners for langflow-mcp repository
+# These owners will be requested for review when someone opens a pull request.
+
+# Global code owner for all files
+* @nobrainer-tech
