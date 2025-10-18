@@ -1,5 +1,10 @@
 # langflow-mcp-server
 
+[![npm version](https://badge.fury.io/js/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
+[![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
+[![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform. Inspired by [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp).
 
 ## Overview
