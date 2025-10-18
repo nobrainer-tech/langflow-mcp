@@ -9,7 +9,7 @@ export const CreateFlowSchema = z.object({
 
 export const ListFlowsSchema = z.object({
   page: z.number().int().positive().optional(),
-  size: z.number().int().positive().max(100).optional(),
+  size: z.number().int().positive().max(100, 'Page size cannot exceed 100').optional(),
   folder_id: z.string().uuid('Invalid folder ID format').optional()
 });
 
@@ -19,7 +19,7 @@ export const GetFlowSchema = z.object({
 
 export const UpdateFlowSchema = z.object({
   flow_id: z.string().uuid('Invalid flow ID format'),
-  name: z.string().min(1).max(255).optional(),
+  name: z.string().min(1, 'Flow name is required').max(255, 'Flow name too long').optional(),
   description: z.string().optional(),
   data: z.record(z.unknown()).optional(),
   folder_id: z.string().uuid('Invalid folder ID format').optional()
