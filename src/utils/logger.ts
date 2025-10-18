@@ -19,12 +19,32 @@ function getCurrentLogLevel(): LogLevel {
   return LOG_LEVEL_MAP[level] ?? LogLevel.INFO;
 }
 
-function formatMessage(level: string, message: string, args: any[]): string {
+function formatMessage(level: string, message: string, args: unknown[]): string {
   const timestamp = new Date().toISOString();
-  const formattedArgs = args.length > 0 ? ' ' + args.map(arg =>
-    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-  ).join(' ') : '';
-
+  if (!args || args.length === 0) {
+    return `[${timestamp}] [${level}] ${message}`;
+  }
+  const seen = new WeakSet<object>();
+  const serialize = (arg: unknown): string => {
+    if (arg instanceof Error) return arg.stack || `${arg.name}: ${arg.message}`;
+    if (typeof arg === 'bigint') return arg.toString();
+    if (typeof arg === 'object' && arg !== null) {
+      try {
+        return JSON.stringify(arg, (key, value) => {
+          if (typeof value === 'bigint') return value.toString();
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value as object)) return '[Circular]';
+            seen.add(value as object);
+          }
+          return value;
+        });
+      } catch {
+        try { return String(arg); } catch { return '[Unserializable]'; }
+      }
+    }
+    return String(arg);
+  };
+  const formattedArgs = ' ' + args.map(serialize).join(' ');
   return `[${timestamp}] [${level}] ${message}${formattedArgs}`;
 }
 
@@ -33,24 +53,25 @@ function shouldLog(level: LogLevel): boolean {
 }
 
 export const logger = {
-  info: (message: string, ...args: any[]) => {
+  info: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.INFO)) {
-      console.error(formatMessage('INFO', message, args));
+      console.log(formatMessage('INFO', message, args));
     }
   },
-  error: (message: string, ...args: any[]) => {
+  error: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.ERROR)) {
       console.error(formatMessage('ERROR', message, args));
     }
   },
-  warn: (message: string, ...args: any[]) => {
+  warn: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.WARN)) {
-      console.error(formatMessage('WARN', message, args));
+      console.warn(formatMessage('WARN', message, args));
     }
   },
-  debug: (message: string, ...args: any[]) => {
+  debug: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.DEBUG)) {
-      console.error(formatMessage('DEBUG', message, args));
+      console.debug ? console.debug(formatMessage('DEBUG', message, args))
+                    : console.log(formatMessage('DEBUG', message, args));
     }
   }
 };

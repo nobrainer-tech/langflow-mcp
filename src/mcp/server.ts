@@ -76,9 +76,9 @@ export class LangflowMCPServer {
     if (error instanceof ZodError) {
       errorMessage = 'Validation error';
       errorDetails = {
-        issues: error.errors.map(err => ({
-          path: err.path.join('.'),
-          message: err.message
+        issues: error.issues.map((issue) => ({
+          path: Array.isArray(issue.path) ? issue.path.join('.') : '',
+          message: issue.message
         }))
       };
     } else if (error instanceof Error) {
@@ -123,11 +123,8 @@ export class LangflowMCPServer {
         throw new Error('Langflow client not initialized');
       }
 
-      const { name, arguments: args } = request.params;
-
-      if (!args) {
-        throw new Error('No arguments provided');
-      }
+      const { name, arguments: rawArgs } = request.params;
+      const args = (rawArgs ?? {}) as Record<string, unknown>;
 
       try {
         switch (name) {

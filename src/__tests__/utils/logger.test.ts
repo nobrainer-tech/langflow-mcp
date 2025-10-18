@@ -2,15 +2,24 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger } from '../../utils/logger';
 
 describe('logger', () => {
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+  let consoleDebugSpy: ReturnType<typeof vi.spyOn>;
   const originalLogLevel = process.env.LOG_LEVEL;
 
   beforeEach(() => {
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+    consoleDebugSpy.mockRestore();
     process.env.LOG_LEVEL = originalLogLevel;
   });
 
@@ -20,7 +29,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
     });
@@ -30,10 +39,10 @@ describe('logger', () => {
 
       logger.info('test message', { foo: 'bar' }, 123);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('"foo":"bar"')
       );
     });
@@ -43,7 +52,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it('should not log info when LOG_LEVEL is silent', () => {
@@ -51,7 +60,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it('should log info when LOG_LEVEL is debug', () => {
@@ -59,7 +68,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
     });
@@ -69,14 +78,14 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/)
       );
     });
   });
 
   describe('error', () => {
-    it('should always log error messages', () => {
+    it('should respect log level for error messages', () => {
       process.env.LOG_LEVEL = 'silent';
 
       logger.error('error message');
@@ -107,7 +116,7 @@ describe('logger', () => {
 
       logger.warn('warning message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('[WARN] warning message')
       );
     });
@@ -117,7 +126,7 @@ describe('logger', () => {
 
       logger.warn('warning message');
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
     it('should log warn when LOG_LEVEL is warn', () => {
@@ -125,7 +134,7 @@ describe('logger', () => {
 
       logger.warn('warning message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('[WARN] warning message')
       );
     });
@@ -137,7 +146,7 @@ describe('logger', () => {
 
       logger.debug('debug message');
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
 
     it('should log debug when LOG_LEVEL is debug', () => {
@@ -145,7 +154,8 @@ describe('logger', () => {
 
       logger.debug('debug message');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleDebugSpy).toHaveBeenCalled();
+      expect(consoleDebugSpy).toHaveBeenCalledWith(
         expect.stringContaining('[DEBUG] debug message')
       );
     });
@@ -155,7 +165,7 @@ describe('logger', () => {
 
       logger.debug('debug message');
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -163,8 +173,11 @@ describe('logger', () => {
     it('should respect log level hierarchy', () => {
       const levels = ['debug', 'info', 'warn', 'error', 'silent'];
 
-      levels.forEach((level, index) => {
+      levels.forEach((level) => {
+        consoleLogSpy.mockClear();
         consoleErrorSpy.mockClear();
+        consoleWarnSpy.mockClear();
+        consoleDebugSpy.mockClear();
         process.env.LOG_LEVEL = level;
 
         logger.debug('debug');
@@ -172,11 +185,31 @@ describe('logger', () => {
         logger.warn('warn');
         logger.error('error');
 
-        const expectedCalls = 4 - index;
         if (level === 'silent') {
+          expect(consoleLogSpy).not.toHaveBeenCalled();
+          expect(consoleWarnSpy).not.toHaveBeenCalled();
           expect(consoleErrorSpy).not.toHaveBeenCalled();
-        } else {
-          expect(consoleErrorSpy).toHaveBeenCalledTimes(expectedCalls);
+          expect(consoleDebugSpy).not.toHaveBeenCalled();
+        } else if (level === 'debug') {
+          expect(consoleDebugSpy).toHaveBeenCalledTimes(1);
+          expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+          expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        } else if (level === 'info') {
+          expect(consoleDebugSpy).not.toHaveBeenCalled();
+          expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+          expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        } else if (level === 'warn') {
+          expect(consoleDebugSpy).not.toHaveBeenCalled();
+          expect(consoleLogSpy).not.toHaveBeenCalled();
+          expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        } else if (level === 'error') {
+          expect(consoleDebugSpy).not.toHaveBeenCalled();
+          expect(consoleLogSpy).not.toHaveBeenCalled();
+          expect(consoleWarnSpy).not.toHaveBeenCalled();
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
         }
       });
     });
