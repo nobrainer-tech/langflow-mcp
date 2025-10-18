@@ -1,10 +1,10 @@
-# langflow-mcp
+# langflow-mcp-server
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform. Inspired by [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp).
 
 ## Overview
 
-langflow-mcp serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively. It provides structured access to:
+langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively. It provides structured access to:
 
 - **Flow Management** - Create, read, update, and delete Langflow flows
 - **Component Discovery** - List all available Langflow components
@@ -21,7 +21,10 @@ langflow-mcp serves as a bridge between Langflow's workflow automation platform 
 ### Installation
 
 ```bash
-# Clone the repository
+# Install from npm
+npm install -g langflow-mcp-server
+
+# OR clone the repository
 git clone https://github.com/aras88/langflow-mcp.git
 cd langflow-mcp
 
@@ -58,7 +61,25 @@ Add to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "langflow-mcp": {
+    "langflow": {
+      "command": "npx",
+      "args": ["-y", "langflow-mcp-server"],
+      "env": {
+        "LANGFLOW_BASE_URL": "http://localhost:7860",
+        "LANGFLOW_API_KEY": "your-api-key-here",
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error"
+      }
+    }
+  }
+}
+```
+
+**Alternative (local installation):**
+```json
+{
+  "mcpServers": {
+    "langflow": {
       "command": "node",
       "args": ["/absolute/path/to/langflow-mcp/dist/mcp/index.js"],
       "env": {
