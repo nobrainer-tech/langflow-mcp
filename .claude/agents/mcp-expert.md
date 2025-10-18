@@ -192,8 +192,8 @@ When creating a new MCP integration:
 1. Test with Claude Code CLI
 2. Verify component installation process
 3. Test environment variable handling
-3. Validate security constraints
-4. Test cross-platform compatibility
+4. Validate security constraints
+5. Test cross-platform compatibility
 
 ## MCP Creation Workflow
 
