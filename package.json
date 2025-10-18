@@ -1,6 +1,6 @@
 {
   "name": "langflow-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Integration between Langflow and Model Context Protocol (MCP)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
