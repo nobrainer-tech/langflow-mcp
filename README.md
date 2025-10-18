@@ -25,7 +25,7 @@ langflow-mcp-server serves as a bridge between Langflow's workflow automation pl
 npm install -g langflow-mcp-server
 
 # OR clone the repository
-git clone https://github.com/aras88/langflow-mcp.git
+git clone https://github.com/nobrainer-tech/langflow-mcp.git
 cd langflow-mcp
 
 # Install dependencies

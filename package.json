@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aras88/langflow-mcp.git"
+    "url": "git+https://github.com/nobrainer-tech/langflow-mcp.git"
   },
   "keywords": [
     "langflow",
@@ -41,12 +41,12 @@
     "workflow",
     "automation"
   ],
-  "author": "Aras",
+  "author": "nobrainer-tech",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/aras88/langflow-mcp/issues"
+    "url": "https://github.com/nobrainer-tech/langflow-mcp/issues"
   },
-  "homepage": "https://github.com/aras88/langflow-mcp#readme",
+  "homepage": "https://github.com/nobrainer-tech/langflow-mcp#readme",
   "files": [
     "dist/**/*",
     ".env.example",

@@ -72,7 +72,7 @@ export class LangflowClient {
   async deleteFlows(flowIds: string[]): Promise<{ deleted: number }> {
     try {
       const response = await this.client.delete<{ deleted: number }>('/flows/', {
-        data: { flow_ids: flowIds }
+        data: flowIds
       });
       return response.data;
     } catch (error) {
