@@ -21,9 +21,6 @@ function initLogLevel(): LogLevel {
 
 let currentLogLevel: LogLevel = initLogLevel();
 
-function getCurrentLogLevel(): LogLevel {
-  return currentLogLevel;
-}
 
 function formatMessage(level: string, message: string, args: unknown[]): string {
   const timestamp = new Date().toISOString();

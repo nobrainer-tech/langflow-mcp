@@ -21,6 +21,7 @@ describe('logger', () => {
     consoleWarnSpy.mockRestore();
     consoleDebugSpy.mockRestore();
     process.env.LOG_LEVEL = originalLogLevel;
+    setLogLevel(originalLogLevel || 'info');
   });
 
   describe('info', () => {
