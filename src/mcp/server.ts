@@ -4,10 +4,20 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { ZodError } from 'zod';
 import { langflowMCPTools } from './tools';
 import { logger } from '../utils/logger';
 import { LangflowClient } from '../services/langflow-client';
 import { LangflowConfig } from '../types';
+import {
+  CreateFlowSchema,
+  ListFlowsSchema,
+  GetFlowSchema,
+  UpdateFlowSchema,
+  DeleteFlowSchema,
+  DeleteFlowsSchema,
+  ListComponentsSchema
+} from './validation';
 
 export class LangflowMCPServer {
   private server: Server;
@@ -46,6 +56,57 @@ export class LangflowMCPServer {
     this.setupHandlers();
   }
 
+  private formatSuccessResponse(data: any): any {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(data, null, 2)
+        }
+      ]
+    };
+  }
+
+  private formatErrorResponse(error: unknown, toolName: string): any {
+    logger.error(`Error executing tool ${toolName}:`, error);
+
+    let errorMessage: string;
+    let errorDetails: Record<string, any> = {};
+
+    if (error instanceof ZodError) {
+      errorMessage = 'Validation error';
+      errorDetails = {
+        issues: error.issues.map((issue) => ({
+          path: Array.isArray(issue.path) ? issue.path.join('.') : '',
+          message: issue.message
+        }))
+      };
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+      if (error.stack) {
+        errorDetails.stack = error.stack.split('\n').slice(0, 3);
+      }
+    } else {
+      errorMessage = 'Unknown error';
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            error: true,
+            message: errorMessage,
+            tool: toolName,
+            timestamp: new Date().toISOString(),
+            ...errorDetails
+          }, null, 2)
+        }
+      ],
+      isError: true
+    };
+  }
+
   private setupHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
@@ -62,126 +123,62 @@ export class LangflowMCPServer {
         throw new Error('Langflow client not initialized');
       }
 
-      const { name, arguments: args } = request.params;
-
-      if (!args) {
-        throw new Error('No arguments provided');
-      }
+      const { name, arguments: rawArgs } = request.params;
+      const args = (rawArgs ?? {}) as Record<string, unknown>;
 
       try {
         switch (name) {
-          case 'create_flow':
-            const created = await this.client.createFlow({
-              name: args.name as string,
-              description: args.description as string | undefined,
-              data: args.data,
-              folder_id: args.folder_id as string | undefined
+          case 'create_flow': {
+            const validated = CreateFlowSchema.parse(args);
+            const created = await this.client.createFlow(validated);
+            return this.formatSuccessResponse(created);
+          }
+
+          case 'list_flows': {
+            const validated = ListFlowsSchema.parse(args);
+            const flows = await this.client.listFlows(validated);
+            return this.formatSuccessResponse(flows);
+          }
+
+          case 'get_flow': {
+            const validated = GetFlowSchema.parse(args);
+            const flow = await this.client.getFlow(validated.flow_id);
+            return this.formatSuccessResponse(flow);
+          }
+
+          case 'update_flow': {
+            const validated = UpdateFlowSchema.parse(args);
+            const { flow_id, ...updates } = validated;
+            const updated = await this.client.updateFlow(flow_id, updates);
+            return this.formatSuccessResponse(updated);
+          }
+
+          case 'delete_flow': {
+            const validated = DeleteFlowSchema.parse(args);
+            await this.client.deleteFlow(validated.flow_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Flow deleted successfully'
             });
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(created, null, 2)
-                }
-              ]
-            };
+          }
 
-          case 'list_flows':
-            const flows = await this.client.listFlows({
-              page: args.page as number | undefined,
-              size: args.size as number | undefined,
-              folder_id: args.folder_id as string | undefined,
-              components_only: args.components_only as boolean | undefined,
-              get_all: args.get_all as boolean | undefined
-            });
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(flows, null, 2)
-                }
-              ]
-            };
+          case 'delete_flows': {
+            const validated = DeleteFlowsSchema.parse(args);
+            const result = await this.client.deleteFlows(validated.flow_ids);
+            return this.formatSuccessResponse(result);
+          }
 
-          case 'get_flow':
-            const flow = await this.client.getFlow(args.flow_id as string);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(flow, null, 2)
-                }
-              ]
-            };
-
-          case 'update_flow':
-            const updated = await this.client.updateFlow(
-              args.flow_id as string,
-              {
-                name: args.name as string | undefined,
-                description: args.description as string | undefined,
-                data: args.data,
-                folder_id: args.folder_id as string | undefined
-              }
-            );
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(updated, null, 2)
-                }
-              ]
-            };
-
-          case 'delete_flow':
-            await this.client.deleteFlow(args.flow_id as string);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ success: true, message: 'Flow deleted' })
-                }
-              ]
-            };
-
-          case 'delete_flows':
-            const result = await this.client.deleteFlows(args.flow_ids as string[]);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(result, null, 2)
-                }
-              ]
-            };
-
-          case 'list_components':
+          case 'list_components': {
+            ListComponentsSchema.parse(args);
             const components = await this.client.listComponents();
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(components, null, 2)
-                }
-              ]
-            };
+            return this.formatSuccessResponse(components);
+          }
 
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        logger.error(`Error executing tool ${name}:`, error);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                error: error instanceof Error ? error.message : 'Unknown error'
-              })
-            }
-          ],
-          isError: true
-        };
+        return this.formatErrorResponse(error, name);
       }
     });
   }
