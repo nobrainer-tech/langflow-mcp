@@ -1,5 +1,5 @@
 {
-  "name": "langflow-mcp",
+  "name": "langflow-mcp-server",
   "version": "1.0.0",
   "description": "Integration between Langflow and Model Context Protocol (MCP)",
   "main": "dist/index.js",
@@ -12,10 +12,11 @@
     }
   },
   "bin": {
-    "langflow-mcp": "./dist/mcp/index.js"
+    "langflow-mcp-server": "./dist/mcp/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "start": "node dist/mcp/index.js",
     "start:http": "MCP_MODE=http node dist/mcp/index.js",
     "dev": "npm run build && npm run start",
