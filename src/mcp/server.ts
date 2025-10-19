@@ -83,14 +83,19 @@ export class LangflowMCPServer {
 
     logger.info('Initializing Langflow MCP server');
 
-    const packageJson = JSON.parse(
-      readFileSync(join(__dirname, '../../package.json'), 'utf-8')
-    );
+    let serverVersion = '1.1.0';
+    try {
+      const pkgRaw = readFileSync(join(__dirname, '../../package.json'), 'utf-8');
+      const pkg = JSON.parse(pkgRaw);
+      serverVersion = pkg.version ?? serverVersion;
+    } catch (e) {
+      logger.warn('package.json not readable; defaulting server version to 1.1.0', e);
+    }
 
     this.server = new Server(
       {
         name: 'langflow-mcp',
-        version: packageJson.version,
+        version: serverVersion,
       },
       {
         capabilities: {

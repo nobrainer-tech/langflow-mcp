@@ -63,8 +63,8 @@ const FileSchema = z.object({
   type: z.string().optional(),
 }).refine(
   data => {
-    const estimatedSize = data.content.length * 0.75;
-    return estimatedSize < 10 * 1024 * 1024;
+    const byteSize = Buffer.byteLength(data.content, 'utf8');
+    return byteSize < 10 * 1024 * 1024;
   },
   { message: 'File size exceeds 10MB limit' }
 );

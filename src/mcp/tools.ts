@@ -207,13 +207,28 @@ export const langflowMCPTools: ToolDefinition[] = [
   },
   {
     name: 'upload_flow',
-    description: 'Upload a flow from JSON data. Creates a new flow from exported flow configuration.',
+    description: 'Upload a flow from file data. Provide an object with name, content (stringified JSON), and optional type fields.',
     inputSchema: {
       type: 'object',
       properties: {
         file: {
           type: 'object',
-          description: 'Flow JSON data (exported flow configuration)'
+          description: 'File object with fields: name (string), content (string, max 10MB), type (optional string)',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'The filename of the flow export (e.g., flow.json)'
+            },
+            content: {
+              type: 'string',
+              description: 'The contents of the flow export as a JSON string'
+            },
+            type: {
+              type: 'string',
+              description: 'Optional MIME type of the file (e.g., application/json)'
+            }
+          },
+          required: ['name', 'content']
         }
       },
       required: ['file']
@@ -422,13 +437,28 @@ export const langflowMCPTools: ToolDefinition[] = [
   },
   {
     name: 'upload_project',
-    description: 'Upload a project from JSON data. Creates a new project from exported configuration.',
+    description: 'Upload a project from file data. Provide an object with name, content (stringified JSON), and optional type fields.',
     inputSchema: {
       type: 'object',
       properties: {
         file: {
           type: 'object',
-          description: 'Project JSON data (exported project configuration)'
+          description: 'File object with fields: name (string), content (string, max 10MB), type (optional string)',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'File name (e.g., project.json)'
+            },
+            content: {
+              type: 'string',
+              description: 'File content as stringified JSON'
+            },
+            type: {
+              type: 'string',
+              description: 'Optional MIME type (e.g., application/json)'
+            }
+          },
+          required: ['name', 'content']
         }
       },
       required: ['file']

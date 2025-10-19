@@ -329,7 +329,7 @@ export class LangflowClient {
     }
   }
 
-  async getBuildStatus(jobId: string, eventDelivery: string = 'polling'): Promise<BuildStatusResponse> {
+  async getBuildStatus(jobId: string, eventDelivery: 'polling' | 'streaming' | 'direct' = 'polling'): Promise<BuildStatusResponse> {
     try {
       const response = await this.client.get<BuildStatusResponse>(
         `/build/${jobId}/events`,
@@ -361,7 +361,7 @@ export class LangflowClient {
 
   async getKnowledgeBase(kbName: string): Promise<KnowledgeBaseInfo> {
     try {
-      const response = await this.client.get<KnowledgeBaseInfo>(`/knowledge_bases/${kbName}`);
+      const response = await this.client.get<KnowledgeBaseInfo>(`/knowledge_bases/${encodeURIComponent(kbName)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get knowledge base ${kbName}`);
@@ -370,7 +370,7 @@ export class LangflowClient {
 
   async deleteKnowledgeBase(kbName: string): Promise<void> {
     try {
-      await this.client.delete(`/knowledge_bases/${kbName}`);
+      await this.client.delete(`/knowledge_bases/${encodeURIComponent(kbName)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete knowledge base ${kbName}`);
     }
