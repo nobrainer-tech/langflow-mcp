@@ -82,13 +82,13 @@ export class LangflowMCPServer {
     logger.info('Initializing Langflow MCP server');
 
     // Use require for reliable package.json access across environments
-    let serverVersion = '1.1.0';
+    let serverVersion = '1.1.1';
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pkg = require('../../package.json');
       serverVersion = pkg.version ?? serverVersion;
     } catch (e) {
-      logger.warn('package.json not readable; using hardcoded version 1.1.0', e);
+      logger.warn('package.json not readable; using hardcoded version 1.1.1', e);
     }
 
     this.server = new Server(
