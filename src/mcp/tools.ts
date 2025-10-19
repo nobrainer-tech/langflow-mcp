@@ -1325,5 +1325,1223 @@ Related Tools:
       idempotentHint: true,
       openWorldHint: true
     }
+  },
+  {
+    name: 'upload_file',
+    description: 'Upload a file to a specific flow. Supports multipart/form-data for binary file uploads.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to upload file to'
+        },
+        file_content: {
+          type: 'string',
+          description: 'Base64 encoded file content'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the file to upload'
+        }
+      },
+      required: ['flow_id', 'file_content', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'download_file',
+    description: 'Download a specific file from a flow. Returns file content as base64.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) containing the file'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the file to download'
+        }
+      },
+      required: ['flow_id', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_files',
+    description: 'List all files associated with a specific flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to list files from'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'delete_file',
+    description: 'Delete a specific file from a flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) containing the file'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the file to delete'
+        }
+      },
+      required: ['flow_id', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_file_image',
+    description: 'Get an image file from a flow. Returns image content as base64.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) containing the image'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the image file to retrieve'
+        }
+      },
+      required: ['flow_id', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_profile_pictures',
+    description: 'List all available profile pictures.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_profile_picture',
+    description: 'Get a specific profile picture by folder and file name.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        folder_name: {
+          type: 'string',
+          description: 'Folder name containing the profile picture'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the profile picture file'
+        }
+      },
+      required: ['folder_name', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'validate_code',
+    description: 'Validate Python code for custom components. Checks syntax and provides error/warning feedback.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'Python code to validate'
+        }
+      },
+      required: ['code']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'validate_prompt',
+    description: 'Validate prompt template syntax. Checks for valid variable syntax and returns extracted variables.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: {
+          type: 'string',
+          description: 'Prompt template to validate'
+        }
+      },
+      required: ['prompt']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'check_store',
+    description: 'Check if the Langflow component store is enabled and accessible.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'check_store_api_key',
+    description: 'Validate a store API key for accessing the Langflow component store.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        api_key: {
+          type: 'string',
+          description: 'Store API key to validate'
+        }
+      },
+      required: ['api_key']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_store_components',
+    description: 'Browse available components in the Langflow store. Supports pagination, filtering by tags, and search.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        page: {
+          type: 'number',
+          description: 'Page number for pagination (default: 1)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Number of items per page (default: 50, max: 100)'
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Filter by tags'
+        },
+        search: {
+          type: 'string',
+          description: 'Search query for component names/descriptions'
+        }
+      }
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_store_component',
+    description: 'Get detailed information about a specific store component.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        component_id: {
+          type: 'string',
+          description: 'Store component ID'
+        }
+      },
+      required: ['component_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_store_tags',
+    description: 'List all available component tags in the store.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_user_likes',
+    description: 'Get components liked by the current user.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'run_flow_advanced',
+    description: 'Advanced flow execution with full parameter control including tweaks, input/output types, session management, and streaming.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to execute'
+        },
+        input_value: {
+          type: 'string',
+          description: 'Input value for the flow'
+        },
+        input_type: {
+          type: 'string',
+          description: 'Type of input (e.g., "chat", "text")'
+        },
+        output_type: {
+          type: 'string',
+          description: 'Expected output type (e.g., "chat", "text", "json")'
+        },
+        output_component: {
+          type: 'string',
+          description: 'Specific output component to retrieve results from'
+        },
+        tweaks: {
+          type: 'object',
+          description: 'Component-specific parameter overrides'
+        },
+        session_id: {
+          type: 'string',
+          description: 'Session ID for conversation continuity'
+        },
+        stream: {
+          type: 'boolean',
+          description: 'Enable streaming mode (default: false)'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'process_flow',
+    description: 'Legacy process endpoint for backward compatibility. Processes a flow with inputs and optional tweaks.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to process'
+        },
+        inputs: {
+          type: 'object',
+          description: 'Input values for the flow'
+        },
+        tweaks: {
+          type: 'object',
+          description: 'Component-specific parameter overrides'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'predict_flow',
+    description: 'Legacy predict endpoint for backward compatibility. Predicts flow output with inputs and optional tweaks.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to predict'
+        },
+        inputs: {
+          type: 'object',
+          description: 'Input values for the flow'
+        },
+        tweaks: {
+          type: 'object',
+          description: 'Component-specific parameter overrides'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_builds',
+    description: 'Get build execution history for a specific flow. Retrieves vertex build map model containing build status and execution details. Essential for monitoring flow build history, debugging build failures, and tracking build performance over time.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Flow ID (UUID) to retrieve build history for'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_messages',
+    description: 'Query chat/message history with flexible filtering options. Retrieve messages filtered by flow ID, session, sender, or sender name. Supports custom ordering for chronological or reverse-chronological message retrieval. Essential for debugging chat flows, analyzing conversation patterns, and monitoring user interactions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Optional flow ID (UUID) to filter messages by flow'
+        },
+        session_id: {
+          type: 'string',
+          description: 'Optional session ID to filter messages by session'
+        },
+        sender: {
+          type: 'string',
+          description: 'Optional sender identifier to filter messages'
+        },
+        sender_name: {
+          type: 'string',
+          description: 'Optional sender name to filter messages'
+        },
+        order_by: {
+          type: 'string',
+          description: 'Optional field to order results by (default: timestamp)'
+        }
+      }
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_message',
+    description: 'Get detailed information about a specific message by ID. Retrieves complete message data including sender, content, timestamp, and metadata. Useful for inspecting individual message details and debugging message-related issues.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Message ID (UUID) to retrieve'
+        }
+      },
+      required: ['message_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_sessions',
+    description: 'List all chat session IDs, optionally filtered by flow. Returns array of session identifiers that can be used to query session-specific messages. Essential for discovering active sessions, monitoring concurrent users, and analyzing session patterns.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Optional flow ID (UUID) to filter sessions by flow'
+        }
+      }
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_session_messages',
+    description: 'Get all messages for a specific session ID. Retrieves complete conversation history for a session in chronological order. Essential for reviewing full conversation context, debugging session-specific issues, and analyzing user interactions within a session.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_id: {
+          type: 'string',
+          description: 'Session ID to retrieve messages for'
+        }
+      },
+      required: ['session_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'migrate_monitor_session',
+    description: 'Migrate messages from old session ID to new session ID. Updates all messages from the old session to belong to the new session, effectively merging or renaming sessions. Useful for session continuity, combining split sessions, or correcting session identifiers.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        old_session_id: {
+          type: 'string',
+          description: 'Original session ID to migrate from'
+        },
+        new_session_id: {
+          type: 'string',
+          description: 'Target session ID to migrate to'
+        }
+      },
+      required: ['old_session_id', 'new_session_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_monitor_transactions',
+    description: 'List transaction logs for a flow with pagination support. Retrieves detailed transaction history including execution logs, API calls, and system events. Essential for debugging flow execution, analyzing performance bottlenecks, and monitoring API usage patterns.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to retrieve transactions for'
+        },
+        page: {
+          type: 'number',
+          description: 'Page number for pagination (default: 1, min: 1)'
+        },
+        size: {
+          type: 'number',
+          description: 'Number of transactions per page (default: 50, max: 100)'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'delete_monitor_builds',
+    description: 'Delete build history for a specific flow. Removes all stored build execution records to clean up old data and free storage space. Use cautiously as this permanently removes build history that may be useful for debugging.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Flow ID (UUID) to delete build history for'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'delete_monitor_messages',
+    description: 'Delete multiple messages by their IDs. Batch deletion of message records for cleanup, privacy compliance, or storage management. Permanently removes messages from the system.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message_ids: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of message IDs (UUIDs) to delete'
+        }
+      },
+      required: ['message_ids']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'build_vertices',
+    description: 'Get vertex build order for a flow. Retrieves the ordered list of vertex IDs representing the build execution sequence. Useful for understanding flow component dependencies, optimizing build performance, and debugging build order issues. Supports partial builds with start/stop component IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) to retrieve vertex build order for'
+        },
+        data: {
+          type: 'object',
+          description: 'Optional flow data override for build'
+        },
+        stop_component_id: {
+          type: 'string',
+          description: 'Optional component ID to stop build at'
+        },
+        start_component_id: {
+          type: 'string',
+          description: 'Optional component ID to start build from'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_vertex',
+    description: 'Get detailed information about a specific vertex (component) in a flow. Retrieves vertex configuration, state, and metadata. Essential for inspecting individual component details, debugging component issues, and understanding flow structure at the component level.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Flow ID (UUID) containing the vertex'
+        },
+        vertex_id: {
+          type: 'string',
+          description: 'Vertex ID to retrieve details for'
+        }
+      },
+      required: ['flow_id', 'vertex_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'stream_vertex_build',
+    description: 'Stream real-time build events for a specific vertex. Provides live updates during vertex build process using server-sent events (SSE). Essential for monitoring long-running component builds, debugging build failures in real-time, and providing live build status to users.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) containing the vertex'
+        },
+        vertex_id: {
+          type: 'string',
+          description: 'Vertex ID to stream build events for'
+        }
+      },
+      required: ['flow_id', 'vertex_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_version',
+    description: 'Get Langflow API version information. Retrieves current API version number and related system information. Essential for compatibility checks, debugging version-specific issues, and ensuring client-server version alignment.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_users',
+    description: 'List all users in the Langflow instance. Admin-only endpoint. Supports pagination with skip and limit parameters. Returns array of user objects with id, username, email, and other profile information.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        skip: {
+          type: 'number',
+          description: 'Number of users to skip (default: 0)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of users to return (default: 50, max: 100)'
+        }
+      }
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_current_user',
+    description: 'Get information about the currently authenticated user. Returns user profile including id, username, email, is_active, is_superuser status, and profile image.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_user',
+    description: 'Get details about a specific user by ID. Returns user profile information including username, email, active status, and profile picture.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'User ID (UUID)'
+        }
+      },
+      required: ['user_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'update_user',
+    description: 'Update user profile information. Can modify username, password, or profile image. Returns updated user object.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'User ID (UUID) to update'
+        },
+        username: {
+          type: 'string',
+          description: 'New username'
+        },
+        password: {
+          type: 'string',
+          description: 'New password'
+        },
+        profile_image: {
+          type: 'string',
+          description: 'New profile image URL or path'
+        }
+      },
+      required: ['user_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'reset_user_password',
+    description: 'Reset password for a specific user. Admin-only endpoint. Requires user ID and new password (minimum 8 characters). Returns updated user object.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'User ID (UUID) to reset password for'
+        },
+        new_password: {
+          type: 'string',
+          description: 'New password (minimum 8 characters)'
+        }
+      },
+      required: ['user_id', 'new_password']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_api_keys',
+    description: 'List all API keys for the authenticated user. Returns array of API key objects with id, name, created_at, last_used_at, total_uses, and is_active status.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'create_api_key',
+    description: 'Create a new API key with a specified name. Returns the created API key object including the key value (only shown once).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name/label for the API key'
+        }
+      },
+      required: ['name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'delete_api_key',
+    description: 'Delete a specific API key by ID. This action is permanent and cannot be undone. The API key will immediately stop working.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        api_key_id: {
+          type: 'string',
+          format: 'uuid',
+          description: 'API key ID (UUID) to delete'
+        }
+      },
+      required: ['api_key_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_custom_components',
+    description: 'List all custom components created by the user. Returns array of custom component objects with code, name, description, and return type.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'create_custom_component',
+    description: 'Create a new custom component with Python code. Requires component code, name, and optional description and return_type. Returns created component object.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'Python code for the custom component'
+        },
+        name: {
+          type: 'string',
+          description: 'Component name'
+        },
+        description: {
+          type: 'string',
+          description: 'Optional component description'
+        },
+        return_type: {
+          type: 'string',
+          description: 'Optional return type specification'
+        }
+      },
+      required: ['code', 'name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'login',
+    description: 'Authenticate with username and password. Returns access token, optional refresh token, and token type. Use the access token in subsequent API requests.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        username: {
+          type: 'string',
+          description: 'Username for authentication'
+        },
+        password: {
+          type: 'string',
+          description: 'Password for authentication'
+        }
+      },
+      required: ['username', 'password']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'auto_login',
+    description: 'Automatically login with stored credentials or session. Returns access token if auto-login is configured and enabled.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'refresh_token',
+    description: 'Refresh authentication token using refresh token. Returns new access token and optionally a new refresh token.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'logout',
+    description: 'Logout and invalidate current authentication session. Clears authentication tokens and terminates the session.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_public_flow',
+    description: 'Get a public flow by ID without authentication. Public flows can be accessed by anyone without API key or login credentials.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: {
+          type: 'string',
+          description: 'Flow ID (UUID) of the public flow'
+        }
+      },
+      required: ['flow_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'batch_create_flows',
+    description: 'Create multiple flows in a single batch operation. More efficient than creating flows individually. Accepts array of flow objects.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flows: {
+          type: 'array',
+          description: 'Array of flow objects to create',
+          items: {
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                description: 'Flow name'
+              },
+              description: {
+                type: 'string',
+                description: 'Optional flow description'
+              },
+              data: {
+                type: 'object',
+                description: 'Optional flow data/configuration'
+              },
+              folder_id: {
+                type: 'string',
+                description: 'Optional folder ID to organize the flow'
+              }
+            }
+          }
+        }
+      },
+      required: ['flows']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_task_status',
+    description: 'Get status of an asynchronous task by task ID. Returns task status (pending, running, completed, failed), result if completed, or error if failed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task_id: {
+          type: 'string',
+          description: 'Task ID to check status for'
+        }
+      },
+      required: ['task_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'download_folder',
+    description: 'Download entire folder as compressed archive. Returns archive file containing all flows and resources in the folder.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        folder_id: {
+          type: 'string',
+          description: 'Folder ID (UUID) to download'
+        }
+      },
+      required: ['folder_id']
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'upload_folder',
+    description: 'Upload folder from compressed archive. Provide base64-encoded file content and filename. Creates folder structure and imports all flows.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_content: {
+          type: 'string',
+          description: 'Base64-encoded archive file content'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Archive filename'
+        }
+      },
+      required: ['file_content', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_starter_projects',
+    description: 'List available starter project templates. Returns array of pre-built project templates that can be used to quickly bootstrap new Langflow projects.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'upload_knowledge_base',
+    description: 'Upload file to create or update a knowledge base for RAG. Provide knowledge base name, base64-encoded file content, and filename.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: {
+          type: 'string',
+          description: 'Knowledge base name/identifier'
+        },
+        file_content: {
+          type: 'string',
+          description: 'Base64-encoded file content'
+        },
+        file_name: {
+          type: 'string',
+          description: 'Name of the file being uploaded'
+        }
+      },
+      required: ['kb_name', 'file_content', 'file_name']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'list_elevenlabs_voices',
+    description: 'List available ElevenLabs text-to-speech voices. Returns array of voice objects with voice_id and name for use in voice synthesis flows.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'health_check',
+    description: 'Check Langflow instance health status. Returns health status and system information. Use to verify the API is accessible and operational.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_logs',
+    description: 'Retrieve system logs. Supports both regular and streaming modes. Use stream parameter to enable real-time log streaming.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        stream: {
+          type: 'boolean',
+          description: 'Enable streaming mode for real-time logs (default: false)'
+        }
+      }
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true
+    }
   }
 ];

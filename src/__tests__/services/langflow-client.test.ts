@@ -56,6 +56,93 @@ import {
   mockPartialBulkDeleteResponse,
   mockDeleteResponse
 } from '../fixtures/knowledge-bases';
+import {
+  mockVertexBuildMap,
+  mockMessageResponse,
+  mockMessagesList,
+  mockSessionsList,
+  mockMonitorMessagesParams,
+  mockMonitorSessionsParams,
+  mockMigrateSessionParams,
+  mockTransactionResponse,
+  mockTransactionsList,
+  mockMonitorTransactionsParams,
+  mockMonitorBuildsParams
+} from '../fixtures/monitoring';
+import {
+  mockFileListItem,
+  mockFilesList,
+  mockFileUploadResponse,
+  mockFileBuffer,
+  mockImageBuffer,
+  mockProfilePicturesList
+} from '../fixtures/files';
+import {
+  mockValidCodeResponse,
+  mockInvalidCodeResponse,
+  mockValidPromptResponse,
+  mockInvalidPromptResponse
+} from '../fixtures/validation';
+import {
+  mockStoreComponent,
+  mockStoreComponentsList,
+  mockStoreTagsList,
+  mockUserLikesList,
+  mockCheckStoreResponse,
+  mockCheckStoreApiKeyResponse
+} from '../fixtures/store';
+import {
+  mockRunFlowAdvancedRequest,
+  mockRunFlowAdvancedResponse,
+  mockProcessFlowRequest,
+  mockProcessFlowResponse,
+  mockPredictFlowRequest,
+  mockPredictFlowResponse
+} from '../fixtures/advanced-execution';
+import {
+  mockBuildVerticesRequest,
+  mockVerticesOrderResponse,
+  mockGetVertexParams,
+  mockVertexResponse,
+  mockStreamVertexBuildParams,
+  mockStreamVertexResponse
+} from '../fixtures/vertices';
+import {
+  mockUserRead,
+  mockUserCreate,
+  mockUserUpdate,
+  mockUsersList,
+  mockListUsersParams,
+  mockPasswordResetResponse
+} from '../fixtures/users';
+import {
+  mockApiKeyRead,
+  mockApiKeyCreate,
+  mockApiKeyWithToken,
+  mockApiKeysList
+} from '../fixtures/api-keys';
+import {
+  mockCustomComponentCreate,
+  mockCustomComponentRead,
+  mockCustomComponentsList
+} from '../fixtures/custom-components';
+import {
+  mockLoginRequest,
+  mockLoginResponse,
+  mockAutoLoginResponse,
+  mockRefreshTokenResponse,
+  mockLogoutResponse
+} from '../fixtures/auth';
+import {
+  mockVersionResponse,
+  mockTaskStatusResponse,
+  mockTaskStatusPending,
+  mockTaskStatusFailed,
+  mockStarterProjectsList,
+  mockElevenLabsVoicesList,
+  mockHealthResponse,
+  mockLogsResponse
+} from '../fixtures/misc';
 
 describe('LangflowClient', () => {
   let client: LangflowClient;

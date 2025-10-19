@@ -210,3 +210,258 @@ export interface KnowledgeBaseInfo {
 export interface BulkDeleteKnowledgeBasesRequest {
   kb_names: string[];
 }
+
+export interface FileListItem {
+  name: string;
+  path: string;
+  size?: number;
+  modified?: string;
+}
+
+export interface ValidateCodeRequest {
+  code: string;
+}
+
+export interface ValidateCodeResponse {
+  valid: boolean;
+  errors?: string[];
+  warnings?: string[];
+}
+
+export interface ValidatePromptRequest {
+  prompt: string;
+}
+
+export interface ValidatePromptResponse {
+  valid: boolean;
+  errors?: string[];
+  variables?: string[];
+}
+
+export interface StoreComponent {
+  id: string;
+  name: string;
+  description?: string;
+  tags?: string[];
+  [key: string]: any;
+}
+
+export interface ListStoreComponentsParams {
+  page?: number;
+  limit?: number;
+  tags?: string[];
+  search?: string;
+}
+
+export interface StoreTag {
+  name: string;
+  count?: number;
+}
+
+export interface UserLike {
+  component_id: string;
+  liked_at?: string;
+}
+
+export interface RunFlowAdvancedRequest {
+  input_value?: string;
+  input_type?: string;
+  output_type?: string;
+  output_component?: string;
+  tweaks?: Record<string, unknown>;
+  session_id?: string;
+}
+
+export interface ProcessFlowRequest {
+  inputs?: Record<string, unknown>;
+  tweaks?: Record<string, unknown>;
+}
+
+export interface PredictFlowRequest {
+  inputs?: Record<string, unknown>;
+  tweaks?: Record<string, unknown>;
+}
+
+export interface MonitorBuildsParams {
+  flow_id: string;
+}
+
+export interface VertexBuildMapModel {
+  [key: string]: any;
+}
+
+export interface MonitorMessagesParams {
+  flow_id?: string;
+  session_id?: string;
+  sender?: string;
+  sender_name?: string;
+  order_by?: string;
+}
+
+export interface MessageResponse {
+  id: string;
+  session_id: string;
+  sender: string;
+  sender_name?: string;
+  text: string;
+  timestamp: string;
+  [key: string]: any;
+}
+
+export interface MonitorSessionsParams {
+  flow_id?: string;
+}
+
+export interface DeleteMonitorMessagesRequest {
+  message_ids: string[];
+}
+
+export interface MigrateSessionParams {
+  old_session_id: string;
+  new_session_id: string;
+}
+
+export interface MonitorTransactionsParams {
+  flow_id: string;
+  page?: number;
+  size?: number;
+}
+
+export interface TransactionResponse {
+  [key: string]: any;
+}
+
+export interface BuildVerticesRequest {
+  data?: Record<string, unknown>;
+  stop_component_id?: string;
+  start_component_id?: string;
+}
+
+export interface VerticesOrderResponse {
+  ids: string[];
+  run_id: string;
+  [key: string]: any;
+}
+
+export interface GetVertexParams {
+  flow_id: string;
+  vertex_id: string;
+}
+
+export interface StreamVertexBuildParams {
+  flow_id: string;
+  vertex_id: string;
+}
+
+export interface VersionResponse {
+  version: string;
+  [key: string]: any;
+}
+
+export interface UserRead {
+  id: string;
+  username: string;
+  email?: string;
+  is_active?: boolean;
+  is_superuser?: boolean;
+  profile_image?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any;
+}
+
+export interface UserCreate {
+  username: string;
+  password: string;
+  email?: string;
+  profile_image?: string;
+  [key: string]: any;
+}
+
+export interface UserUpdate {
+  username?: string;
+  password?: string;
+  profile_image?: string;
+  [key: string]: any;
+}
+
+export interface ListUsersParams {
+  skip?: number;
+  limit?: number;
+}
+
+export interface ApiKeyRead {
+  id: string;
+  name: string;
+  api_key?: string; // WARNING: Only present on creation, store securely!
+  created_at: string;
+  last_used_at?: string;
+  total_uses?: number;
+  is_active?: boolean;
+  [key: string]: any;
+}
+
+export interface ApiKeyCreate {
+  name: string;
+}
+
+export interface CustomComponentRead {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  return_type?: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any;
+}
+
+export interface CustomComponentCreate {
+  code: string;
+  name: string;
+  description?: string;
+  return_type?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token?: string;
+  token_type: string;
+  [key: string]: any;
+}
+
+export interface BatchFlowCreate {
+  flows: FlowCreate[];
+}
+
+export interface TaskStatusResponse {
+  task_id: string;
+  status: string;
+  result?: any;
+  error?: string;
+  [key: string]: any;
+}
+
+export interface StarterProject {
+  id: string;
+  name: string;
+  description?: string;
+  data?: any;
+  [key: string]: any;
+}
+
+export interface ElevenLabsVoice {
+  voice_id: string;
+  name: string;
+  [key: string]: any;
+}
+
+export interface HealthResponse {
+  status: string;
+  [key: string]: any;
+}

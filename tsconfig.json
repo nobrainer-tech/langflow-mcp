@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
@@ -27,7 +26,7 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "allowJs": true
   },
   "include": ["src/**/*", "vitest.config.mts"],
