@@ -19,6 +19,12 @@ export interface ToolDefinition {
     required?: string[];
     additionalProperties?: boolean | Record<string, any>;
   };
+  annotations?: {
+    readOnlyHint?: boolean;
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+  };
 }
 
 export interface LangflowConfig {

@@ -1266,12 +1266,12 @@ describe('Validation Schemas', () => {
       expect(() => ListKnowledgeBasesSchema.parse({})).not.toThrow();
     });
 
-    it('should ignore extra properties', () => {
+    it('should reject extra properties', () => {
       const data = {
-        extra_param: 'should be ignored'
+        extra_param: 'should be rejected'
       };
 
-      expect(() => ListKnowledgeBasesSchema.parse(data)).not.toThrow();
+      expect(() => ListKnowledgeBasesSchema.parse(data)).toThrow();
     });
   });
 
