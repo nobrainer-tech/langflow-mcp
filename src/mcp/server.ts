@@ -44,7 +44,61 @@ import {
   ListKnowledgeBasesSchema,
   GetKnowledgeBaseSchema,
   DeleteKnowledgeBaseSchema,
-  BulkDeleteKnowledgeBasesSchema
+  BulkDeleteKnowledgeBasesSchema,
+  UploadFileSchema,
+  DownloadFileSchema,
+  ListFilesSchema,
+  DeleteFileSchema,
+  GetFileImageSchema,
+  ListProfilePicturesSchema,
+  GetProfilePictureSchema,
+  ValidateCodeSchema,
+  ValidatePromptSchema,
+  CheckStoreSchema,
+  CheckStoreApiKeySchema,
+  ListStoreComponentsSchema,
+  GetStoreComponentSchema,
+  ListStoreTagsSchema,
+  GetUserLikesSchema,
+  RunFlowAdvancedSchema,
+  ProcessFlowSchema,
+  PredictFlowSchema,
+  GetMonitorBuildsSchema,
+  GetMonitorMessagesSchema,
+  GetMonitorMessageSchema,
+  GetMonitorSessionsSchema,
+  GetMonitorSessionMessagesSchema,
+  MigrateMonitorSessionSchema,
+  GetMonitorTransactionsSchema,
+  DeleteMonitorBuildsSchema,
+  DeleteMonitorMessagesSchema,
+  BuildVerticesSchema,
+  GetVertexSchema,
+  StreamVertexBuildSchema,
+  GetVersionSchema,
+  ListUsersSchema,
+  GetCurrentUserSchema,
+  GetUserSchema,
+  UpdateUserSchema,
+  ResetUserPasswordSchema,
+  ListApiKeysSchema,
+  CreateApiKeySchema,
+  DeleteApiKeySchema,
+  ListCustomComponentsSchema,
+  CreateCustomComponentSchema,
+  LoginSchema,
+  AutoLoginSchema,
+  RefreshTokenSchema,
+  LogoutSchema,
+  GetPublicFlowSchema,
+  BatchCreateFlowsSchema,
+  GetTaskStatusSchema,
+  DownloadFolderSchema,
+  UploadFolderSchema,
+  ListStarterProjectsSchema,
+  UploadKnowledgeBaseSchema,
+  ListElevenLabsVoicesSchema,
+  GetLogsSchema
 } from './validation';
 
 export class LangflowMCPServer {
@@ -117,8 +171,34 @@ export class LangflowMCPServer {
     };
   }
 
-  private formatErrorResponse(error: unknown, toolName: string): any {
-    logger.error(`Error executing tool ${toolName}:`, error);
+  private sanitizeSensitiveData(args: Record<string, unknown>): Record<string, unknown> {
+    const sensitiveFields = ['password', 'new_password', 'api_key', 'token'];
+    const sanitized = { ...args };
+
+    for (const field of sensitiveFields) {
+      if (field in sanitized) {
+        sanitized[field] = '***REDACTED***';
+      }
+    }
+
+    return sanitized;
+  }
+
+  private validateFileSize(fileContent: string, maxSizeBytes: number = 10 * 1024 * 1024): Buffer {
+    const fileBuffer = Buffer.from(fileContent, 'base64');
+
+    if (fileBuffer.length > maxSizeBytes) {
+      throw new Error(
+        `File size ${fileBuffer.length} bytes exceeds maximum allowed size of ${maxSizeBytes} bytes (10MB)`
+      );
+    }
+
+    return fileBuffer;
+  }
+
+  private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
+    const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
+    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
 
     let errorMessage: string;
     let errorDetails: Record<string, any> = {};
@@ -424,11 +504,386 @@ export class LangflowMCPServer {
             return this.formatSuccessResponse(result);
           }
 
+          case 'upload_file': {
+            const validated = UploadFileSchema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const result = await this.client.uploadFile(
+              validated.flow_id,
+              fileBuffer,
+              validated.file_name
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'download_file': {
+            const validated = DownloadFileSchema.parse(args);
+            const fileData = await this.client.downloadFile(
+              validated.flow_id,
+              validated.file_name
+            );
+            const base64Data = Buffer.from(fileData).toString('base64');
+            return this.formatSuccessResponse({
+              file_name: validated.file_name,
+              content: base64Data
+            });
+          }
+
+          case 'list_files': {
+            const validated = ListFilesSchema.parse(args);
+            const files = await this.client.listFiles(validated.flow_id);
+            return this.formatSuccessResponse(files);
+          }
+
+          case 'delete_file': {
+            const validated = DeleteFileSchema.parse(args);
+            await this.client.deleteFile(validated.flow_id, validated.file_name);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'File deleted successfully'
+            });
+          }
+
+          case 'get_file_image': {
+            const validated = GetFileImageSchema.parse(args);
+            const imageData = await this.client.getFileImage(
+              validated.flow_id,
+              validated.file_name
+            );
+            const base64Data = Buffer.from(imageData).toString('base64');
+            return this.formatSuccessResponse({
+              file_name: validated.file_name,
+              content: base64Data
+            });
+          }
+
+          case 'list_profile_pictures': {
+            ListProfilePicturesSchema.parse(args);
+            const pictures = await this.client.listProfilePictures();
+            return this.formatSuccessResponse(pictures);
+          }
+
+          case 'get_profile_picture': {
+            const validated = GetProfilePictureSchema.parse(args);
+            const pictureData = await this.client.getProfilePicture(
+              validated.folder_name,
+              validated.file_name
+            );
+            const base64Data = Buffer.from(pictureData).toString('base64');
+            return this.formatSuccessResponse({
+              file_name: validated.file_name,
+              content: base64Data
+            });
+          }
+
+          case 'validate_code': {
+            const validated = ValidateCodeSchema.parse(args);
+            const result = await this.client.validateCode(validated.code);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'validate_prompt': {
+            const validated = ValidatePromptSchema.parse(args);
+            const result = await this.client.validatePrompt(validated.prompt);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'check_store': {
+            CheckStoreSchema.parse(args);
+            const result = await this.client.checkStore();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'check_store_api_key': {
+            const validated = CheckStoreApiKeySchema.parse(args);
+            const result = await this.client.checkStoreApiKey(validated.api_key);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_store_components': {
+            const validated = ListStoreComponentsSchema.parse(args);
+            const components = await this.client.listStoreComponents(validated);
+            return this.formatSuccessResponse(components);
+          }
+
+          case 'get_store_component': {
+            const validated = GetStoreComponentSchema.parse(args);
+            const component = await this.client.getStoreComponent(validated.component_id);
+            return this.formatSuccessResponse(component);
+          }
+
+          case 'list_store_tags': {
+            ListStoreTagsSchema.parse(args);
+            const tags = await this.client.listStoreTags();
+            return this.formatSuccessResponse(tags);
+          }
+
+          case 'get_user_likes': {
+            GetUserLikesSchema.parse(args);
+            const likes = await this.client.getUserLikes();
+            return this.formatSuccessResponse(likes);
+          }
+
+          case 'run_flow_advanced': {
+            const validated = RunFlowAdvancedSchema.parse(args);
+            const { flow_id, stream, ...request } = validated;
+            const result = await this.client.runFlowAdvanced(flow_id, request, stream);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'process_flow': {
+            const validated = ProcessFlowSchema.parse(args);
+            const { flow_id, ...request } = validated;
+            const result = await this.client.processFlow(flow_id, request);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'predict_flow': {
+            const validated = PredictFlowSchema.parse(args);
+            const { flow_id, ...request } = validated;
+            const result = await this.client.predictFlow(flow_id, request);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_builds': {
+            const validated = GetMonitorBuildsSchema.parse(args);
+            const result = await this.client.getMonitorBuilds(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_messages': {
+            const validated = GetMonitorMessagesSchema.parse(args);
+            const result = await this.client.getMonitorMessages(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_message': {
+            const validated = GetMonitorMessageSchema.parse(args);
+            const result = await this.client.getMonitorMessage(validated.message_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_sessions': {
+            const validated = GetMonitorSessionsSchema.parse(args);
+            const result = await this.client.getMonitorSessions(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_session_messages': {
+            const validated = GetMonitorSessionMessagesSchema.parse(args);
+            const result = await this.client.getMonitorSessionMessages(validated.session_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'migrate_monitor_session': {
+            const validated = MigrateMonitorSessionSchema.parse(args);
+            const result = await this.client.migrateMonitorSession(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_monitor_transactions': {
+            const validated = GetMonitorTransactionsSchema.parse(args);
+            const result = await this.client.getMonitorTransactions(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_monitor_builds': {
+            const validated = DeleteMonitorBuildsSchema.parse(args);
+            await this.client.deleteMonitorBuilds(validated.flow_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Monitor builds deleted successfully'
+            });
+          }
+
+          case 'delete_monitor_messages': {
+            const validated = DeleteMonitorMessagesSchema.parse(args);
+            await this.client.deleteMonitorMessages(validated.message_ids);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Monitor messages deleted successfully'
+            });
+          }
+
+          case 'build_vertices': {
+            const validated = BuildVerticesSchema.parse(args);
+            const { flow_id, ...request } = validated;
+            const result = await this.client.buildVertices(flow_id, request);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_vertex': {
+            const validated = GetVertexSchema.parse(args);
+            const result = await this.client.getVertex(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'stream_vertex_build': {
+            const validated = StreamVertexBuildSchema.parse(args);
+            const result = await this.client.streamVertexBuild(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_version': {
+            GetVersionSchema.parse(args);
+            const result = await this.client.getVersion();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_users': {
+            const validated = ListUsersSchema.parse(args);
+            const result = await this.client.listUsers(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_current_user': {
+            GetCurrentUserSchema.parse(args);
+            const result = await this.client.getCurrentUser();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_user': {
+            const validated = GetUserSchema.parse(args);
+            const result = await this.client.getUser(validated.user_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_user': {
+            const validated = UpdateUserSchema.parse(args);
+            const { user_id, ...updates } = validated;
+            const result = await this.client.updateUser(user_id, updates);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'reset_user_password': {
+            const validated = ResetUserPasswordSchema.parse(args);
+            const result = await this.client.resetUserPassword(validated.user_id, validated.new_password);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_api_keys': {
+            ListApiKeysSchema.parse(args);
+            const result = await this.client.listApiKeys();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_api_key': {
+            const validated = CreateApiKeySchema.parse(args);
+            const result = await this.client.createApiKey(validated.name);
+            return this.formatSuccessResponse({
+              ...result,
+              security_warning: 'IMPORTANT: Store this API key securely. It cannot be retrieved later and will only be shown once.'
+            });
+          }
+
+          case 'delete_api_key': {
+            const validated = DeleteApiKeySchema.parse(args);
+            await this.client.deleteApiKey(validated.api_key_id);
+            return this.formatSuccessResponse({ success: true, message: 'API key deleted successfully' });
+          }
+
+          case 'list_custom_components': {
+            ListCustomComponentsSchema.parse(args);
+            const result = await this.client.listCustomComponents();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_custom_component': {
+            const validated = CreateCustomComponentSchema.parse(args);
+            const result = await this.client.createCustomComponent(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'login': {
+            const validated = LoginSchema.parse(args);
+            const result = await this.client.login(validated.username, validated.password);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'auto_login': {
+            AutoLoginSchema.parse(args);
+            const result = await this.client.autoLogin();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'refresh_token': {
+            RefreshTokenSchema.parse(args);
+            const result = await this.client.refreshToken();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'logout': {
+            LogoutSchema.parse(args);
+            const result = await this.client.logout();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_public_flow': {
+            const validated = GetPublicFlowSchema.parse(args);
+            const result = await this.client.getPublicFlow(validated.flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'batch_create_flows': {
+            const validated = BatchCreateFlowsSchema.parse(args);
+            const result = await this.client.batchCreateFlows(validated.flows);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_task_status': {
+            const validated = GetTaskStatusSchema.parse(args);
+            const result = await this.client.getTaskStatus(validated.task_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'download_folder': {
+            const validated = DownloadFolderSchema.parse(args);
+            const result = await this.client.downloadFolder(validated.folder_id);
+            const base64Data = Buffer.from(result).toString('base64');
+            return this.formatSuccessResponse({ data: base64Data, encoding: 'base64' });
+          }
+
+          case 'upload_folder': {
+            const validated = UploadFolderSchema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const result = await this.client.uploadFolder(fileBuffer, validated.file_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_starter_projects': {
+            ListStarterProjectsSchema.parse(args);
+            const result = await this.client.listStarterProjects();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'upload_knowledge_base': {
+            const validated = UploadKnowledgeBaseSchema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const result = await this.client.uploadKnowledgeBase(validated.kb_name, fileBuffer, validated.file_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_elevenlabs_voices': {
+            ListElevenLabsVoicesSchema.parse(args);
+            const result = await this.client.listElevenLabsVoices();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'health_check': {
+            const result = await this.client.healthCheck();
+            return this.formatSuccessResponse({ status: result ? 'healthy' : 'unhealthy', healthy: result });
+          }
+
+          case 'get_logs': {
+            const validated = GetLogsSchema.parse(args);
+            const result = await this.client.getLogs(validated.stream);
+            return this.formatSuccessResponse(result);
+          }
+
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        return this.formatErrorResponse(error, name);
+        return this.formatErrorResponse(error, name, args);
       }
     });
   }
