@@ -5,13 +5,20 @@ const FileNameSchema = z.string()
   .max(255, 'Filename too long')
   .refine(
     (name) => {
-      if (name.includes('..')) return false;
-      if (name.includes('/')) return false;
-      if (name.includes('\\')) return false;
-      if (name.includes('\0')) return false;
+      // Path separators and traversal
+      if (/[\\\/]/.test(name)) return false;
+      if (/\.\./.test(name)) return false;
+      // Control characters (0x00-0x1F, 0x7F)
+      if (/[\x00-\x1F\x7F]/.test(name)) return false;
+      // Windows reserved characters
+      if (/[<>:"|?*]/.test(name)) return false;
+      // Windows reserved filenames (case-insensitive)
+      const baseName = name.split('.')[0].toUpperCase();
+      const reserved = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/;
+      if (reserved.test(baseName)) return false;
       return true;
     },
-    { message: 'Invalid filename. Path traversal characters detected.' }
+    { message: 'Invalid filename. Contains forbidden characters, reserved names, or path traversal sequences.' }
   );
 
 export const CreateFlowSchema = z.object({
@@ -24,7 +31,9 @@ export const CreateFlowSchema = z.object({
 export const ListFlowsSchema = z.object({
   page: z.number().int().positive().optional(),
   size: z.number().int().positive().max(100, 'Page size cannot exceed 100').optional(),
-  folder_id: z.string().uuid('Invalid folder ID format').optional()
+  folder_id: z.string().uuid('Invalid folder ID format').optional(),
+  components_only: z.boolean().optional(),
+  get_all: z.boolean().optional()
 }).strict();
 
 export const GetFlowSchema = z.object({

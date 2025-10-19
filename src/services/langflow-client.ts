@@ -983,9 +983,37 @@ export class LangflowClient {
       const status = axiosError.response?.status;
       const data = axiosError.response?.data;
 
+      // Sanitize sensitive data with circular reference and depth protection
+      const sanitize = (val: any, depth = 0, seen = new WeakSet()): any => {
+        const MAX_DEPTH = 10;
+        const SENSITIVE_KEYS = new Set([
+          'authorization', 'api_key', 'x-api-key', 'password', 'token',
+          'access_token', 'refresh_token', 'secret', 'api-key',
+          'bearer', 'private_key', 'session_id', 'cookie'
+        ]);
+
+        if (!val || typeof val !== 'object') return val;
+        if (depth > MAX_DEPTH) return '[max depth exceeded]';
+        if (Buffer.isBuffer(val) || val instanceof ArrayBuffer) return '[binary data]';
+
+        // Circular reference detection
+        if (seen.has(val)) return '[circular reference]';
+        seen.add(val);
+
+        if (Array.isArray(val)) return val.map(v => sanitize(v, depth + 1, seen));
+
+        return Object.fromEntries(
+          Object.entries(val).map(([k, v]) =>
+            [k, SENSITIVE_KEYS.has(k.toLowerCase()) ? '***REDACTED***' : sanitize(v, depth + 1, seen)]
+          )
+        );
+      };
+
+      const safeData = data ? sanitize(data) : undefined;
+
       return new Error(
         `${message}: ${status ? `HTTP ${status}` : 'Network error'} - ${
-          data ? JSON.stringify(data) : axiosError.message
+          safeData ? JSON.stringify(safeData) : axiosError.message
         }`
       );
     }

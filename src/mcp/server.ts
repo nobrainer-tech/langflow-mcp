@@ -196,6 +196,20 @@ export class LangflowMCPServer {
     return fileBuffer;
   }
 
+  private validateTextSize(content: string, maxSizeBytes: number = 10 * 1024 * 1024): void {
+    const size = Buffer.byteLength(content, 'utf8');
+    if (size > maxSizeBytes) {
+      const formatSize = (bytes: number) => {
+        if (bytes < 1024) return `${bytes} bytes`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      };
+      throw new Error(
+        `Content size ${formatSize(size)} exceeds maximum allowed size of ${formatSize(maxSizeBytes)}`
+      );
+    }
+  }
+
   private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
     const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
     logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });

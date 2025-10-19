@@ -1750,6 +1750,7 @@ Related Tools:
       properties: {
         flow_id: {
           type: 'string',
+          format: 'uuid',
           description: 'Flow ID (UUID) to retrieve build history for'
         }
       },
@@ -1805,6 +1806,7 @@ Related Tools:
       properties: {
         message_id: {
           type: 'string',
+          format: 'uuid',
           description: 'Message ID (UUID) to retrieve'
         }
       },
@@ -1916,6 +1918,7 @@ Related Tools:
       properties: {
         flow_id: {
           type: 'string',
+          format: 'uuid',
           description: 'Flow ID (UUID) to delete build history for'
         }
       },
@@ -1989,6 +1992,7 @@ Related Tools:
       properties: {
         flow_id: {
           type: 'string',
+          format: 'uuid',
           description: 'Flow ID (UUID) containing the vertex'
         },
         vertex_id: {
@@ -2088,6 +2092,7 @@ Related Tools:
       properties: {
         user_id: {
           type: 'string',
+          format: 'uuid',
           description: 'User ID (UUID)'
         }
       },
@@ -2108,6 +2113,7 @@ Related Tools:
       properties: {
         user_id: {
           type: 'string',
+          format: 'uuid',
           description: 'User ID (UUID) to update'
         },
         username: {
@@ -2140,6 +2146,7 @@ Related Tools:
       properties: {
         user_id: {
           type: 'string',
+          format: 'uuid',
           description: 'User ID (UUID) to reset password for'
         },
         new_password: {
@@ -2198,6 +2205,7 @@ Related Tools:
       properties: {
         api_key_id: {
           type: 'string',
+          format: 'uuid',
           description: 'API key ID (UUID) to delete'
         }
       },
