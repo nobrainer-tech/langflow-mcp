@@ -5,8 +5,6 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ZodError } from 'zod';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { langflowMCPTools } from './tools';
 import { logger } from '../utils/logger';
 import { LangflowClient } from '../services/langflow-client';
@@ -83,13 +81,14 @@ export class LangflowMCPServer {
 
     logger.info('Initializing Langflow MCP server');
 
+    // Use require for reliable package.json access across environments
     let serverVersion = '1.1.0';
     try {
-      const pkgRaw = readFileSync(join(__dirname, '../../package.json'), 'utf-8');
-      const pkg = JSON.parse(pkgRaw);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const pkg = require('../../package.json');
       serverVersion = pkg.version ?? serverVersion;
     } catch (e) {
-      logger.warn('package.json not readable; defaulting server version to 1.1.0', e);
+      logger.warn('package.json not readable; using hardcoded version 1.1.0', e);
     }
 
     this.server = new Server(
