@@ -429,58 +429,59 @@ export class LangflowClient {
     }
   }
 
-  async uploadFile(flowId: string, fileContent: Buffer, fileName: string): Promise<any> {
+  async uploadFile(params: { flow_id: string; file: any; file_name: string }): Promise<any> {
     try {
       const formData = new FormData();
-      formData.append('file', fileContent, fileName);
+      formData.append('file', params.file, params.file_name);
 
-      const response = await this.client.post(`/files/upload/${flowId}`, formData, {
+      const response = await this.client.post(`/files/upload/${params.flow_id}`, formData, {
         headers: {
           ...formData.getHeaders()
         }
       });
       return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to upload file to flow ${flowId}`);
+      throw this.handleError(error, `Failed to upload file to flow ${params.flow_id}`);
     }
   }
 
-  async downloadFile(flowId: string, fileName: string): Promise<any> {
+  async downloadFile(params: { flow_id: string; file_name: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/files/download/${flowId}/${fileName}`, {
+      const response = await this.client.get(`/files/download/${params.flow_id}/${params.file_name}`, {
         responseType: 'arraybuffer'
       });
       return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to download file ${fileName} from flow ${flowId}`);
+      throw this.handleError(error, `Failed to download file ${params.file_name} from flow ${params.flow_id}`);
     }
   }
 
-  async listFiles(flowId: string): Promise<FileListItem[]> {
+  async listFiles(params: { flow_id: string }): Promise<FileListItem[]> {
     try {
-      const response = await this.client.get<FileListItem[]>(`/files/list/${flowId}`);
+      const response = await this.client.get<FileListItem[]>(`/files/list/${params.flow_id}`);
       return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to list files for flow ${flowId}`);
+      throw this.handleError(error, `Failed to list files for flow ${params.flow_id}`);
     }
   }
 
-  async deleteFile(flowId: string, fileName: string): Promise<void> {
+  async deleteFile(params: { flow_id: string; file_name: string }): Promise<{ message: string }> {
     try {
-      await this.client.delete(`/files/delete/${flowId}/${fileName}`);
+      const response = await this.client.delete<{ message: string }>(`/files/delete/${params.flow_id}/${params.file_name}`);
+      return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to delete file ${fileName} from flow ${flowId}`);
+      throw this.handleError(error, `Failed to delete file ${params.file_name} from flow ${params.flow_id}`);
     }
   }
 
-  async getFileImage(flowId: string, fileName: string): Promise<any> {
+  async getFileImage(params: { flow_id: string; file_name: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/files/images/${flowId}/${fileName}`, {
+      const response = await this.client.get(`/files/images/${params.flow_id}/${params.file_name}`, {
         responseType: 'arraybuffer'
       });
       return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to get image ${fileName} from flow ${flowId}`);
+      throw this.handleError(error, `Failed to get image ${params.file_name} from flow ${params.flow_id}`);
     }
   }
 
@@ -610,12 +611,12 @@ export class LangflowClient {
     }
   }
 
-  async getMonitorBuilds(params: MonitorBuildsParams): Promise<VertexBuildMapModel> {
+  async getMonitorBuilds(params: { flow_id: string }): Promise<VertexBuildMapModel> {
     try {
       const response = await this.client.get<VertexBuildMapModel>('/monitor/builds', { params });
       return response.data;
     } catch (error) {
-      throw this.handleError(error, 'Failed to get monitor builds');
+      throw this.handleError(error, `Failed to get monitor builds for flow ${params.flow_id}`);
     }
   }
 
@@ -668,7 +669,7 @@ export class LangflowClient {
     }
   }
 
-  async getMonitorTransactions(params: MonitorTransactionsParams): Promise<any> {
+  async getMonitorTransactions(params?: MonitorTransactionsParams): Promise<any> {
     try {
       const response = await this.client.get('/monitor/transactions', { params });
       return response.data;
@@ -679,15 +680,18 @@ export class LangflowClient {
 
   async deleteMonitorBuilds(flowId: string): Promise<void> {
     try {
-      await this.client.delete('/monitor/builds', { params: { flow_id: flowId } });
+      await this.client.delete('/monitor/builds', {
+        params: { flow_id: flowId }
+      });
     } catch (error) {
-      throw this.handleError(error, 'Failed to delete monitor builds');
+      throw this.handleError(error, `Failed to delete monitor builds for flow ${flowId}`);
     }
   }
 
-  async deleteMonitorMessages(messageIds: string[]): Promise<void> {
+  async deleteMonitorMessages(messageIds: string[]): Promise<any> {
     try {
-      await this.client.delete('/monitor/messages', { data: messageIds });
+      const response = await this.client.delete('/monitor/messages', { data: messageIds });
+      return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to delete monitor messages');
     }
@@ -974,6 +978,293 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get logs');
+    }
+  }
+
+  async getMonitorMessageById(messageId: string): Promise<MessageResponse> {
+    try {
+      const response = await this.client.get<MessageResponse>(`/monitor/messages/${messageId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get monitor message');
+    }
+  }
+
+  async getMonitorTransactionById(transactionId: string): Promise<TransactionResponse> {
+    try {
+      const response = await this.client.get<TransactionResponse>(`/monitor/transactions/${transactionId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get monitor transaction');
+    }
+  }
+
+  async getMonitorVertexBuilds(params?: { flow_id?: string }): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/monitor/vertices/builds', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get monitor vertex builds');
+    }
+  }
+
+  async getMonitorVertexBuildById(vertexBuildId: string): Promise<any> {
+    try {
+      const response = await this.client.get<any>(`/monitor/vertices/builds/${vertexBuildId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get monitor vertex build');
+    }
+  }
+
+  async uploadTextData(params: { flow_id: string; text_data: string; file_name?: string }): Promise<any> {
+    try {
+      const response = await this.client.post(`/files/upload/${params.flow_id}/text`, {
+        text: params.text_data,
+        file_name: params.file_name
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to upload text data to flow ${params.flow_id}`);
+    }
+  }
+
+  async installStoreComponent(componentId: string): Promise<any> {
+    try {
+      const response = await this.client.post(`/store/components/${componentId}/install`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to install store component ${componentId}`);
+    }
+  }
+
+  async updateCustomComponent(componentId: string, updates: Partial<CustomComponentCreate>): Promise<CustomComponentRead> {
+    try {
+      const response = await this.client.patch<CustomComponentRead>(`/custom_component/${componentId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update custom component ${componentId}`);
+    }
+  }
+
+  async deleteCustomComponent(componentId: string): Promise<void> {
+    try {
+      await this.client.delete(`/custom_component/${componentId}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete custom component ${componentId}`);
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      await this.client.delete(`/users/${userId}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete user ${userId}`);
+    }
+  }
+
+  async getConfig(): Promise<any> {
+    try {
+      const response = await this.client.get('/config');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get configuration');
+    }
+  }
+
+  async updateConfig(config: any): Promise<any> {
+    try {
+      const response = await this.client.patch('/config', config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to update configuration');
+    }
+  }
+
+  async getStats(): Promise<any> {
+    try {
+      const response = await this.client.get('/stats');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get statistics');
+    }
+  }
+
+  async exportFlow(flowId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/flows/${flowId}/export`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to export flow ${flowId}`);
+    }
+  }
+
+  async importFlow(flowData: any): Promise<FlowRead> {
+    try {
+      const response = await this.client.post<FlowRead>('/flows/import', flowData);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to import flow');
+    }
+  }
+
+  async cloneFlow(flowId: string, name?: string): Promise<FlowRead> {
+    try {
+      const response = await this.client.post<FlowRead>(`/flows/${flowId}/clone`, { name });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to clone flow ${flowId}`);
+    }
+  }
+
+  async getFlowDependencies(flowId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/flows/${flowId}/dependencies`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get flow dependencies ${flowId}`);
+    }
+  }
+
+  async getAiNodes(): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/ai_nodes');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get AI nodes');
+    }
+  }
+
+  async buildVertex(params: { flow_id: string; vertex_id: string; inputs?: any }): Promise<any> {
+    try {
+      const response = await this.client.post(`/build/${params.flow_id}/vertices/${params.vertex_id}`, params.inputs || {});
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to build vertex ${params.vertex_id}`);
+    }
+  }
+
+  async cancelExecution(params: { execution_id: string }): Promise<any> {
+    try {
+      const response = await this.client.post(`/executions/${params.execution_id}/cancel`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to cancel execution ${params.execution_id}`);
+    }
+  }
+
+  async getExecutionResult(params: { execution_id: string }): Promise<any> {
+    try {
+      const response = await this.client.get(`/executions/${params.execution_id}/result`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get execution result ${params.execution_id}`);
+    }
+  }
+
+  async getFileMetadata(params: { flow_id: string; file_name: string }): Promise<any> {
+    try {
+      const response = await this.client.get(`/files/${params.flow_id}/${params.file_name}/metadata`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get file metadata ${params.file_name}`);
+    }
+  }
+
+  async getHealth(): Promise<any> {
+    try {
+      const response = await this.client.get('/health');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get health status');
+    }
+  }
+
+  async getUserById(userId: string): Promise<UserRead> {
+    try {
+      const response = await this.client.get<UserRead>(`/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get user ${userId}`);
+    }
+  }
+
+  async listFilesDetailed(params: { flow_id: string }): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>(`/files/${params.flow_id}/detailed`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get detailed file list for flow ${params.flow_id}`);
+    }
+  }
+
+  async register(username: string, password: string, email?: string): Promise<any> {
+    try {
+      const response = await this.client.post('/register', {
+        username,
+        password,
+        email
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to register user');
+    }
+  }
+
+  async runAdvancedExecution(params: { flow_id: string; [key: string]: any }): Promise<any> {
+    try {
+      const { flow_id, ...request } = params;
+      const response = await this.client.post(`/executions/${flow_id}/advanced`, request);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to execute advanced flow ${params.flow_id}`);
+    }
+  }
+
+  async searchStoreComponents(query: string, params?: any): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/store/components/search', {
+        params: { q: query, ...params }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to search store components');
+    }
+  }
+
+  async uninstallStoreComponent(componentId: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/store/components/${componentId}/uninstall`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to uninstall store component ${componentId}`);
+    }
+  }
+
+  async updateStoreComponent(componentId: string, updates: any): Promise<any> {
+    try {
+      const response = await this.client.patch(`/store/components/${componentId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update store component ${componentId}`);
+    }
+  }
+
+  async validateConnection(connectionData: any): Promise<any> {
+    try {
+      const response = await this.client.post('/validate/connection', connectionData);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to validate connection');
+    }
+  }
+
+  async validateFlow(params: { flow_id: string }): Promise<any> {
+    try {
+      const response = await this.client.post(`/flows/${params.flow_id}/validate`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to validate flow ${params.flow_id}`);
     }
   }
 

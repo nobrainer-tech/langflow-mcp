@@ -11,18 +11,21 @@ export const mockValidateCodeRequest: ValidateCodeRequest = {
 
 export const mockValidCodeResponse: ValidateCodeResponse = {
   valid: true,
+  is_valid: true,
   errors: [],
   warnings: []
 };
 
 export const mockInvalidCodeResponse: ValidateCodeResponse = {
   valid: false,
-  errors: ['SyntaxError: unexpected EOF while parsing'],
+  is_valid: false,
+  errors: ['SyntaxError: unexpected EOF while parsing', 'IndentationError: unexpected indent'],
   warnings: []
 };
 
 export const mockCodeWithWarningsResponse: ValidateCodeResponse = {
   valid: true,
+  is_valid: true,
   errors: [],
   warnings: ['Unused variable: x']
 };

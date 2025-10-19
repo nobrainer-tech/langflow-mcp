@@ -521,20 +521,20 @@ export class LangflowMCPServer {
           case 'upload_file': {
             const validated = UploadFileSchema.parse(args);
             const fileBuffer = this.validateFileSize(validated.file_content);
-            const result = await this.client.uploadFile(
-              validated.flow_id,
-              fileBuffer,
-              validated.file_name
-            );
+            const result = await this.client.uploadFile({
+              flow_id: validated.flow_id,
+              file: fileBuffer,
+              file_name: validated.file_name
+            });
             return this.formatSuccessResponse(result);
           }
 
           case 'download_file': {
             const validated = DownloadFileSchema.parse(args);
-            const fileData = await this.client.downloadFile(
-              validated.flow_id,
-              validated.file_name
-            );
+            const fileData = await this.client.downloadFile({
+              flow_id: validated.flow_id,
+              file_name: validated.file_name
+            });
             const base64Data = Buffer.from(fileData).toString('base64');
             return this.formatSuccessResponse({
               file_name: validated.file_name,
@@ -544,25 +544,25 @@ export class LangflowMCPServer {
 
           case 'list_files': {
             const validated = ListFilesSchema.parse(args);
-            const files = await this.client.listFiles(validated.flow_id);
+            const files = await this.client.listFiles({ flow_id: validated.flow_id });
             return this.formatSuccessResponse(files);
           }
 
           case 'delete_file': {
             const validated = DeleteFileSchema.parse(args);
-            await this.client.deleteFile(validated.flow_id, validated.file_name);
-            return this.formatSuccessResponse({
-              success: true,
-              message: 'File deleted successfully'
+            const result = await this.client.deleteFile({
+              flow_id: validated.flow_id,
+              file_name: validated.file_name
             });
+            return this.formatSuccessResponse(result);
           }
 
           case 'get_file_image': {
             const validated = GetFileImageSchema.parse(args);
-            const imageData = await this.client.getFileImage(
-              validated.flow_id,
-              validated.file_name
-            );
+            const imageData = await this.client.getFileImage({
+              flow_id: validated.flow_id,
+              file_name: validated.file_name
+            });
             const base64Data = Buffer.from(imageData).toString('base64');
             return this.formatSuccessResponse({
               file_name: validated.file_name,

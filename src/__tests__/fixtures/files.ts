@@ -25,6 +25,7 @@ export const mockFilesList: FileListItem[] = [
 
 export const mockFileUploadResponse = {
   file_path: '/uploads/flow-123/test-file.txt',
+  file_name: 'test-file.txt',
   flow_id: 'flow-123',
   size: 1024,
   success: true

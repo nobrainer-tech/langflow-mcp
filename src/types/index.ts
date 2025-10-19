@@ -224,6 +224,7 @@ export interface ValidateCodeRequest {
 
 export interface ValidateCodeResponse {
   valid: boolean;
+  is_valid: boolean;
   errors?: string[];
   warnings?: string[];
 }
@@ -247,10 +248,18 @@ export interface StoreComponent {
 }
 
 export interface ListStoreComponentsParams {
+  component_id?: string;
+  search?: string;
+  private?: boolean;
+  is_component?: boolean;
+  tags?: string[];
+  sort?: string[];
+  liked?: boolean;
+  filter_by_user?: boolean;
+  fields?: string[];
   page?: number;
   limit?: number;
-  tags?: string[];
-  search?: string;
+  category?: string;
 }
 
 export interface StoreTag {
@@ -287,7 +296,9 @@ export interface MonitorBuildsParams {
 }
 
 export interface VertexBuildMapModel {
-  [key: string]: any;
+  vertex_builds: {
+    [vertexId: string]: any[];
+  };
 }
 
 export interface MonitorMessagesParams {
@@ -335,6 +346,7 @@ export interface BuildVerticesRequest {
   data?: Record<string, unknown>;
   stop_component_id?: string;
   start_component_id?: string;
+  vertex_ids?: string[];
 }
 
 export interface VerticesOrderResponse {

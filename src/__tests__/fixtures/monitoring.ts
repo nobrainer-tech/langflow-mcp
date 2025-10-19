@@ -14,15 +14,17 @@ export const mockMonitorBuildsParams: MonitorBuildsParams = {
 };
 
 export const mockVertexBuildMap: VertexBuildMapModel = {
-  'vertex-1': {
-    status: 'completed',
-    duration: 1234,
-    timestamp: '2024-01-01T00:00:00Z'
-  },
-  'vertex-2': {
-    status: 'running',
-    duration: null,
-    timestamp: '2024-01-01T00:01:00Z'
+  vertex_builds: {
+    'vertex-1': [{
+      status: 'completed',
+      duration: 1234,
+      timestamp: '2024-01-01T00:00:00Z'
+    }],
+    'vertex-2': [{
+      status: 'running',
+      duration: null,
+      timestamp: '2024-01-01T00:01:00Z'
+    }]
   }
 };
 
