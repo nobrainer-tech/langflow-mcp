@@ -6,7 +6,28 @@ import {
   FlowUpdate,
   ListFlowsParams,
   DeleteFlowsRequest,
-  ComponentInfo
+  ComponentInfo,
+  RunFlowRequest,
+  RunResponse,
+  SimplifiedAPIRequest,
+  FolderRead,
+  FolderCreate,
+  FolderUpdate,
+  ListFoldersParams,
+  ProjectRead,
+  ProjectCreate,
+  ProjectUpdate,
+  ListProjectsParams,
+  VariableRead,
+  VariableCreate,
+  VariableUpdate,
+  BuildFlowRequest,
+  BuildFlowParams,
+  BuildFlowResponse,
+  BuildStatusResponse,
+  CancelBuildResponse,
+  KnowledgeBaseInfo,
+  BulkDeleteKnowledgeBasesRequest
 } from '../types';
 
 export class LangflowClient {
@@ -103,6 +124,266 @@ export class LangflowClient {
       return components;
     } catch (error) {
       throw this.handleError(error, 'Failed to list components');
+    }
+  }
+
+  async runFlow(flowIdOrName: string, inputRequest: RunFlowRequest, stream: boolean = false): Promise<RunResponse> {
+    try {
+      const response = await this.client.post<RunResponse>(`/run/${flowIdOrName}`, {
+        ...inputRequest,
+        stream
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to run flow ${flowIdOrName}`);
+    }
+  }
+
+  async triggerWebhook(flowIdOrName: string, inputRequest: SimplifiedAPIRequest): Promise<any> {
+    try {
+      const response = await this.client.post(`/webhook/${flowIdOrName}`, inputRequest);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to trigger webhook for flow ${flowIdOrName}`);
+    }
+  }
+
+  async uploadFlow(file: Record<string, unknown>): Promise<FlowRead> {
+    try {
+      const response = await this.client.post<FlowRead>('/flows/upload/', file);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to upload flow');
+    }
+  }
+
+  async downloadFlows(flowIds: string[]): Promise<any> {
+    try {
+      const response = await this.client.post('/flows/download/', flowIds);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to download flows');
+    }
+  }
+
+  async getBasicExamples(): Promise<FlowRead[]> {
+    try {
+      const response = await this.client.get<FlowRead[]>('/flows/basic_examples/');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get basic examples');
+    }
+  }
+
+  async listFolders(params?: ListFoldersParams): Promise<FolderRead[]> {
+    try {
+      const response = await this.client.get<FolderRead[]>('/folders/', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list folders');
+    }
+  }
+
+  async createFolder(folder: FolderCreate): Promise<FolderRead> {
+    try {
+      const response = await this.client.post<FolderRead>('/folders/', folder);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create folder');
+    }
+  }
+
+  async getFolder(folderId: string): Promise<FolderRead> {
+    try {
+      const response = await this.client.get<FolderRead>(`/folders/${folderId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get folder ${folderId}`);
+    }
+  }
+
+  async updateFolder(folderId: string, updates: FolderUpdate): Promise<FolderRead> {
+    try {
+      const response = await this.client.patch<FolderRead>(`/folders/${folderId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update folder ${folderId}`);
+    }
+  }
+
+  async deleteFolder(folderId: string): Promise<void> {
+    try {
+      await this.client.delete(`/folders/${folderId}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete folder ${folderId}`);
+    }
+  }
+
+  async listProjects(params?: ListProjectsParams): Promise<ProjectRead[]> {
+    try {
+      const response = await this.client.get<ProjectRead[]>('/projects/', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list projects');
+    }
+  }
+
+  async createProject(project: ProjectCreate): Promise<ProjectRead> {
+    try {
+      const response = await this.client.post<ProjectRead>('/projects/', project);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create project');
+    }
+  }
+
+  async getProject(projectId: string): Promise<ProjectRead> {
+    try {
+      const response = await this.client.get<ProjectRead>(`/projects/${projectId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get project ${projectId}`);
+    }
+  }
+
+  async updateProject(projectId: string, updates: ProjectUpdate): Promise<ProjectRead> {
+    try {
+      const response = await this.client.patch<ProjectRead>(`/projects/${projectId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update project ${projectId}`);
+    }
+  }
+
+  async deleteProject(projectId: string): Promise<void> {
+    try {
+      await this.client.delete(`/projects/${projectId}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete project ${projectId}`);
+    }
+  }
+
+  async uploadProject(file: Record<string, unknown>): Promise<ProjectRead> {
+    try {
+      const response = await this.client.post<ProjectRead>('/projects/upload/', file);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to upload project');
+    }
+  }
+
+  async downloadProject(projectId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/projects/download/${projectId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to download project ${projectId}`);
+    }
+  }
+
+  async listVariables(): Promise<VariableRead[]> {
+    try {
+      const response = await this.client.get<VariableRead[]>('/variables/');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list variables');
+    }
+  }
+
+  async createVariable(variable: VariableCreate): Promise<VariableRead> {
+    try {
+      const response = await this.client.post<VariableRead>('/variables/', variable);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create variable');
+    }
+  }
+
+  async updateVariable(variableId: string, updates: VariableUpdate): Promise<VariableRead> {
+    try {
+      const response = await this.client.patch<VariableRead>(`/variables/${variableId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update variable ${variableId}`);
+    }
+  }
+
+  async deleteVariable(variableId: string): Promise<void> {
+    try {
+      await this.client.delete(`/variables/${variableId}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete variable ${variableId}`);
+    }
+  }
+
+  async buildFlow(flowId: string, request: BuildFlowRequest, params: BuildFlowParams): Promise<BuildFlowResponse> {
+    try {
+      const response = await this.client.post<BuildFlowResponse>(
+        `/build/${flowId}/flow`,
+        request,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to build flow ${flowId}`);
+    }
+  }
+
+  async getBuildStatus(jobId: string, eventDelivery: 'polling' | 'streaming' | 'direct' = 'polling'): Promise<BuildStatusResponse> {
+    try {
+      const response = await this.client.get<BuildStatusResponse>(
+        `/build/${jobId}/events`,
+        { params: { event_delivery: eventDelivery } }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get build status for job ${jobId}`);
+    }
+  }
+
+  async cancelBuild(jobId: string): Promise<CancelBuildResponse> {
+    try {
+      const response = await this.client.post<CancelBuildResponse>(`/build/${jobId}/cancel`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to cancel build job ${jobId}`);
+    }
+  }
+
+  async listKnowledgeBases(): Promise<KnowledgeBaseInfo[]> {
+    try {
+      const response = await this.client.get<KnowledgeBaseInfo[]>('/knowledge_bases');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list knowledge bases');
+    }
+  }
+
+  async getKnowledgeBase(kbName: string): Promise<KnowledgeBaseInfo> {
+    try {
+      const response = await this.client.get<KnowledgeBaseInfo>(`/knowledge_bases/${encodeURIComponent(kbName)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get knowledge base ${kbName}`);
+    }
+  }
+
+  async deleteKnowledgeBase(kbName: string): Promise<void> {
+    try {
+      await this.client.delete(`/knowledge_bases/${encodeURIComponent(kbName)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete knowledge base ${kbName}`);
+    }
+  }
+
+  async bulkDeleteKnowledgeBases(kbNames: string[]): Promise<any> {
+    try {
+      const response = await this.client.delete('/knowledge_bases', {
+        data: { kb_names: kbNames }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to bulk delete knowledge bases');
     }
   }
 
