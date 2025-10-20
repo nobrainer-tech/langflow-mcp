@@ -34,6 +34,7 @@ export const mockGetVertexParams: GetVertexParams = {
 
 export const mockVertexResponse = {
   id: 'vertex-1',
+  vertex_id: 'vertex-1',
   flow_id: 'flow-123',
   component_type: 'ChatInput',
   status: 'completed',

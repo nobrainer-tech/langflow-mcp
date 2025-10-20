@@ -21,6 +21,7 @@ export const mockRunFlowAdvancedRequest: RunFlowAdvancedRequest = {
 
 export const mockRunFlowAdvancedResponse: RunResponse = {
   session_id: 'session-adv-123',
+  execution_id: 'exec-adv-123',
   outputs: [
     {
       inputs: { input: 'advanced test input' },
