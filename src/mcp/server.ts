@@ -136,13 +136,13 @@ export class LangflowMCPServer {
     logger.info('Initializing Langflow MCP server');
 
     // Use require for reliable package.json access across environments
-    let serverVersion = '1.2.0';
+    let serverVersion = 'dev';
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pkg = require('../../package.json');
       serverVersion = pkg.version ?? serverVersion;
     } catch (e) {
-      logger.warn('package.json not readable; using hardcoded version 1.2.0', e);
+      logger.warn('package.json not readable; using fallback version "dev"', e);
     }
 
     this.server = new Server(
@@ -172,7 +172,11 @@ export class LangflowMCPServer {
   }
 
   private sanitizeSensitiveData(args: Record<string, unknown>): Record<string, unknown> {
-    const sensitiveFields = ['password', 'new_password', 'api_key', 'token'];
+    const sensitiveFields = [
+      'password', 'new_password', 'api_key', 'token',
+      'access_token', 'refresh_token', 'authorization',
+      'x-api-key', 'x-store-api-key', 'set-cookie'
+    ];
     const sanitized = { ...args };
 
     for (const field of sensitiveFields) {
@@ -194,20 +198,6 @@ export class LangflowMCPServer {
     }
 
     return fileBuffer;
-  }
-
-  private validateTextSize(content: string, maxSizeBytes: number = 10 * 1024 * 1024): void {
-    const size = Buffer.byteLength(content, 'utf8');
-    if (size > maxSizeBytes) {
-      const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} bytes`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-      };
-      throw new Error(
-        `Content size ${formatSize(size)} exceeds maximum allowed size of ${formatSize(maxSizeBytes)}`
-      );
-    }
   }
 
   private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {

@@ -1278,9 +1278,10 @@ export class LangflowClient {
       const sanitize = (val: any, depth = 0, seen = new WeakSet()): any => {
         const MAX_DEPTH = 10;
         const SENSITIVE_KEYS = new Set([
-          'authorization', 'api_key', 'x-api-key', 'password', 'token',
+          'authorization', 'api_key', 'x-api-key', 'password', 'new_password', 'token',
           'access_token', 'refresh_token', 'secret', 'api-key',
-          'bearer', 'private_key', 'session_id', 'cookie'
+          'bearer', 'private_key', 'session_id', 'cookie', 'set-cookie',
+          'x-store-api-key'
         ]);
 
         if (!val || typeof val !== 'object') return val;

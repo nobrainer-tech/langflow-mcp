@@ -108,7 +108,7 @@ Restart Claude Desktop after updating configuration.
 
 ## Available MCP Tools
 
-Once connected, Claude can use these 35 tools:
+Once connected, Claude can use these 90 tools:
 
 ### Flow Management (6 tools)
 - **`create_flow`** - Create a new Langflow flow
