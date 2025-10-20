@@ -163,6 +163,93 @@ Once connected, Claude can use these 90 tools:
 ### Component Discovery (1 tool)
 - **`list_components`** - List all available Langflow components
 
+### File Management (5 tools)
+- **`upload_file`** - Upload a file to a specific flow
+- **`download_file`** - Download a file from a flow
+- **`list_files`** - List all files in a flow
+- **`delete_file`** - Delete a file from a flow
+- **`get_file_image`** - Get an image file from a flow
+
+### Monitoring & Analytics (9 tools)
+- **`get_monitor_builds`** - Get build execution history for a flow
+- **`get_monitor_messages`** - Query chat/message history with filtering
+- **`get_monitor_message`** - Get details of a specific message
+- **`get_monitor_sessions`** - List all chat session IDs
+- **`get_monitor_session_messages`** - Get all messages for a session
+- **`migrate_monitor_session`** - Migrate messages between sessions
+- **`get_monitor_transactions`** - List transaction logs for a flow
+- **`delete_monitor_builds`** - Delete build history for a flow
+- **`delete_monitor_messages`** - Delete multiple messages by ID
+
+### Vertex Operations (3 tools)
+- **`build_vertices`** - Get vertex build order for a flow
+- **`get_vertex`** - Get details of a specific vertex/component
+- **`stream_vertex_build`** - Stream real-time build events for a vertex
+
+### User Management (5 tools)
+- **`list_users`** - List all users (admin only)
+- **`get_current_user`** - Get current authenticated user info
+- **`get_user`** - Get details of a specific user
+- **`update_user`** - Update user profile information
+- **`reset_user_password`** - Reset password for a user (admin only)
+
+### API Key Management (3 tools)
+- **`list_api_keys`** - List all API keys for the user
+- **`create_api_key`** - Create a new API key
+- **`delete_api_key`** - Delete an API key
+
+### Custom Components (2 tools)
+- **`list_custom_components`** - List all custom components
+- **`create_custom_component`** - Create a new custom component
+
+### Authentication (4 tools)
+- **`login`** - Authenticate with username and password
+- **`auto_login`** - Auto-login with stored credentials
+- **`refresh_token`** - Refresh authentication token
+- **`logout`** - Logout and invalidate session
+
+### Store & Marketplace (6 tools)
+- **`check_store`** - Check if component store is enabled
+- **`check_store_api_key`** - Validate a store API key
+- **`list_store_components`** - Browse available components in the store
+- **`get_store_component`** - Get details of a store component
+- **`list_store_tags`** - List all component tags in the store
+- **`get_user_likes`** - Get components liked by user
+
+### Validation Tools (2 tools)
+- **`validate_code`** - Validate Python code for custom components
+- **`validate_prompt`** - Validate prompt template syntax
+
+### Advanced Execution (3 tools)
+- **`run_flow_advanced`** - Advanced flow execution with full control
+- **`process_flow`** - Legacy process endpoint for flows
+- **`predict_flow`** - Legacy predict endpoint for flows
+
+### Batch & Public Operations (3 tools)
+- **`get_public_flow`** - Get a public flow without authentication
+- **`batch_create_flows`** - Create multiple flows in one operation
+- **`get_task_status`** - Get status of an async task
+
+### Folder Operations (2 tools)
+- **`download_folder`** - Download entire folder as archive
+- **`upload_folder`** - Upload folder from archive
+
+### Starter & Templates (2 tools)
+- **`list_starter_projects`** - List available starter templates
+- **`upload_knowledge_base`** - Upload file to create/update knowledge base
+
+### Profile & Media (2 tools)
+- **`list_profile_pictures`** - List available profile pictures
+- **`get_profile_picture`** - Get a specific profile picture
+
+### Integration Tools (1 tool)
+- **`list_elevenlabs_voices`** - List ElevenLabs text-to-speech voices
+
+### System & Health (3 tools)
+- **`get_version`** - Get Langflow API version information
+- **`health_check`** - Check Langflow instance health status
+- **`get_logs`** - Retrieve system logs (supports streaming)
+
 ## Example Usage
 
 ```typescript
