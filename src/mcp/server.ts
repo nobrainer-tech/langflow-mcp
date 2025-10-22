@@ -246,6 +246,54 @@ export class LangflowMCPServer {
     return sanitized;
   }
 
+  /**
+   * Formats error responses according to MCP specification.
+   * Per MCP spec: Tool errors SHOULD be reported with isError: true,
+   * not as MCP protocol-level errors, so the LLM can see and self-correct.
+   */
+  private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
+    const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
+    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
+
+    let errorMessage: string;
+    let errorDetails: Record<string, any> = {};
+
+    if (error instanceof ZodError) {
+      errorMessage = 'Validation error';
+      errorDetails = {
+        issues: error.issues.map((issue) => ({
+          path: Array.isArray(issue.path) ? issue.path.join('.') : '',
+          message: issue.message
+        }))
+      };
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+      // Only include stack trace in non-production environments
+      if (error.stack && process.env.NODE_ENV !== 'production') {
+        const stackLines = error.stack.split('\n');
+        errorDetails.stack = stackLines.slice(0, 5); // Limit to 5 lines
+      }
+    } else {
+      errorMessage = 'Unknown error';
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            error: true,
+            message: errorMessage,
+            tool: toolName,
+            timestamp: new Date().toISOString(),
+            ...errorDetails
+          }, null, 2)
+        }
+      ],
+      isError: true
+    };
+  }
+
   private validateFileSize(fileContent: string, maxSizeBytes: number = 10 * 1024 * 1024): Buffer {
     // Validate base64 format first
     const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
@@ -950,21 +998,10 @@ export class LangflowMCPServer {
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        // Log error with sanitized args for debugging
-        const sanitized = this.sanitizeSensitiveData(args);
-        logger.error(`Error executing tool ${name}:`, { args: sanitized, error });
-
-        // Transform errors according to MCP protocol (throw, don't return)
-        if (error instanceof ZodError) {
-          const issues = error.issues.map((issue) => {
-            const path = Array.isArray(issue.path) ? issue.path.join('.') : '';
-            return path ? `${path}: ${issue.message}` : issue.message;
-          }).join('; ');
-          throw new Error(`Validation error: ${issues}`);
-        }
-
-        // Re-throw other errors (MCP SDK will handle them)
-        throw error;
+        // Per MCP spec: Tool execution errors should be returned with isError: true
+        // so the LLM can see the error and self-correct. Only server-level errors
+        // (like "Unknown tool") should be thrown.
+        return this.formatErrorResponse(error, name, args);
       }
     });
   }
