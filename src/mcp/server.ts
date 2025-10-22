@@ -113,6 +113,24 @@ export class LangflowMCPServer {
       throw new Error('LANGFLOW_BASE_URL and LANGFLOW_API_KEY must be set in environment');
     }
 
+    // Validate URL format
+    try {
+      const url = new URL(baseUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        throw new Error(`Invalid protocol: ${url.protocol}. Only http: and https: are allowed.`);
+      }
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error(`Invalid LANGFLOW_BASE_URL format: ${baseUrl}`);
+      }
+      throw error;
+    }
+
+    // Basic API key validation
+    if (apiKey.length < 10) {
+      throw new Error('LANGFLOW_API_KEY appears to be invalid (too short)');
+    }
+
     const DEFAULT_TIMEOUT = 30000;
     const MIN_TIMEOUT = 1000;
     const MAX_TIMEOUT = 300000;
@@ -171,17 +189,57 @@ export class LangflowMCPServer {
     };
   }
 
-  private sanitizeSensitiveData(args: Record<string, unknown>): Record<string, unknown> {
-    const sensitiveFields = [
+  private sanitizeSensitiveData(
+    args: Record<string, unknown>,
+    depth = 0,
+    seen = new WeakSet<object>()
+  ): Record<string, unknown> {
+    const MAX_DEPTH = 10;
+    const SENSITIVE_KEYS = new Set([
       'password', 'new_password', 'api_key', 'token',
       'access_token', 'refresh_token', 'authorization',
-      'x-api-key', 'x-store-api-key', 'set-cookie'
-    ];
-    const sanitized = { ...args };
+      'x-api-key', 'x-store-api-key', 'set-cookie',
+      'bearer', 'session', 'session_id', 'cookie',
+      'private_key', 'secret', 'credentials', 'api-key'
+    ]);
 
-    for (const field of sensitiveFields) {
-      if (field in sanitized) {
-        sanitized[field] = '***REDACTED***';
+    // Prevent infinite recursion
+    if (depth > MAX_DEPTH) {
+      return { __error: 'max depth exceeded' } as Record<string, unknown>;
+    }
+
+    if (!args || typeof args !== 'object') {
+      return args as Record<string, unknown>;
+    }
+
+    // Prevent circular references
+    if (seen.has(args)) {
+      return { __error: 'circular reference' } as Record<string, unknown>;
+    }
+
+    seen.add(args);
+    const sanitized: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(args)) {
+      // Case-insensitive check for sensitive keys
+      if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+        sanitized[key] = '***REDACTED***';
+      } else if (Array.isArray(value)) {
+        // Handle arrays recursively
+        sanitized[key] = value.map(item =>
+          typeof item === 'object' && item !== null
+            ? this.sanitizeSensitiveData(item as Record<string, unknown>, depth + 1, seen)
+            : item
+        );
+      } else if (typeof value === 'object' && value !== null) {
+        // Handle nested objects recursively
+        sanitized[key] = this.sanitizeSensitiveData(
+          value as Record<string, unknown>,
+          depth + 1,
+          seen
+        );
+      } else {
+        sanitized[key] = value;
       }
     }
 
@@ -189,8 +247,24 @@ export class LangflowMCPServer {
   }
 
   private validateFileSize(fileContent: string, maxSizeBytes: number = 10 * 1024 * 1024): Buffer {
+    // Validate base64 format first
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(fileContent)) {
+      throw new Error('Invalid base64 format');
+    }
+
+    // Estimate decoded size BEFORE decoding (base64 is ~4/3 of original)
+    const estimatedSize = (fileContent.length * 3) / 4;
+    if (estimatedSize > maxSizeBytes) {
+      throw new Error(
+        `File size ${Math.round(estimatedSize)} bytes (estimated) exceeds maximum allowed size of ${maxSizeBytes} bytes (10MB)`
+      );
+    }
+
+    // Now decode (safe because we checked size first)
     const fileBuffer = Buffer.from(fileContent, 'base64');
 
+    // Verify actual size after decoding
     if (fileBuffer.length > maxSizeBytes) {
       throw new Error(
         `File size ${fileBuffer.length} bytes exceeds maximum allowed size of ${maxSizeBytes} bytes (10MB)`
@@ -198,49 +272,6 @@ export class LangflowMCPServer {
     }
 
     return fileBuffer;
-  }
-
-  private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
-    const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
-    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
-
-    let errorMessage: string;
-    let errorDetails: Record<string, any> = {};
-
-    if (error instanceof ZodError) {
-      errorMessage = 'Validation error';
-      errorDetails = {
-        issues: error.issues.map((issue) => ({
-          path: Array.isArray(issue.path) ? issue.path.join('.') : '',
-          message: issue.message
-        }))
-      };
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-      if (error.stack) {
-        const maxStackLines = process.env.NODE_ENV === 'production' ? 3 : undefined;
-        const stackLines = error.stack.split('\n');
-        errorDetails.stack = maxStackLines ? stackLines.slice(0, maxStackLines) : stackLines;
-      }
-    } else {
-      errorMessage = 'Unknown error';
-    }
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            error: true,
-            message: errorMessage,
-            tool: toolName,
-            timestamp: new Date().toISOString(),
-            ...errorDetails
-          }, null, 2)
-        }
-      ],
-      isError: true
-    };
   }
 
   private setupHandlers(): void {
@@ -260,6 +291,14 @@ export class LangflowMCPServer {
       }
 
       const { name, arguments: rawArgs } = request.params;
+
+      // Validate args type before casting (security check)
+      if (rawArgs !== undefined && rawArgs !== null) {
+        if (typeof rawArgs !== 'object' || Array.isArray(rawArgs)) {
+          throw new Error('Arguments must be an object');
+        }
+      }
+
       const args = (rawArgs ?? {}) as Record<string, unknown>;
 
       try {
@@ -525,6 +564,12 @@ export class LangflowMCPServer {
               flow_id: validated.flow_id,
               file_name: validated.file_name
             });
+
+            // Validate fileData before base64 conversion
+            if (!fileData) {
+              throw new Error('No file data received from server');
+            }
+
             const base64Data = Buffer.from(fileData).toString('base64');
             return this.formatSuccessResponse({
               file_name: validated.file_name,
@@ -553,6 +598,12 @@ export class LangflowMCPServer {
               flow_id: validated.flow_id,
               file_name: validated.file_name
             });
+
+            // Validate imageData before base64 conversion
+            if (!imageData) {
+              throw new Error('No image data received from server');
+            }
+
             const base64Data = Buffer.from(imageData).toString('base64');
             return this.formatSuccessResponse({
               file_name: validated.file_name,
@@ -572,6 +623,12 @@ export class LangflowMCPServer {
               validated.folder_name,
               validated.file_name
             );
+
+            // Validate pictureData before base64 conversion
+            if (!pictureData) {
+              throw new Error('No picture data received from server');
+            }
+
             const base64Data = Buffer.from(pictureData).toString('base64');
             return this.formatSuccessResponse({
               file_name: validated.file_name,
@@ -842,6 +899,12 @@ export class LangflowMCPServer {
           case 'download_folder': {
             const validated = DownloadFolderSchema.parse(args);
             const result = await this.client.downloadFolder(validated.folder_id);
+
+            // Validate result before base64 conversion
+            if (!result) {
+              throw new Error('No folder data received from server');
+            }
+
             const base64Data = Buffer.from(result).toString('base64');
             return this.formatSuccessResponse({ data: base64Data, encoding: 'base64' });
           }
@@ -887,7 +950,21 @@ export class LangflowMCPServer {
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        return this.formatErrorResponse(error, name, args);
+        // Log error with sanitized args for debugging
+        const sanitized = this.sanitizeSensitiveData(args);
+        logger.error(`Error executing tool ${name}:`, { args: sanitized, error });
+
+        // Transform errors according to MCP protocol (throw, don't return)
+        if (error instanceof ZodError) {
+          const issues = error.issues.map((issue) => {
+            const path = Array.isArray(issue.path) ? issue.path.join('.') : '';
+            return path ? `${path}: ${issue.message}` : issue.message;
+          }).join('; ');
+          throw new Error(`Validation error: ${issues}`);
+        }
+
+        // Re-throw other errors (MCP SDK will handle them)
+        throw error;
       }
     });
   }

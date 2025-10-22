@@ -152,6 +152,11 @@ export class LangflowClient {
         Object.entries(response.data).forEach(([category, items]: [string, any]) => {
           if (items && typeof items === 'object') {
             Object.entries(items).forEach(([name, info]: [string, any]) => {
+              // Guard clause: skip if info is null/undefined or not an object
+              if (!info || typeof info !== 'object') {
+                return;
+              }
+
               components.push({
                 name,
                 display_name: info.display_name || name,
@@ -699,9 +704,11 @@ export class LangflowClient {
 
   async buildVertices(flowId: string, request?: BuildVerticesRequest): Promise<VerticesOrderResponse> {
     try {
+      // API expects parameters as query params, not in request body (per api.yaml spec)
       const response = await this.client.post<VerticesOrderResponse>(
         `/build/${flowId}/vertices`,
-        request || {}
+        {},  // Empty body
+        { params: request }  // Parameters as query params
       );
       return response.data;
     } catch (error) {
@@ -1286,7 +1293,11 @@ export class LangflowClient {
 
         if (!val || typeof val !== 'object') return val;
         if (depth > MAX_DEPTH) return '[max depth exceeded]';
-        if (Buffer.isBuffer(val) || val instanceof ArrayBuffer) return '[binary data]';
+
+        // Check for binary data (Buffer, ArrayBuffer, TypedArray)
+        if (Buffer.isBuffer(val) || val instanceof ArrayBuffer || ArrayBuffer.isView(val)) {
+          return '[binary data]';
+        }
 
         // Circular reference detection
         if (seen.has(val)) return '[circular reference]';
