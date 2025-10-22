@@ -69,12 +69,6 @@ Related Tools:
         }
       },
       required: ['name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -148,12 +142,6 @@ Related Tools:
           description: 'Get all flows without pagination (default: true)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -213,12 +201,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -303,12 +285,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -360,12 +336,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -381,12 +351,6 @@ Related Tools:
         }
       },
       required: ['flow_ids']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -395,12 +359,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -487,12 +445,6 @@ Related Tools:
         }
       },
       required: ['flow_id_or_name', 'input_request']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -521,12 +473,6 @@ Related Tools:
         }
       },
       required: ['flow_id_or_name', 'input_request']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -556,12 +502,6 @@ Related Tools:
         }
       },
       required: ['file']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -577,12 +517,6 @@ Related Tools:
         }
       },
       required: ['flow_ids']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -591,12 +525,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -653,12 +581,6 @@ Related Tools:
           description: 'Number of items per page (default: 50, max: 100)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -725,12 +647,6 @@ Related Tools:
         }
       },
       required: ['name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -745,12 +661,6 @@ Related Tools:
         }
       },
       required: ['folder_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -777,12 +687,6 @@ Related Tools:
         }
       },
       required: ['folder_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -797,12 +701,6 @@ Related Tools:
         }
       },
       required: ['folder_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -820,12 +718,6 @@ Related Tools:
           description: 'Number of items per page (default: 50, max: 100)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -844,12 +736,6 @@ Related Tools:
         }
       },
       required: ['name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -864,12 +750,6 @@ Related Tools:
         }
       },
       required: ['project_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -892,12 +772,6 @@ Related Tools:
         }
       },
       required: ['project_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -912,12 +786,6 @@ Related Tools:
         }
       },
       required: ['project_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -947,12 +815,6 @@ Related Tools:
         }
       },
       required: ['file']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -967,12 +829,6 @@ Related Tools:
         }
       },
       required: ['project_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -981,12 +837,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1014,12 +864,6 @@ Related Tools:
         }
       },
       required: ['name', 'value']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -1046,12 +890,6 @@ Related Tools:
         }
       },
       required: ['variable_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1066,12 +904,6 @@ Related Tools:
         }
       },
       required: ['variable_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1168,12 +1000,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1192,12 +1018,6 @@ Related Tools:
         }
       },
       required: ['job_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1212,12 +1032,6 @@ Related Tools:
         }
       },
       required: ['job_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1257,12 +1071,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1277,12 +1085,6 @@ Related Tools:
         }
       },
       required: ['kb_name']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1297,12 +1099,6 @@ Related Tools:
         }
       },
       required: ['kb_name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1318,12 +1114,6 @@ Related Tools:
         }
       },
       required: ['kb_names']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1346,12 +1136,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'file_content', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -1370,12 +1154,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1390,12 +1168,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1414,12 +1186,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1438,12 +1204,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1452,12 +1212,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1476,12 +1230,6 @@ Related Tools:
         }
       },
       required: ['folder_name', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1496,12 +1244,6 @@ Related Tools:
         }
       },
       required: ['code']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1516,12 +1258,6 @@ Related Tools:
         }
       },
       required: ['prompt']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1530,12 +1266,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1550,12 +1280,6 @@ Related Tools:
         }
       },
       required: ['api_key']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1582,12 +1306,6 @@ Related Tools:
           description: 'Search query for component names/descriptions'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1602,12 +1320,6 @@ Related Tools:
         }
       },
       required: ['component_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1616,12 +1328,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1630,12 +1336,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1678,12 +1378,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -1706,12 +1400,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -1734,12 +1422,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -1755,12 +1437,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1790,12 +1466,6 @@ Related Tools:
           description: 'Optional field to order results by (default: timestamp)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1811,12 +1481,6 @@ Related Tools:
         }
       },
       required: ['message_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1830,12 +1494,6 @@ Related Tools:
           description: 'Optional flow ID (UUID) to filter sessions by flow'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1850,12 +1508,6 @@ Related Tools:
         }
       },
       required: ['session_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1874,12 +1526,6 @@ Related Tools:
         }
       },
       required: ['old_session_id', 'new_session_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1902,12 +1548,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1923,12 +1563,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1944,12 +1578,6 @@ Related Tools:
         }
       },
       required: ['message_ids']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -1976,12 +1604,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2001,12 +1623,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'vertex_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2025,12 +1641,6 @@ Related Tools:
         }
       },
       required: ['flow_id', 'vertex_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2039,12 +1649,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2062,12 +1666,6 @@ Related Tools:
           description: 'Maximum number of users to return (default: 50, max: 100)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2076,12 +1674,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2097,12 +1689,6 @@ Related Tools:
         }
       },
       required: ['user_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2130,12 +1716,6 @@ Related Tools:
         }
       },
       required: ['user_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2155,12 +1735,6 @@ Related Tools:
         }
       },
       required: ['user_id', 'new_password']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2169,12 +1743,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2189,12 +1757,6 @@ Related Tools:
         }
       },
       required: ['name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2210,12 +1772,6 @@ Related Tools:
         }
       },
       required: ['api_key_id']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2224,12 +1780,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2256,12 +1806,6 @@ Related Tools:
         }
       },
       required: ['code', 'name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2280,12 +1824,6 @@ Related Tools:
         }
       },
       required: ['username', 'password']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2294,12 +1832,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2308,12 +1840,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2322,12 +1848,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2342,12 +1862,6 @@ Related Tools:
         }
       },
       required: ['flow_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2383,12 +1897,6 @@ Related Tools:
         }
       },
       required: ['flows']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2403,12 +1911,6 @@ Related Tools:
         }
       },
       required: ['task_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2423,12 +1925,6 @@ Related Tools:
         }
       },
       required: ['folder_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2447,12 +1943,6 @@ Related Tools:
         }
       },
       required: ['file_content', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2461,12 +1951,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2489,12 +1973,6 @@ Related Tools:
         }
       },
       required: ['kb_name', 'file_content', 'file_name']
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true
     }
   },
   {
@@ -2503,12 +1981,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2517,12 +1989,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   },
   {
@@ -2536,12 +2002,6 @@ Related Tools:
           description: 'Enable streaming mode for real-time logs (default: false)'
         }
       }
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
     }
   }
 ];

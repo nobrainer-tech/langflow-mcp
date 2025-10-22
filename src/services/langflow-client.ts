@@ -108,7 +108,7 @@ export class LangflowClient {
 
   async getFlow(flowId: string): Promise<FlowRead> {
     try {
-      const response = await this.client.get<FlowRead>(`/flows/${flowId}`);
+      const response = await this.client.get<FlowRead>(`/flows/${encodeURIComponent(flowId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get flow ${flowId}`);
@@ -117,7 +117,7 @@ export class LangflowClient {
 
   async updateFlow(flowId: string, updates: FlowUpdate): Promise<FlowRead> {
     try {
-      const response = await this.client.patch<FlowRead>(`/flows/${flowId}`, updates);
+      const response = await this.client.patch<FlowRead>(`/flows/${encodeURIComponent(flowId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update flow ${flowId}`);
@@ -126,7 +126,7 @@ export class LangflowClient {
 
   async deleteFlow(flowId: string): Promise<void> {
     try {
-      await this.client.delete(`/flows/${flowId}`);
+      await this.client.delete(`/flows/${encodeURIComponent(flowId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete flow ${flowId}`);
     }
@@ -176,7 +176,7 @@ export class LangflowClient {
 
   async runFlow(flowIdOrName: string, inputRequest: RunFlowRequest, stream: boolean = false): Promise<RunResponse> {
     try {
-      const response = await this.client.post<RunResponse>(`/run/${flowIdOrName}`, {
+      const response = await this.client.post<RunResponse>(`/run/${encodeURIComponent(flowIdOrName)}`, {
         ...inputRequest,
         stream
       });
@@ -188,7 +188,7 @@ export class LangflowClient {
 
   async triggerWebhook(flowIdOrName: string, inputRequest: SimplifiedAPIRequest): Promise<any> {
     try {
-      const response = await this.client.post(`/webhook/${flowIdOrName}`, inputRequest);
+      const response = await this.client.post(`/webhook/${encodeURIComponent(flowIdOrName)}`, inputRequest);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to trigger webhook for flow ${flowIdOrName}`);
@@ -242,7 +242,7 @@ export class LangflowClient {
 
   async getFolder(folderId: string): Promise<FolderRead> {
     try {
-      const response = await this.client.get<FolderRead>(`/folders/${folderId}`);
+      const response = await this.client.get<FolderRead>(`/folders/${encodeURIComponent(folderId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get folder ${folderId}`);
@@ -251,7 +251,7 @@ export class LangflowClient {
 
   async updateFolder(folderId: string, updates: FolderUpdate): Promise<FolderRead> {
     try {
-      const response = await this.client.patch<FolderRead>(`/folders/${folderId}`, updates);
+      const response = await this.client.patch<FolderRead>(`/folders/${encodeURIComponent(folderId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update folder ${folderId}`);
@@ -260,7 +260,7 @@ export class LangflowClient {
 
   async deleteFolder(folderId: string): Promise<void> {
     try {
-      await this.client.delete(`/folders/${folderId}`);
+      await this.client.delete(`/folders/${encodeURIComponent(folderId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete folder ${folderId}`);
     }
@@ -286,7 +286,7 @@ export class LangflowClient {
 
   async getProject(projectId: string): Promise<ProjectRead> {
     try {
-      const response = await this.client.get<ProjectRead>(`/projects/${projectId}`);
+      const response = await this.client.get<ProjectRead>(`/projects/${encodeURIComponent(projectId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get project ${projectId}`);
@@ -295,7 +295,7 @@ export class LangflowClient {
 
   async updateProject(projectId: string, updates: ProjectUpdate): Promise<ProjectRead> {
     try {
-      const response = await this.client.patch<ProjectRead>(`/projects/${projectId}`, updates);
+      const response = await this.client.patch<ProjectRead>(`/projects/${encodeURIComponent(projectId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update project ${projectId}`);
@@ -304,7 +304,7 @@ export class LangflowClient {
 
   async deleteProject(projectId: string): Promise<void> {
     try {
-      await this.client.delete(`/projects/${projectId}`);
+      await this.client.delete(`/projects/${encodeURIComponent(projectId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete project ${projectId}`);
     }
@@ -321,7 +321,7 @@ export class LangflowClient {
 
   async downloadProject(projectId: string): Promise<any> {
     try {
-      const response = await this.client.get(`/projects/download/${projectId}`);
+      const response = await this.client.get(`/projects/download/${encodeURIComponent(projectId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to download project ${projectId}`);
@@ -348,7 +348,7 @@ export class LangflowClient {
 
   async updateVariable(variableId: string, updates: VariableUpdate): Promise<VariableRead> {
     try {
-      const response = await this.client.patch<VariableRead>(`/variables/${variableId}`, updates);
+      const response = await this.client.patch<VariableRead>(`/variables/${encodeURIComponent(variableId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update variable ${variableId}`);
@@ -357,7 +357,7 @@ export class LangflowClient {
 
   async deleteVariable(variableId: string): Promise<void> {
     try {
-      await this.client.delete(`/variables/${variableId}`);
+      await this.client.delete(`/variables/${encodeURIComponent(variableId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete variable ${variableId}`);
     }
@@ -366,7 +366,7 @@ export class LangflowClient {
   async buildFlow(flowId: string, request: BuildFlowRequest, params: BuildFlowParams): Promise<BuildFlowResponse> {
     try {
       const response = await this.client.post<BuildFlowResponse>(
-        `/build/${flowId}/flow`,
+        `/build/${encodeURIComponent(flowId)}/flow`,
         request,
         { params }
       );
@@ -379,7 +379,7 @@ export class LangflowClient {
   async getBuildStatus(jobId: string, eventDelivery: 'polling' | 'streaming' | 'direct' = 'polling'): Promise<BuildStatusResponse> {
     try {
       const response = await this.client.get<BuildStatusResponse>(
-        `/build/${jobId}/events`,
+        `/build/${encodeURIComponent(jobId)}/events`,
         { params: { event_delivery: eventDelivery } }
       );
       return response.data;
@@ -390,7 +390,7 @@ export class LangflowClient {
 
   async cancelBuild(jobId: string): Promise<CancelBuildResponse> {
     try {
-      const response = await this.client.post<CancelBuildResponse>(`/build/${jobId}/cancel`);
+      const response = await this.client.post<CancelBuildResponse>(`/build/${encodeURIComponent(jobId)}/cancel`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to cancel build job ${jobId}`);
@@ -439,7 +439,7 @@ export class LangflowClient {
       const formData = new FormData();
       formData.append('file', params.file, params.file_name);
 
-      const response = await this.client.post(`/files/upload/${params.flow_id}`, formData, {
+      const response = await this.client.post(`/files/upload/${encodeURIComponent(params.flow_id)}`, formData, {
         headers: {
           ...formData.getHeaders()
         }
@@ -452,7 +452,7 @@ export class LangflowClient {
 
   async downloadFile(params: { flow_id: string; file_name: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/files/download/${params.flow_id}/${params.file_name}`, {
+      const response = await this.client.get(`/files/download/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.file_name)}`, {
         responseType: 'arraybuffer'
       });
       return response.data;
@@ -463,7 +463,7 @@ export class LangflowClient {
 
   async listFiles(params: { flow_id: string }): Promise<FileListItem[]> {
     try {
-      const response = await this.client.get<FileListItem[]>(`/files/list/${params.flow_id}`);
+      const response = await this.client.get<FileListItem[]>(`/files/list/${encodeURIComponent(params.flow_id)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to list files for flow ${params.flow_id}`);
@@ -472,7 +472,7 @@ export class LangflowClient {
 
   async deleteFile(params: { flow_id: string; file_name: string }): Promise<{ message: string }> {
     try {
-      const response = await this.client.delete<{ message: string }>(`/files/delete/${params.flow_id}/${params.file_name}`);
+      const response = await this.client.delete<{ message: string }>(`/files/delete/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.file_name)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to delete file ${params.file_name} from flow ${params.flow_id}`);
@@ -481,7 +481,7 @@ export class LangflowClient {
 
   async getFileImage(params: { flow_id: string; file_name: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/files/images/${params.flow_id}/${params.file_name}`, {
+      const response = await this.client.get(`/files/images/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.file_name)}`, {
         responseType: 'arraybuffer'
       });
       return response.data;
@@ -561,7 +561,7 @@ export class LangflowClient {
 
   async getStoreComponent(componentId: string): Promise<StoreComponent> {
     try {
-      const response = await this.client.get<StoreComponent>(`/store/components/${componentId}`);
+      const response = await this.client.get<StoreComponent>(`/store/components/${encodeURIComponent(componentId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get store component ${componentId}`);
@@ -588,7 +588,7 @@ export class LangflowClient {
 
   async runFlowAdvanced(flowId: string, request: RunFlowAdvancedRequest, stream: boolean = false): Promise<RunResponse> {
     try {
-      const response = await this.client.post<RunResponse>(`/run/advanced/${flowId}`, {
+      const response = await this.client.post<RunResponse>(`/run/advanced/${encodeURIComponent(flowId)}`, {
         ...request,
         stream
       });
@@ -600,7 +600,7 @@ export class LangflowClient {
 
   async processFlow(flowId: string, request: ProcessFlowRequest): Promise<any> {
     try {
-      const response = await this.client.post(`/process/${flowId}`, request);
+      const response = await this.client.post(`/process/${encodeURIComponent(flowId)}`, request);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to process flow ${flowId}`);
@@ -609,7 +609,7 @@ export class LangflowClient {
 
   async predictFlow(flowId: string, request: PredictFlowRequest): Promise<any> {
     try {
-      const response = await this.client.post(`/predict/${flowId}`, request);
+      const response = await this.client.post(`/predict/${encodeURIComponent(flowId)}`, request);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to predict flow ${flowId}`);
@@ -636,7 +636,7 @@ export class LangflowClient {
 
   async getMonitorMessage(messageId: string): Promise<MessageResponse> {
     try {
-      const response = await this.client.get<MessageResponse>(`/monitor/messages/${messageId}`);
+      const response = await this.client.get<MessageResponse>(`/monitor/messages/${encodeURIComponent(messageId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get monitor message ${messageId}`);
@@ -654,7 +654,7 @@ export class LangflowClient {
 
   async getMonitorSessionMessages(sessionId: string): Promise<MessageResponse[]> {
     try {
-      const response = await this.client.get<MessageResponse[]>(`/monitor/messages/session/${sessionId}`);
+      const response = await this.client.get<MessageResponse[]>(`/monitor/messages/session/${encodeURIComponent(sessionId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get session messages for ${sessionId}`);
@@ -664,7 +664,7 @@ export class LangflowClient {
   async migrateMonitorSession(params: MigrateSessionParams): Promise<MessageResponse[]> {
     try {
       const response = await this.client.patch<MessageResponse[]>(
-        `/monitor/messages/session/${params.old_session_id}`,
+        `/monitor/messages/session/${encodeURIComponent(params.old_session_id)}`,
         null,
         { params: { new_session_id: params.new_session_id } }
       );
@@ -706,7 +706,7 @@ export class LangflowClient {
     try {
       // API expects parameters as query params, not in request body (per api.yaml spec)
       const response = await this.client.post<VerticesOrderResponse>(
-        `/build/${flowId}/vertices`,
+        `/build/${encodeURIComponent(flowId)}/vertices`,
         {},  // Empty body
         { params: request }  // Parameters as query params
       );
@@ -718,7 +718,7 @@ export class LangflowClient {
 
   async getVertex(params: GetVertexParams): Promise<any> {
     try {
-      const response = await this.client.get(`/build/${params.flow_id}/vertices/${params.vertex_id}`);
+      const response = await this.client.get(`/build/${encodeURIComponent(params.flow_id)}/vertices/${encodeURIComponent(params.vertex_id)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get vertex ${params.vertex_id}`);
@@ -727,7 +727,7 @@ export class LangflowClient {
 
   async streamVertexBuild(params: StreamVertexBuildParams): Promise<any> {
     try {
-      const response = await this.client.get(`/build/${params.flow_id}/${params.vertex_id}/stream`);
+      const response = await this.client.get(`/build/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.vertex_id)}/stream`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to stream vertex build ${params.vertex_id}`);
@@ -763,7 +763,7 @@ export class LangflowClient {
 
   async getUser(userId: string): Promise<UserRead> {
     try {
-      const response = await this.client.get<UserRead>(`/users/${userId}`);
+      const response = await this.client.get<UserRead>(`/users/${encodeURIComponent(userId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get user ${userId}`);
@@ -772,7 +772,7 @@ export class LangflowClient {
 
   async updateUser(userId: string, updates: UserUpdate): Promise<UserRead> {
     try {
-      const response = await this.client.patch<UserRead>(`/users/${userId}`, updates);
+      const response = await this.client.patch<UserRead>(`/users/${encodeURIComponent(userId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update user ${userId}`);
@@ -810,7 +810,7 @@ export class LangflowClient {
 
   async deleteApiKey(apiKeyId: string): Promise<void> {
     try {
-      await this.client.delete(`/api_key/${apiKeyId}`);
+      await this.client.delete(`/api_key/${encodeURIComponent(apiKeyId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete API key ${apiKeyId}`);
     }
@@ -880,7 +880,7 @@ export class LangflowClient {
 
   async getPublicFlow(flowId: string): Promise<FlowRead> {
     try {
-      const response = await this.client.get<FlowRead>(`/flows/public_flow/${flowId}`);
+      const response = await this.client.get<FlowRead>(`/flows/public_flow/${encodeURIComponent(flowId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get public flow ${flowId}`);
@@ -898,7 +898,7 @@ export class LangflowClient {
 
   async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
     try {
-      const response = await this.client.get<TaskStatusResponse>(`/task/${taskId}`);
+      const response = await this.client.get<TaskStatusResponse>(`/task/${encodeURIComponent(taskId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get task status ${taskId}`);
@@ -990,7 +990,7 @@ export class LangflowClient {
 
   async getMonitorMessageById(messageId: string): Promise<MessageResponse> {
     try {
-      const response = await this.client.get<MessageResponse>(`/monitor/messages/${messageId}`);
+      const response = await this.client.get<MessageResponse>(`/monitor/messages/${encodeURIComponent(messageId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get monitor message');
@@ -999,7 +999,7 @@ export class LangflowClient {
 
   async getMonitorTransactionById(transactionId: string): Promise<TransactionResponse> {
     try {
-      const response = await this.client.get<TransactionResponse>(`/monitor/transactions/${transactionId}`);
+      const response = await this.client.get<TransactionResponse>(`/monitor/transactions/${encodeURIComponent(transactionId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get monitor transaction');
@@ -1017,7 +1017,7 @@ export class LangflowClient {
 
   async getMonitorVertexBuildById(vertexBuildId: string): Promise<any> {
     try {
-      const response = await this.client.get<any>(`/monitor/vertices/builds/${vertexBuildId}`);
+      const response = await this.client.get<any>(`/monitor/vertices/builds/${encodeURIComponent(vertexBuildId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get monitor vertex build');
@@ -1026,7 +1026,7 @@ export class LangflowClient {
 
   async uploadTextData(params: { flow_id: string; text_data: string; file_name?: string }): Promise<any> {
     try {
-      const response = await this.client.post(`/files/upload/${params.flow_id}/text`, {
+      const response = await this.client.post(`/files/upload/${encodeURIComponent(params.flow_id)}/text`, {
         text: params.text_data,
         file_name: params.file_name
       });
@@ -1047,7 +1047,7 @@ export class LangflowClient {
 
   async updateCustomComponent(componentId: string, updates: Partial<CustomComponentCreate>): Promise<CustomComponentRead> {
     try {
-      const response = await this.client.patch<CustomComponentRead>(`/custom_component/${componentId}`, updates);
+      const response = await this.client.patch<CustomComponentRead>(`/custom_component/${encodeURIComponent(componentId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update custom component ${componentId}`);
@@ -1056,7 +1056,7 @@ export class LangflowClient {
 
   async deleteCustomComponent(componentId: string): Promise<void> {
     try {
-      await this.client.delete(`/custom_component/${componentId}`);
+      await this.client.delete(`/custom_component/${encodeURIComponent(componentId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete custom component ${componentId}`);
     }
@@ -1064,7 +1064,7 @@ export class LangflowClient {
 
   async deleteUser(userId: string): Promise<void> {
     try {
-      await this.client.delete(`/users/${userId}`);
+      await this.client.delete(`/users/${encodeURIComponent(userId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete user ${userId}`);
     }
@@ -1099,7 +1099,7 @@ export class LangflowClient {
 
   async exportFlow(flowId: string): Promise<any> {
     try {
-      const response = await this.client.get(`/flows/${flowId}/export`);
+      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/export`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to export flow ${flowId}`);
@@ -1117,7 +1117,7 @@ export class LangflowClient {
 
   async cloneFlow(flowId: string, name?: string): Promise<FlowRead> {
     try {
-      const response = await this.client.post<FlowRead>(`/flows/${flowId}/clone`, { name });
+      const response = await this.client.post<FlowRead>(`/flows/${encodeURIComponent(flowId)}/clone`, { name });
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to clone flow ${flowId}`);
@@ -1126,7 +1126,7 @@ export class LangflowClient {
 
   async getFlowDependencies(flowId: string): Promise<any> {
     try {
-      const response = await this.client.get(`/flows/${flowId}/dependencies`);
+      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/dependencies`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get flow dependencies ${flowId}`);
@@ -1144,7 +1144,7 @@ export class LangflowClient {
 
   async buildVertex(params: { flow_id: string; vertex_id: string; inputs?: any }): Promise<any> {
     try {
-      const response = await this.client.post(`/build/${params.flow_id}/vertices/${params.vertex_id}`, params.inputs || {});
+      const response = await this.client.post(`/build/${encodeURIComponent(params.flow_id)}/vertices/${encodeURIComponent(params.vertex_id)}`, params.inputs || {});
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to build vertex ${params.vertex_id}`);
@@ -1153,7 +1153,7 @@ export class LangflowClient {
 
   async cancelExecution(params: { execution_id: string }): Promise<any> {
     try {
-      const response = await this.client.post(`/executions/${params.execution_id}/cancel`);
+      const response = await this.client.post(`/executions/${encodeURIComponent(params.execution_id)}/cancel`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to cancel execution ${params.execution_id}`);
@@ -1162,7 +1162,7 @@ export class LangflowClient {
 
   async getExecutionResult(params: { execution_id: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/executions/${params.execution_id}/result`);
+      const response = await this.client.get(`/executions/${encodeURIComponent(params.execution_id)}/result`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get execution result ${params.execution_id}`);
@@ -1171,7 +1171,7 @@ export class LangflowClient {
 
   async getFileMetadata(params: { flow_id: string; file_name: string }): Promise<any> {
     try {
-      const response = await this.client.get(`/files/${params.flow_id}/${params.file_name}/metadata`);
+      const response = await this.client.get(`/files/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.file_name)}/metadata`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get file metadata ${params.file_name}`);
@@ -1189,7 +1189,7 @@ export class LangflowClient {
 
   async getUserById(userId: string): Promise<UserRead> {
     try {
-      const response = await this.client.get<UserRead>(`/users/${userId}`);
+      const response = await this.client.get<UserRead>(`/users/${encodeURIComponent(userId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get user ${userId}`);
@@ -1198,7 +1198,7 @@ export class LangflowClient {
 
   async listFilesDetailed(params: { flow_id: string }): Promise<any[]> {
     try {
-      const response = await this.client.get<any[]>(`/files/${params.flow_id}/detailed`);
+      const response = await this.client.get<any[]>(`/files/${encodeURIComponent(params.flow_id)}/detailed`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get detailed file list for flow ${params.flow_id}`);
@@ -1221,7 +1221,7 @@ export class LangflowClient {
   async runAdvancedExecution(params: { flow_id: string; [key: string]: any }): Promise<any> {
     try {
       const { flow_id, ...request } = params;
-      const response = await this.client.post(`/executions/${flow_id}/advanced`, request);
+      const response = await this.client.post(`/executions/${encodeURIComponent(flow_id)}/advanced`, request);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to execute advanced flow ${params.flow_id}`);
@@ -1250,7 +1250,7 @@ export class LangflowClient {
 
   async updateStoreComponent(componentId: string, updates: any): Promise<any> {
     try {
-      const response = await this.client.patch(`/store/components/${componentId}`, updates);
+      const response = await this.client.patch(`/store/components/${encodeURIComponent(componentId)}`, updates);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update store component ${componentId}`);
@@ -1268,7 +1268,7 @@ export class LangflowClient {
 
   async validateFlow(params: { flow_id: string }): Promise<any> {
     try {
-      const response = await this.client.post(`/flows/${params.flow_id}/validate`);
+      const response = await this.client.post(`/flows/${encodeURIComponent(params.flow_id)}/validate`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to validate flow ${params.flow_id}`);
