@@ -1178,13 +1178,13 @@ describe('Validation Schemas', () => {
       expect(() => GetBuildStatusSchema.parse(validData)).not.toThrow();
     });
 
-    it('should default event_delivery to polling', () => {
+    it('should default event_delivery to streaming', () => {
       const validData = {
         job_id: 'job-123'
       };
 
       const parsed = GetBuildStatusSchema.parse(validData);
-      expect(parsed.event_delivery).toBe('polling');
+      expect(parsed.event_delivery).toBe('streaming');
     });
 
     it('should validate event_delivery as polling', () => {

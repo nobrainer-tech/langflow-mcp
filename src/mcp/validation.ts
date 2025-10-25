@@ -81,7 +81,7 @@ export const TriggerWebhookSchema = z.object({
 }).strict();
 
 const FileSchema = z.object({
-  name: z.string().min(1, 'Filename required'),
+  name: FileNameSchema,  // Use secure FileNameSchema instead of basic string validation
   content: z.string().min(1, 'File content required'),
   type: z.string().optional(),
 }).refine(
@@ -203,7 +203,7 @@ export const BuildFlowSchema = z.object({
 
 export const GetBuildStatusSchema = z.object({
   job_id: z.string().min(1, 'Job ID is required'),
-  event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('polling')
+  event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('streaming')  // Changed from 'polling' to match api.yaml spec
 }).strict();
 
 export const CancelBuildSchema = z.object({
