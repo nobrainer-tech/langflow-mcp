@@ -49,6 +49,7 @@
   "files": [
     "dist/**/*",
     ".env.example",
+    "healthcheck.js",
     "README.md",
     "LICENSE"
   ],

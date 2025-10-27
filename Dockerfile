@@ -39,8 +39,9 @@ RUN npm ci --only=production && \
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy .env.example as reference
+# Copy .env.example and healthcheck script
 COPY .env.example ./
+COPY healthcheck.js ./
 
 # Change ownership
 RUN chown -R nodejs:nodejs /app
@@ -53,9 +54,9 @@ ENV NODE_ENV=production \
     MCP_MODE=stdio \
     LOG_LEVEL=info
 
-# Health check (only works in HTTP mode)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "if(process.env.MCP_MODE==='http'){require('http').get('http://localhost:'+process.env.PORT+'/health',r=>process.exit(r.statusCode===200?0:1))}else{process.exit(0)}"
+  CMD node healthcheck.js
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
