@@ -55,12 +55,12 @@
   "devDependencies": {
     "@types/node": "^24.8.1",
     "@vitest/coverage-v8": "^4.0.3",
-    "@vitest/ui": "^3.2.4",
+    "@vitest/ui": "^4.0.3",
     "axios-mock-adapter": "^2.1.0",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.3"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
