@@ -4,13 +4,17 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-611%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-635%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
 
 ## Overview
 
-langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively. It provides structured access to:
+langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
+
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.6.4**.
+
+It provides structured access to:
 
 - **Flow Management** - Create, read, update, delete, and execute Langflow flows
 - **Flow Execution** - Run flows with inputs and trigger webhooks
@@ -106,9 +110,88 @@ Add to your Claude Desktop config file:
 
 Restart Claude Desktop after updating configuration.
 
+### Docker Deployment
+
+The MCP server can be run in a Docker container for easier deployment and isolation.
+
+#### Quick Start with Docker
+
+```bash
+# Clone the repository
+git clone https://github.com/nobrainer-tech/langflow-mcp.git
+cd langflow-mcp
+
+# Create .env file with your configuration
+cp .env.example .env
+# Edit .env with your Langflow instance URL and API key
+
+# Build and run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the server
+docker-compose down
+```
+
+#### Building Docker Image
+
+```bash
+# Build the image
+docker build -t langflow-mcp-server:latest .
+
+# Run in stdio mode (for Claude Desktop)
+docker run -it --rm \
+  -e LANGFLOW_BASE_URL=http://localhost:7860 \
+  -e LANGFLOW_API_KEY=your-api-key \
+  langflow-mcp-server:latest
+
+# Run in HTTP mode (for remote access)
+docker run -d \
+  -p 3000:3000 \
+  -e MCP_MODE=http \
+  -e PORT=3000 \
+  -e AUTH_TOKEN=your-secure-token \
+  -e LANGFLOW_BASE_URL=http://langflow:7860 \
+  -e LANGFLOW_API_KEY=your-api-key \
+  langflow-mcp-server:latest
+```
+
+#### Docker Compose Configuration
+
+The included `docker-compose.yml` supports both stdio and HTTP modes:
+
+```yaml
+# STDIO mode (default)
+environment:
+  - MCP_MODE=stdio
+  - LANGFLOW_BASE_URL=http://localhost:7860
+  - LANGFLOW_API_KEY=your-key
+
+# HTTP mode
+environment:
+  - MCP_MODE=http
+  - PORT=3000
+  - AUTH_TOKEN=your-secure-token
+```
+
+## Deprecated Tools
+
+⚠️ **Important**: This server includes 4 deprecated tools that match deprecated endpoints in Langflow API 1.6.4:
+- `build_vertices` - Use `build_flow` instead
+- `get_vertex` - Use `build_flow` or `get_flow` instead
+- `stream_vertex_build` - Use `get_build_status` with streaming instead
+- `get_task_status` - Use `get_build_status` instead
+
+These tools are **enabled by default** but marked with ⚠️ warnings. To disable them, set:
+```bash
+ENABLE_DEPRECATED_TOOLS=false
+```
+
 ## Available MCP Tools
 
-Once connected, Claude can use these 90 tools:
+Once connected, Claude can use **90 tools** (94 with deprecated tools enabled):
 
 ### Flow Management (6 tools)
 - **`create_flow`** - Create a new Langflow flow
@@ -181,10 +264,10 @@ Once connected, Claude can use these 90 tools:
 - **`delete_monitor_builds`** - Delete build history for a flow
 - **`delete_monitor_messages`** - Delete multiple messages by ID
 
-### Vertex Operations (3 tools)
-- **`build_vertices`** - Get vertex build order for a flow
-- **`get_vertex`** - Get details of a specific vertex/component
-- **`stream_vertex_build`** - Stream real-time build events for a vertex
+### Vertex Operations ⚠️ *DEPRECATED* (3 tools)
+- **`build_vertices`** ⚠️ *DEPRECATED* - Get vertex build order for a flow (use `build_flow` instead)
+- **`get_vertex`** ⚠️ *DEPRECATED* - Get details of a specific vertex/component (use `build_flow` or `get_flow` instead)
+- **`stream_vertex_build`** ⚠️ *DEPRECATED* - Stream real-time build events for a vertex (use `get_build_status` with streaming instead)
 
 ### User Management (5 tools)
 - **`list_users`** - List all users (admin only)
@@ -228,7 +311,7 @@ Once connected, Claude can use these 90 tools:
 ### Batch & Public Operations (3 tools)
 - **`get_public_flow`** - Get a public flow without authentication
 - **`batch_create_flows`** - Create multiple flows in one operation
-- **`get_task_status`** - Get status of an async task
+- **`get_task_status`** ⚠️ *DEPRECATED* - Get status of an async task (use `get_build_status` instead)
 
 ### Folder Operations (2 tools)
 - **`download_folder`** - Download entire folder as archive

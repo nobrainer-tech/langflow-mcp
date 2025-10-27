@@ -1954,7 +1954,7 @@ Related Tools:
   },
   {
     name: 'build_vertices',
-    description: 'Get vertex build order for a flow. Retrieves the ordered list of vertex IDs representing the build execution sequence. Useful for understanding flow component dependencies, optimizing build performance, and debugging build order issues. Supports partial builds with start/stop component IDs.',
+    description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "build_flow" tool instead with start_component_id/stop_component_id for partial builds.\n\nGet vertex build order for a flow. Retrieves the ordered list of vertex IDs representing the build execution sequence. Useful for understanding flow component dependencies, optimizing build performance, and debugging build order issues. Supports partial builds with start/stop component IDs.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1986,7 +1986,7 @@ Related Tools:
   },
   {
     name: 'get_vertex',
-    description: 'Get detailed information about a specific vertex (component) in a flow. Retrieves vertex configuration, state, and metadata. Essential for inspecting individual component details, debugging component issues, and understanding flow structure at the component level.',
+    description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "build_flow" tool instead to build specific components, or "get_flow" to retrieve flow structure.\n\nGet detailed information about a specific vertex (component) in a flow. Retrieves vertex configuration, state, and metadata. Essential for inspecting individual component details, debugging component issues, and understanding flow structure at the component level.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2011,7 +2011,7 @@ Related Tools:
   },
   {
     name: 'stream_vertex_build',
-    description: 'Stream real-time build events for a specific vertex. Provides live updates during vertex build process using server-sent events (SSE). Essential for monitoring long-running component builds, debugging build failures in real-time, and providing live build status to users.',
+    description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "get_build_status" tool with event_delivery="streaming" to monitor build progress.\n\nStream real-time build events for a specific vertex. Provides live updates during vertex build process using server-sent events (SSE). Essential for monitoring long-running component builds, debugging build failures in real-time, and providing live build status to users.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2393,7 +2393,7 @@ Related Tools:
   },
   {
     name: 'get_task_status',
-    description: 'Get status of an asynchronous task by task ID. Returns task status (pending, running, completed, failed), result if completed, or error if failed.',
+    description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "get_build_status" tool with job_id instead of task_id.\n\nGet status of an asynchronous task by task ID. Returns task status (pending, running, completed, failed), result if completed, or error if failed.',
     inputSchema: {
       type: 'object',
       properties: {

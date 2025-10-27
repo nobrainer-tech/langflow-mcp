@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MCP Tools Definitions > Tool Count > should maintain consistent tool count 1`] = `90`;
