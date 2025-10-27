@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  langflow-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: langflow-mcp-server:latest
+    container_name: langflow-mcp-server
+    restart: unless-stopped
+
+    environment:
+      # Langflow Configuration
+      - LANGFLOW_BASE_URL=${LANGFLOW_BASE_URL:-http://localhost:7860}
+      - LANGFLOW_API_KEY=${LANGFLOW_API_KEY}
+      - LANGFLOW_TIMEOUT=${LANGFLOW_TIMEOUT:-30000}
+
+      # MCP Server Configuration
+      - MCP_MODE=${MCP_MODE:-stdio}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
+      - ENABLE_DEPRECATED_TOOLS=${ENABLE_DEPRECATED_TOOLS:-true}
+
+      # HTTP Mode Configuration (only used when MCP_MODE=http)
+      - PORT=${PORT:-3000}
+      - HOST=${HOST:-0.0.0.0}
+      - AUTH_TOKEN=${AUTH_TOKEN}
+
+    # Ports (only needed in HTTP mode)
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"if(process.env.MCP_MODE==='http'){require('http').get('http://localhost:'+process.env.PORT+'/health',r=>process.exit(r.statusCode===200?0:1))}else{process.exit(0)}\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+    # Network (optional - for connecting to local Langflow)
+    # network_mode: "host"  # Uncomment for host networking
+
+# Optional: Add Langflow service for local development
+#   langflow:
+#     image: langflowai/langflow:latest
+#     container_name: langflow
+#     restart: unless-stopped
+#     ports:
+#       - "7860:7860"
+#     environment:
+#       - LANGFLOW_DATABASE_URL=sqlite:///langflow.db
+#     volumes:
+#       - langflow_data:/app/langflow
+
+# volumes:
+#   langflow_data:

@@ -324,8 +324,15 @@ export class LangflowMCPServer {
 
   private setupHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      const deprecatedTools = ['build_vertices', 'get_vertex', 'stream_vertex_build', 'get_task_status'];
+      const enableDeprecated = process.env.ENABLE_DEPRECATED_TOOLS !== 'false';
+
+      const toolsToShow = enableDeprecated
+        ? langflowMCPTools
+        : langflowMCPTools.filter(tool => !deprecatedTools.includes(tool.name));
+
       return {
-        tools: langflowMCPTools.map(tool => ({
+        tools: toolsToShow.map(tool => ({
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
