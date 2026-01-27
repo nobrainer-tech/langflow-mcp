@@ -67,7 +67,8 @@ export const RunFlowSchema = z.object({
     input_value: z.string().optional(),
     output_type: z.string().optional(),
     input_type: z.string().optional(),
-    tweaks: z.record(z.string(), z.unknown()).optional()
+    tweaks: z.record(z.string(), z.unknown()).optional(),
+    context: z.record(z.string(), z.unknown()).optional()
   }),
   stream: z.boolean().optional().default(false)
 }).strict();
@@ -290,14 +291,32 @@ export const ListStoreTagsSchema = z.object({}).strict();
 export const GetUserLikesSchema = z.object({}).strict();
 
 export const RunFlowAdvancedSchema = z.object({
-  flow_id: z.string().uuid('Invalid flow ID format'),
+  flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
   input_value: z.string().optional(),
   input_type: z.string().optional(),
   output_type: z.string().optional(),
   output_component: z.string().optional(),
   tweaks: z.record(z.string(), z.unknown()).optional(),
   session_id: z.string().optional(),
+  user_id: z.string().uuid('Invalid user ID format').optional(),
   stream: z.boolean().optional().default(false)
+}).strict();
+
+export const RunFlowSessionSchema = z.object({
+  flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
+  input_value: z.string().optional(),
+  input_type: z.string().optional(),
+  output_type: z.string().optional(),
+  output_component: z.string().optional(),
+  tweaks: z.record(z.string(), z.unknown()).optional(),
+  session_id: z.string().min(1, 'Session ID is required'),
+  stream: z.boolean().optional().default(false)
+}).strict();
+
+export const GetRegistrationSchema = z.object({}).strict();
+
+export const RegisterUserSchema = z.object({
+  email: z.string().email('Invalid email format')
 }).strict();
 
 export const ProcessFlowSchema = z.object({
@@ -529,6 +548,9 @@ export type GetStoreComponentInput = z.infer<typeof GetStoreComponentSchema>;
 export type ListStoreTagsInput = z.infer<typeof ListStoreTagsSchema>;
 export type GetUserLikesInput = z.infer<typeof GetUserLikesSchema>;
 export type RunFlowAdvancedInput = z.infer<typeof RunFlowAdvancedSchema>;
+export type RunFlowSessionInput = z.infer<typeof RunFlowSessionSchema>;
+export type GetRegistrationInput = z.infer<typeof GetRegistrationSchema>;
+export type RegisterUserInput = z.infer<typeof RegisterUserSchema>;
 export type ProcessFlowInput = z.infer<typeof ProcessFlowSchema>;
 export type PredictFlowInput = z.infer<typeof PredictFlowSchema>;
 export type GetMonitorBuildsInput = z.infer<typeof GetMonitorBuildsSchema>;

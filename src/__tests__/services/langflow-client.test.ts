@@ -4116,4 +4116,146 @@ describe('LangflowClient', () => {
       await expect(client.getAiNodes()).rejects.toThrow();
     });
   });
+
+  describe('runFlowAdvanced', () => {
+    it('should run flow with name instead of UUID', async () => {
+      const flowName = 'my-flow-name';
+      const request = { input_value: 'test' };
+      mock.onPost(`/run/advanced/${flowName}`).reply(200, mockRunFlowAdvancedResponse);
+
+      const result = await client.runFlowAdvanced(flowName, request);
+
+      expect(result).toEqual(mockRunFlowAdvancedResponse);
+    });
+
+    it('should run flow with user_id parameter', async () => {
+      const flowId = 'test-flow-uuid';
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const request = { input_value: 'test' };
+      mock.onPost(`/run/advanced/${flowId}`).reply(200, mockRunFlowAdvancedResponse);
+
+      const result = await client.runFlowAdvanced(flowId, request, false, userId);
+
+      expect(result).toEqual(mockRunFlowAdvancedResponse);
+    });
+
+    it('should handle 404 Not Found', async () => {
+      const flowName = 'non-existent';
+      const request = { input_value: 'test' };
+      mock.onPost(`/run/advanced/${flowName}`).reply(404, { detail: 'Flow not found' });
+
+      await expect(client.runFlowAdvanced(flowName, request)).rejects.toThrow('Failed to run flow');
+    });
+
+    it('should handle network timeout', async () => {
+      const flowName = 'test-flow';
+      const request = { input_value: 'test' };
+      mock.onPost(`/run/advanced/${flowName}`).timeout();
+
+      await expect(client.runFlowAdvanced(flowName, request)).rejects.toThrow();
+    });
+  });
+
+  describe('runFlowSession', () => {
+    it('should run flow session successfully', async () => {
+      const flowName = 'my-flow';
+      const request = { session_id: 'session-123', input_value: 'hello' };
+      mock.onPost(`/run/session/${flowName}`).reply(200, mockRunFlowAdvancedResponse);
+
+      const result = await client.runFlowSession(flowName, request);
+
+      expect(result).toEqual(mockRunFlowAdvancedResponse);
+    });
+
+    it('should handle 404 Not Found for non-existent flow', async () => {
+      const flowName = 'non-existent';
+      const request = { session_id: 'session-123', input_value: 'test' };
+      mock.onPost(`/run/session/${flowName}`).reply(404, { detail: 'Flow not found' });
+
+      await expect(client.runFlowSession(flowName, request)).rejects.toThrow('Failed to run flow session');
+    });
+
+    it('should handle 400 Bad Request for missing session_id', async () => {
+      const flowName = 'my-flow';
+      const request = { session_id: '', input_value: 'test' };
+      mock.onPost(`/run/session/${flowName}`).reply(400, { detail: 'Session ID required' });
+
+      await expect(client.runFlowSession(flowName, request)).rejects.toThrow('Failed to run flow session');
+    });
+
+    it('should handle network timeout', async () => {
+      const flowName = 'my-flow';
+      const request = { session_id: 'session-123', input_value: 'test' };
+      mock.onPost(`/run/session/${flowName}`).timeout();
+
+      await expect(client.runFlowSession(flowName, request)).rejects.toThrow();
+    });
+  });
+
+  describe('getRegistration', () => {
+    it('should get registration status for registered user', async () => {
+      const response = { email: 'test@example.com', registered: true };
+      mock.onGet('/api/v2/registration/').reply(200, response);
+
+      const result = await client.getRegistration();
+
+      expect(result.registered).toBe(true);
+      expect(result.email).toBe('test@example.com');
+    });
+
+    it('should get registration status for non-registered user', async () => {
+      const response = { registered: false };
+      mock.onGet('/api/v2/registration/').reply(200, response);
+
+      const result = await client.getRegistration();
+
+      expect(result.registered).toBe(false);
+    });
+
+    it('should handle 401 Unauthorized', async () => {
+      mock.onGet('/api/v2/registration/').reply(401, { detail: 'Unauthorized' });
+
+      await expect(client.getRegistration()).rejects.toThrow('Failed to get registration status');
+    });
+
+    it('should handle network timeout', async () => {
+      mock.onGet('/api/v2/registration/').timeout();
+
+      await expect(client.getRegistration()).rejects.toThrow();
+    });
+  });
+
+  describe('registerUser', () => {
+    it('should register user successfully', async () => {
+      const email = 'newuser@example.com';
+      const response = { email, registered: true };
+      mock.onPost('/api/v2/registration/').reply(200, response);
+
+      const result = await client.registerUser(email);
+
+      expect(result.registered).toBe(true);
+      expect(result.email).toBe(email);
+    });
+
+    it('should handle 400 Bad Request for invalid email', async () => {
+      const email = 'invalid-email';
+      mock.onPost('/api/v2/registration/').reply(400, { detail: 'Invalid email' });
+
+      await expect(client.registerUser(email)).rejects.toThrow('Failed to register user');
+    });
+
+    it('should handle 409 Conflict for already registered email', async () => {
+      const email = 'existing@example.com';
+      mock.onPost('/api/v2/registration/').reply(409, { detail: 'Email already registered' });
+
+      await expect(client.registerUser(email)).rejects.toThrow('Failed to register user');
+    });
+
+    it('should handle network timeout', async () => {
+      const email = 'test@example.com';
+      mock.onPost('/api/v2/registration/').timeout();
+
+      await expect(client.registerUser(email)).rejects.toThrow();
+    });
+  });
 });

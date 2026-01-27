@@ -1640,13 +1640,13 @@ Related Tools:
   },
   {
     name: 'run_flow_advanced',
-    description: 'Advanced flow execution with full parameter control including tweaks, input/output types, session management, and streaming.',
+    description: 'Advanced flow execution with full parameter control including tweaks, input/output types, session management, and streaming. Supports both flow UUID and flow name.',
     inputSchema: {
       type: 'object',
       properties: {
-        flow_id: {
+        flow_id_or_name: {
           type: 'string',
-          description: 'Flow ID (UUID) to execute'
+          description: 'Flow ID (UUID) or flow name to execute'
         },
         input_value: {
           type: 'string',
@@ -1672,18 +1672,105 @@ Related Tools:
           type: 'string',
           description: 'Session ID for conversation continuity'
         },
+        user_id: {
+          type: 'string',
+          description: 'User ID (UUID) for user-scoped execution'
+        },
         stream: {
           type: 'boolean',
           description: 'Enable streaming mode (default: false)'
         }
       },
-      required: ['flow_id']
+      required: ['flow_id_or_name']
     },
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
       idempotentHint: false,
       openWorldHint: true
+    }
+  },
+  {
+    name: 'run_flow_session',
+    description: 'Execute a flow with session-based state management. Maintains conversation context across multiple calls using the same session ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id_or_name: {
+          type: 'string',
+          description: 'Flow ID (UUID) or flow name to execute'
+        },
+        input_value: {
+          type: 'string',
+          description: 'Input value for the flow'
+        },
+        input_type: {
+          type: 'string',
+          description: 'Type of input (e.g., "chat", "text")'
+        },
+        output_type: {
+          type: 'string',
+          description: 'Expected output type (e.g., "chat", "text", "json")'
+        },
+        output_component: {
+          type: 'string',
+          description: 'Specific output component to retrieve results from'
+        },
+        tweaks: {
+          type: 'object',
+          description: 'Component-specific parameter overrides'
+        },
+        session_id: {
+          type: 'string',
+          description: 'Session ID for conversation continuity (required)'
+        },
+        stream: {
+          type: 'boolean',
+          description: 'Enable streaming mode (default: false)'
+        }
+      },
+      required: ['flow_id_or_name', 'session_id']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'get_registration',
+    description: 'Get current user registration status from Langflow. Returns whether the user is registered and their email if available.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  },
+  {
+    name: 'register_user',
+    description: 'Register a new user with Langflow using their email address.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        email: {
+          type: 'string',
+          description: 'Email address to register'
+        }
+      },
+      required: ['email']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false
     }
   },
   {

@@ -1,5 +1,7 @@
 import {
   RunFlowAdvancedRequest,
+  RunFlowSessionRequest,
+  RegistrationResponse,
   ProcessFlowRequest,
   PredictFlowRequest,
   RunResponse
@@ -82,4 +84,50 @@ export const mockPredictFlowResponse = {
     class_B: 0.06,
     class_C: 0.02
   }
+};
+
+export const mockRunFlowSessionRequest: RunFlowSessionRequest = {
+  input_value: 'session test input',
+  input_type: 'text',
+  output_type: 'chat',
+  output_component: 'ChatOutput-456',
+  tweaks: {
+    'llm-component': {
+      temperature: 0.5
+    }
+  },
+  session_id: 'session-persistent-123'
+};
+
+export const mockRunFlowSessionResponse: RunResponse = {
+  session_id: 'session-persistent-123',
+  execution_id: 'exec-session-123',
+  outputs: [
+    {
+      inputs: { input: 'session test input' },
+      outputs: [
+        {
+          results: {
+            message: {
+              text: 'Session response',
+              context_id: 'ctx-123'
+            }
+          },
+          artifacts: {},
+          messages: [],
+          component_display_name: 'ChatOutput',
+          component_id: 'ChatOutput-456'
+        }
+      ]
+    }
+  ]
+};
+
+export const mockRegistrationResponseRegistered: RegistrationResponse = {
+  email: 'test@example.com',
+  registered: true
+};
+
+export const mockRegistrationResponseNotRegistered: RegistrationResponse = {
+  registered: false
 };

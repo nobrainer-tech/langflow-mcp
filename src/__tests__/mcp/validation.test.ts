@@ -34,7 +34,11 @@ import {
   ListKnowledgeBasesSchema,
   GetKnowledgeBaseSchema,
   DeleteKnowledgeBaseSchema,
-  BulkDeleteKnowledgeBasesSchema
+  BulkDeleteKnowledgeBasesSchema,
+  RunFlowAdvancedSchema,
+  RunFlowSessionSchema,
+  GetRegistrationSchema,
+  RegisterUserSchema
 } from '../../mcp/validation';
 
 describe('Validation Schemas', () => {
@@ -1382,6 +1386,142 @@ describe('Validation Schemas', () => {
       };
 
       expect(() => BulkDeleteKnowledgeBasesSchema.parse(invalidData)).toThrow();
+    });
+  });
+
+  describe('RunFlowAdvancedSchema', () => {
+    it('should validate with flow_id_or_name (UUID)', () => {
+      const validData = {
+        flow_id_or_name: '123e4567-e89b-12d3-a456-426614174000',
+        input_value: 'test'
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(validData)).not.toThrow();
+    });
+
+    it('should validate with flow_id_or_name (flow name)', () => {
+      const validData = {
+        flow_id_or_name: 'my-flow-name',
+        input_value: 'test'
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(validData)).not.toThrow();
+    });
+
+    it('should validate with user_id parameter', () => {
+      const validData = {
+        flow_id_or_name: 'my-flow',
+        user_id: '123e4567-e89b-12d3-a456-426614174000'
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(validData)).not.toThrow();
+    });
+
+    it('should reject invalid user_id format', () => {
+      const invalidData = {
+        flow_id_or_name: 'my-flow',
+        user_id: 'not-a-uuid'
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(invalidData)).toThrow('Invalid user ID format');
+    });
+
+    it('should reject empty flow_id_or_name', () => {
+      const invalidData = {
+        flow_id_or_name: ''
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(invalidData)).toThrow();
+    });
+
+    it('should reject missing flow_id_or_name', () => {
+      const invalidData = {
+        input_value: 'test'
+      };
+
+      expect(() => RunFlowAdvancedSchema.parse(invalidData)).toThrow();
+    });
+  });
+
+  describe('RunFlowSessionSchema', () => {
+    it('should validate valid session request', () => {
+      const validData = {
+        flow_id_or_name: 'my-flow',
+        session_id: 'session-123',
+        input_value: 'hello'
+      };
+
+      expect(() => RunFlowSessionSchema.parse(validData)).not.toThrow();
+    });
+
+    it('should reject empty session_id', () => {
+      const invalidData = {
+        flow_id_or_name: 'my-flow',
+        session_id: ''
+      };
+
+      expect(() => RunFlowSessionSchema.parse(invalidData)).toThrow();
+    });
+
+    it('should reject missing session_id', () => {
+      const invalidData = {
+        flow_id_or_name: 'my-flow'
+      };
+
+      expect(() => RunFlowSessionSchema.parse(invalidData)).toThrow();
+    });
+
+    it('should reject empty flow_id_or_name', () => {
+      const invalidData = {
+        flow_id_or_name: '',
+        session_id: 'session-123'
+      };
+
+      expect(() => RunFlowSessionSchema.parse(invalidData)).toThrow();
+    });
+  });
+
+  describe('GetRegistrationSchema', () => {
+    it('should validate empty object', () => {
+      expect(() => GetRegistrationSchema.parse({})).not.toThrow();
+    });
+
+    it('should reject extra properties', () => {
+      const data = {
+        extra_param: 'should be rejected'
+      };
+
+      expect(() => GetRegistrationSchema.parse(data)).toThrow();
+    });
+  });
+
+  describe('RegisterUserSchema', () => {
+    it('should validate valid email', () => {
+      const validData = {
+        email: 'test@example.com'
+      };
+
+      expect(() => RegisterUserSchema.parse(validData)).not.toThrow();
+    });
+
+    it('should reject invalid email format', () => {
+      const invalidData = {
+        email: 'not-an-email'
+      };
+
+      expect(() => RegisterUserSchema.parse(invalidData)).toThrow('Invalid email format');
+    });
+
+    it('should reject empty email', () => {
+      const invalidData = {
+        email: ''
+      };
+
+      expect(() => RegisterUserSchema.parse(invalidData)).toThrow();
+    });
+
+    it('should reject missing email', () => {
+      expect(() => RegisterUserSchema.parse({})).toThrow();
     });
   });
 });
