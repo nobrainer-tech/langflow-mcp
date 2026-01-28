@@ -2960,6 +2960,47 @@ describe('LangflowClient', () => {
 
       await expect(client.buildVertices(flowId, vertices)).rejects.toThrow();
     });
+
+    it('should send data in request body and other params in query (API 1.7.2 breaking change)', async () => {
+      const flowId = 'test-flow-uuid';
+      const request = {
+        data: { key: 'value', nested: { foo: 'bar' } },
+        stop_component_id: 'stop-123',
+        start_component_id: 'start-456'
+      };
+
+      mock.onPost(`/build/${flowId}/vertices`).reply((config) => {
+        // Verify data is in request body
+        const body = JSON.parse(config.data);
+        expect(body).toEqual({ data: request.data });
+
+        // Verify other params are in query string
+        expect(config.params).toEqual({
+          stop_component_id: 'stop-123',
+          start_component_id: 'start-456'
+        });
+
+        return [200, mockVerticesOrderResponse];
+      });
+
+      const result = await client.buildVertices(flowId, request);
+      expect(result).toEqual(mockVerticesOrderResponse);
+    });
+
+    it('should send empty body when no data provided', async () => {
+      const flowId = 'test-flow-uuid';
+      const request = { stop_component_id: 'stop-123' };
+
+      mock.onPost(`/build/${flowId}/vertices`).reply((config) => {
+        const body = JSON.parse(config.data);
+        expect(body).toEqual({});
+        expect(config.params).toEqual({ stop_component_id: 'stop-123' });
+        return [200, mockVerticesOrderResponse];
+      });
+
+      const result = await client.buildVertices(flowId, request);
+      expect(result).toEqual(mockVerticesOrderResponse);
+    });
   });
 
   describe('streamVertexBuild', () => {
