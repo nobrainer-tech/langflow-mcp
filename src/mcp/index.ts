@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { LangflowMCPServer } from './server';
+import { LangflowMCPServerConsolidated } from './server-consolidated';
 import { logger } from '../utils/logger';
 import * as dotenv from 'dotenv';
 
@@ -31,7 +32,15 @@ async function main() {
       process.exit(1);
     }
 
-    const server = new LangflowMCPServer();
+    // Use consolidated tools (15 grouped tools) or granular tools (93 individual tools)
+    const useConsolidated = process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true';
+    const server = useConsolidated
+      ? new LangflowMCPServerConsolidated()
+      : new LangflowMCPServer();
+
+    if (useConsolidated) {
+      logger.info('Using consolidated tools mode (15 grouped tools)');
+    }
 
     let isShuttingDown = false;
     const shutdown = async (signal: string = 'UNKNOWN') => {
