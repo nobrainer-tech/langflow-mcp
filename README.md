@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-635%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-771%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
 
@@ -12,7 +12,38 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.6.4**.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.7.2**.
+
+### v3.0.0 - Consolidated Tools Mode
+
+Version 3.0.0 introduces **Consolidated Tools Mode** - a new architecture that groups 93 individual tools into **15 action-based tools**. This significantly reduces token usage and improves AI assistant context management.
+
+| Mode | Tools | Best For |
+|------|-------|----------|
+| Standard | 93 tools | Full granular control |
+| Consolidated | 15 tools | Reduced token usage, better context |
+
+To enable consolidated mode:
+```bash
+LANGFLOW_CONSOLIDATED_TOOLS=true
+```
+
+**Consolidated tools:**
+- `flow` - All flow operations (list, get, create, update, delete, download, upload, etc.)
+- `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
+- `build` - Build operations (start, status, cancel, vertices)
+- `folder` - Folder management (list, get, create, update, delete, download, upload)
+- `project` - Project management (list, get, create, update, delete, download, upload)
+- `variable` - Variable operations (list, create, update, delete)
+- `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload)
+- `file` - File operations (list, upload, download, delete, get_image)
+- `monitor` - Monitoring (builds, messages, sessions, transactions)
+- `user` - User management (list, get, get_current, update, reset_password)
+- `auth` - Authentication (login, auto_login, logout, refresh, api keys)
+- `store` - Component store (list, get, tags, likes)
+- `registration` - User registration (get, register)
+- `validation` - Code/prompt validation (code, prompt)
+- `system` - System info (health, version, logs, pictures, voices)
 
 It provides structured access to:
 
@@ -82,6 +113,7 @@ Add to your Claude Desktop config file:
       "env": {
         "LANGFLOW_BASE_URL": "http://localhost:7860",
         "LANGFLOW_API_KEY": "your-api-key-here",
+        "LANGFLOW_CONSOLIDATED_TOOLS": "true",
         "MCP_MODE": "stdio",
         "LOG_LEVEL": "error"
       }
@@ -191,7 +223,11 @@ ENABLE_DEPRECATED_TOOLS=false
 
 ## Available MCP Tools
 
-Once connected, Claude can use **90 tools** (94 with deprecated tools enabled):
+Once connected, Claude can use:
+- **Standard mode**: 93 individual tools (97 with deprecated tools enabled)
+- **Consolidated mode**: 15 action-based tools (recommended for reduced token usage)
+
+### Standard Mode Tools (93 tools)
 
 ### Flow Management (6 tools)
 - **`create_flow`** - Create a new Langflow flow
