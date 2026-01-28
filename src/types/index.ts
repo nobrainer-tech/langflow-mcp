@@ -93,6 +93,7 @@ export interface RunResponse {
 export interface SimplifiedAPIRequest {
   input_value?: string;
   tweaks?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 export interface FolderRead {
@@ -281,6 +282,20 @@ export interface RunFlowAdvancedRequest {
   session_id?: string;
 }
 
+export interface RunFlowSessionRequest {
+  input_value?: string;
+  input_type?: string;
+  output_type?: string;
+  output_component?: string;
+  tweaks?: Record<string, unknown>;
+  session_id: string;
+}
+
+export interface RegistrationResponse {
+  email?: string;
+  registered: boolean;
+}
+
 export interface ProcessFlowRequest {
   inputs?: Record<string, unknown>;
   tweaks?: Record<string, unknown>;
@@ -316,6 +331,7 @@ export interface MessageResponse {
   sender_name?: string;
   text: string;
   timestamp: string;
+  context_id?: string;
   [key: string]: any;
 }
 

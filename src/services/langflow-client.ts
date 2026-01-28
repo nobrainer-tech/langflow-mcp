@@ -39,6 +39,8 @@ import {
   StoreTag,
   UserLike,
   RunFlowAdvancedRequest,
+  RunFlowSessionRequest,
+  RegistrationResponse,
   ProcessFlowRequest,
   PredictFlowRequest,
   MonitorBuildsParams,
@@ -586,15 +588,21 @@ export class LangflowClient {
     }
   }
 
-  async runFlowAdvanced(flowId: string, request: RunFlowAdvancedRequest, stream: boolean = false): Promise<RunResponse> {
+  async runFlowAdvanced(
+    flowIdOrName: string,
+    request: RunFlowAdvancedRequest,
+    stream: boolean = false,
+    userId?: string
+  ): Promise<RunResponse> {
     try {
-      const response = await this.client.post<RunResponse>(`/run/advanced/${encodeURIComponent(flowId)}`, {
-        ...request,
-        stream
-      });
+      const response = await this.client.post<RunResponse>(
+        `/run/advanced/${encodeURIComponent(flowIdOrName)}`,
+        { ...request, stream },
+        userId ? { params: { user_id: userId } } : undefined
+      );
       return response.data;
     } catch (error) {
-      throw this.handleError(error, `Failed to run flow ${flowId} (advanced)`);
+      throw this.handleError(error, `Failed to run flow ${flowIdOrName} (advanced)`);
     }
   }
 
@@ -704,11 +712,12 @@ export class LangflowClient {
 
   async buildVertices(flowId: string, request?: BuildVerticesRequest): Promise<VerticesOrderResponse> {
     try {
-      // API expects parameters as query params, not in request body (per api.yaml spec)
+      // API 1.7.2: 'data' moved to request body, other params remain in query
+      const { data, ...queryParams } = request || {};
       const response = await this.client.post<VerticesOrderResponse>(
         `/build/${encodeURIComponent(flowId)}/vertices`,
-        {},  // Empty body
-        { params: request }  // Parameters as query params
+        data ? { data } : {},
+        { params: queryParams }
       );
       return response.data;
     } catch (error) {
@@ -1254,6 +1263,48 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update store component ${componentId}`);
+    }
+  }
+
+  async runFlowSession(
+    flowIdOrName: string,
+    request: RunFlowSessionRequest,
+    stream: boolean = false
+  ): Promise<RunResponse> {
+    try {
+      const response = await this.client.post<RunResponse>(
+        `/run/session/${encodeURIComponent(flowIdOrName)}`,
+        { ...request, stream }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to run flow session ${flowIdOrName}`);
+    }
+  }
+
+  async getRegistration(): Promise<RegistrationResponse> {
+    try {
+      // Registration API is v2
+      const response = await this.client.get<RegistrationResponse>('/api/v2/registration/', {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get registration status');
+    }
+  }
+
+  async registerUser(email: string): Promise<RegistrationResponse> {
+    try {
+      // Registration API is v2
+      const response = await this.client.post<RegistrationResponse>(
+        '/api/v2/registration/',
+        { email },
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to register user');
     }
   }
 

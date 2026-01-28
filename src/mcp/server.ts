@@ -61,6 +61,9 @@ import {
   ListStoreTagsSchema,
   GetUserLikesSchema,
   RunFlowAdvancedSchema,
+  RunFlowSessionSchema,
+  GetRegistrationSchema,
+  RegisterUserSchema,
   ProcessFlowSchema,
   PredictFlowSchema,
   GetMonitorBuildsSchema,
@@ -741,8 +744,27 @@ export class LangflowMCPServer {
 
           case 'run_flow_advanced': {
             const validated = RunFlowAdvancedSchema.parse(args);
-            const { flow_id, stream, ...request } = validated;
-            const result = await this.client.runFlowAdvanced(flow_id, request, stream);
+            const { flow_id_or_name, stream, user_id, ...request } = validated;
+            const result = await this.client.runFlowAdvanced(flow_id_or_name, request, stream, user_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'run_flow_session': {
+            const validated = RunFlowSessionSchema.parse(args);
+            const { flow_id_or_name, stream, ...request } = validated;
+            const result = await this.client.runFlowSession(flow_id_or_name, request, stream);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_registration': {
+            GetRegistrationSchema.parse(args);
+            const result = await this.client.getRegistration();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'register_user': {
+            const validated = RegisterUserSchema.parse(args);
+            const result = await this.client.registerUser(validated.email);
             return this.formatSuccessResponse(result);
           }
 
