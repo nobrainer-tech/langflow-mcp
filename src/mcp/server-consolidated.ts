@@ -101,12 +101,14 @@ export class LangflowMCPServerConsolidated {
     seen = new WeakSet<object>()
   ): Record<string, unknown> {
     const MAX_DEPTH = 10;
+    const MAX_STRING_LENGTH = 200;
     const SENSITIVE_KEYS = new Set([
       'password', 'new_password', 'api_key', 'token',
       'access_token', 'refresh_token', 'authorization',
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
-      'private_key', 'secret', 'credentials', 'api-key'
+      'private_key', 'secret', 'credentials', 'api-key',
+      'file_content', 'file', 'content', 'payload', 'data'
     ]);
 
     if (depth > MAX_DEPTH) return { __error: 'max depth exceeded' };
@@ -117,13 +119,18 @@ export class LangflowMCPServerConsolidated {
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(args)) {
-      if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+      const keyLower = key.toLowerCase();
+      if (SENSITIVE_KEYS.has(keyLower)) {
         sanitized[key] = '***REDACTED***';
+      } else if (typeof value === 'string' && value.length > MAX_STRING_LENGTH) {
+        sanitized[key] = `${value.slice(0, MAX_STRING_LENGTH)}...[truncated ${value.length} chars]`;
       } else if (Array.isArray(value)) {
         sanitized[key] = value.map(item =>
           typeof item === 'object' && item !== null
             ? this.sanitizeSensitiveData(item as Record<string, unknown>, depth + 1, seen)
-            : item
+            : typeof item === 'string' && item.length > MAX_STRING_LENGTH
+              ? `${item.slice(0, MAX_STRING_LENGTH)}...[truncated]`
+              : item
         );
       } else if (typeof value === 'object' && value !== null) {
         sanitized[key] = this.sanitizeSensitiveData(value as Record<string, unknown>, depth + 1, seen);
@@ -140,7 +147,11 @@ export class LangflowMCPServerConsolidated {
     args?: Record<string, unknown>
   ): { content: Array<{ type: string; text: string }>; isError: boolean } {
     const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
-    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
+    // Sanitize error to avoid logging sensitive data from axios config/headers
+    const safeError = error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { message: String(error) };
+    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error: safeError });
 
     let errorMessage: string;
     let errorDetails: Record<string, unknown> = {};
@@ -625,7 +636,9 @@ export class LangflowMCPServerConsolidated {
     switch (validated.action) {
       case 'list': {
         const { action: _, page, size, ...rest } = validated;
-        const params = { skip: page, limit: size, ...rest };
+        // Convert 1-based page to 0-based skip offset
+        const skip = page && size ? (page - 1) * size : page ? page - 1 : undefined;
+        const params = { skip, limit: size, ...rest };
         const result = await this.client!.listUsers(params);
         return this.formatSuccessResponse(result);
       }

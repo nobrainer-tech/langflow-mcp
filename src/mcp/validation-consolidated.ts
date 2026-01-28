@@ -127,6 +127,7 @@ export const BuildToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('start'),
     flow_id: uuidSchema('flow ID'),
+    flow_name: z.string().optional(),
     inputs: z.record(z.string(), z.unknown()).optional(),
     data: z.record(z.string(), z.unknown()).optional(),
     files: z.array(z.string()).optional(),
