@@ -41,40 +41,40 @@ export class LangflowMCPServerConsolidated {
     const baseUrl = process.env.LANGFLOW_BASE_URL;
     const apiKey = process.env.LANGFLOW_API_KEY;
 
-    if (!baseUrl || !apiKey) {
-      throw new Error('LANGFLOW_BASE_URL and LANGFLOW_API_KEY must be set in environment');
-    }
-
-    try {
-      const url = new URL(baseUrl);
-      if (!['http:', 'https:'].includes(url.protocol)) {
-        throw new Error(`Invalid protocol: ${url.protocol}. Only http: and https: are allowed.`);
+    if (baseUrl && apiKey) {
+      try {
+        const url = new URL(baseUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          throw new Error(`Invalid protocol: ${url.protocol}. Only http: and https: are allowed.`);
+        }
+      } catch (error) {
+        if (error instanceof TypeError) {
+          throw new Error(`Invalid LANGFLOW_BASE_URL format: ${baseUrl}`);
+        }
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof TypeError) {
-        throw new Error(`Invalid LANGFLOW_BASE_URL format: ${baseUrl}`);
+
+      if (apiKey.length < 10) {
+        throw new Error('LANGFLOW_API_KEY appears to be invalid (too short)');
       }
-      throw error;
+
+      const DEFAULT_TIMEOUT = 30000;
+      const MIN_TIMEOUT = 1000;
+      const MAX_TIMEOUT = 300000;
+
+      const timeoutStr = process.env.LANGFLOW_TIMEOUT || String(DEFAULT_TIMEOUT);
+      let timeout = parseInt(timeoutStr, 10);
+
+      if (isNaN(timeout) || timeout < MIN_TIMEOUT || timeout > MAX_TIMEOUT) {
+        logger.warn(`Invalid LANGFLOW_TIMEOUT: ${timeoutStr}, using default: ${DEFAULT_TIMEOUT}`);
+        timeout = DEFAULT_TIMEOUT;
+      }
+
+      const config: LangflowConfig = { baseUrl, apiKey, timeout };
+      this.client = new LangflowClient(config);
+    } else {
+      logger.warn('LANGFLOW_BASE_URL or LANGFLOW_API_KEY not set. Server will start but tools will return errors until configured.');
     }
-
-    if (apiKey.length < 10) {
-      throw new Error('LANGFLOW_API_KEY appears to be invalid (too short)');
-    }
-
-    const DEFAULT_TIMEOUT = 30000;
-    const MIN_TIMEOUT = 1000;
-    const MAX_TIMEOUT = 300000;
-
-    const timeoutStr = process.env.LANGFLOW_TIMEOUT || String(DEFAULT_TIMEOUT);
-    let timeout = parseInt(timeoutStr, 10);
-
-    if (isNaN(timeout) || timeout < MIN_TIMEOUT || timeout > MAX_TIMEOUT) {
-      logger.warn(`Invalid LANGFLOW_TIMEOUT: ${timeoutStr}, using default: ${DEFAULT_TIMEOUT}`);
-      timeout = DEFAULT_TIMEOUT;
-    }
-
-    const config: LangflowConfig = { baseUrl, apiKey, timeout };
-    this.client = new LangflowClient(config);
 
     logger.info('Initializing Langflow MCP server (consolidated tools)');
 
@@ -264,7 +264,7 @@ export class LangflowMCPServerConsolidated {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (!this.client) {
-        throw new Error('Langflow client not initialized');
+        throw new Error('Langflow client not initialized. Set LANGFLOW_BASE_URL and LANGFLOW_API_KEY environment variables.');
       }
 
       const { name, arguments: rawArgs } = request.params;

@@ -16,20 +16,20 @@ describe('LangflowMCPServer Integration', () => {
   });
 
   describe('Server Initialization', () => {
-    it('should validate required environment variables', () => {
+    it('should start without env vars (graceful degradation)', () => {
       delete process.env.LANGFLOW_BASE_URL;
 
       expect(() => {
         new LangflowMCPServer();
-      }).toThrow('LANGFLOW_BASE_URL and LANGFLOW_API_KEY must be set');
+      }).not.toThrow();
     });
 
-    it('should validate API key presence', () => {
+    it('should start without API key (graceful degradation)', () => {
       delete process.env.LANGFLOW_API_KEY;
 
       expect(() => {
         new LangflowMCPServer();
-      }).toThrow('LANGFLOW_BASE_URL and LANGFLOW_API_KEY must be set');
+      }).not.toThrow();
     });
 
     it('should validate URL format', () => {
