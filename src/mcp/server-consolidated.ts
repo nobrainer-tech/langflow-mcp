@@ -3,12 +3,18 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ZodError } from 'zod';
 import { consolidatedTools } from './tools-consolidated';
 import { logger } from '../utils/logger';
 import { LangflowClient } from '../services/langflow-client';
 import { LangflowConfig } from '../types';
+import { langflowPrompts, getPromptMessages } from './prompts';
+import { langflowResources, getResourceContent } from './resources';
 import {
   FlowToolSchema,
   FlowExecutionToolSchema,
@@ -83,7 +89,7 @@ export class LangflowMCPServerConsolidated {
 
     this.server = new Server(
       { name: 'langflow-mcp', version: serverVersion },
-      { capabilities: { tools: {} } }
+      { capabilities: { tools: {}, prompts: {}, resources: {} } }
     );
 
     this.setupHandlers();
@@ -215,6 +221,46 @@ export class LangflowMCPServerConsolidated {
         inputSchema: tool.inputSchema,
       })),
     }));
+
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+      prompts: langflowPrompts.map(p => ({
+        name: p.name,
+        description: p.description,
+        arguments: p.arguments,
+      })),
+    }));
+
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name, arguments: promptArgs } = request.params;
+      const prompt = langflowPrompts.find(p => p.name === name);
+      if (!prompt) {
+        throw new Error(`Unknown prompt: ${name}`);
+      }
+      return {
+        description: prompt.description,
+        messages: getPromptMessages(name, (promptArgs ?? {}) as Record<string, string>),
+      };
+    });
+
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+      resources: langflowResources.map(r => ({
+        uri: r.uri,
+        name: r.name,
+        description: r.description,
+        mimeType: r.mimeType,
+      })),
+    }));
+
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const { uri } = request.params;
+      const resource = langflowResources.find(r => r.uri === uri);
+      if (!resource) {
+        throw new Error(`Unknown resource: ${uri}`);
+      }
+      return {
+        contents: [getResourceContent(uri)],
+      };
+    });
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (!this.client) {
