@@ -15,7 +15,7 @@ export const langflowResources: McpResource[] = [
   {
     uri: 'langflow://health',
     name: 'Langflow Health Status',
-    description: 'Current health status of the connected Langflow instance.',
+    description: 'Connection info and pointer to the health_check tool for live status.',
     mimeType: 'application/json',
   },
   {
