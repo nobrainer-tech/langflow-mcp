@@ -66,7 +66,7 @@ describe('healthcheck.js', () => {
     });
 
     it('should use default port 3000 when PORT is not set', async () => {
-      const env = { ...process.env, MCP_MODE: 'http' };
+      const env: NodeJS.ProcessEnv = { ...process.env, MCP_MODE: 'http' };
       delete env.PORT;
 
       try {

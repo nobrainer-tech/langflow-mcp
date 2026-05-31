@@ -13,16 +13,16 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.7.2**.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.9.5**.
 
-### v3.0.0 - Consolidated Tools Mode
+### Consolidated Tools Mode
 
-Version 3.0.0 introduces **Consolidated Tools Mode** - a new architecture that groups 93 individual tools into **15 action-based tools**. This significantly reduces token usage and improves AI assistant context management.
+**Consolidated Tools Mode** is an architecture that groups the 163 individual tools into **24 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
 
 | Mode | Tools | Best For |
 |------|-------|----------|
-| Standard | 93 tools | Full granular control |
-| Consolidated | 15 tools | Reduced token usage, better context |
+| Standard | 163 tools | Full granular control |
+| Consolidated | 24 tools | Reduced token usage, better context |
 
 To enable consolidated mode:
 ```bash
@@ -30,21 +30,30 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 ```
 
 **Consolidated tools:**
-- `flow` - All flow operations (list, get, create, update, delete, download, upload, etc.)
+- `flow` - All flow operations (list, get, create, update, delete, download, upload, replace, expand, batch, public)
 - `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
+- `flow_version` - Flow versions and lifecycle events (list, create, get, delete, activate, get_events, create_event)
 - `build` - Build operations (start, status, cancel, vertices)
+- `workflow` - Run and manage v2 workflows (run, get_result, stop)
+- `agentic` - Agentic assistant (assist, check_config, execute)
 - `folder` - Folder management (list, get, create, update, delete, download, upload)
 - `project` - Project management (list, get, create, update, delete, download, upload)
-- `variable` - Variable operations (list, create, update, delete)
-- `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload)
-- `file` - File operations (list, upload, download, delete, get_image)
+- `variable` - Variable operations (list, create, update, delete, detect)
+- `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload, create, preview/list chunks, ingest, cancel_ingest)
+- `file` - Flow-scoped file operations (list, upload, download, delete, get_image)
+- `file_v2` - User-scoped v2 files (list, upload, get, rename, delete, delete_all, batch_download, batch_delete)
 - `monitor` - Monitoring (builds, messages, sessions, transactions)
-- `user` - User management (list, get, get_current, update, reset_password)
-- `auth` - Authentication (login, auto_login, logout, refresh, api keys)
-- `store` - Component store (list, get, tags, likes)
+- `trace` - Execution traces (list, get, delete, delete_by_flow)
+- `model` - Models and providers (list, providers, enabled, default get/set/delete, mapping, validate, options)
+- `user` - User management (list, get_current, update, reset_password, create)
+- `auth` - Authentication (login, auto_login, logout, refresh, api keys, save_store_key)
+- `store` - Component store (list, get, tags, likes, save_api_key, create, like, update_custom)
 - `registration` - User registration (get, register)
 - `validation` - Code/prompt validation (code, prompt)
-- `system` - System info (health, version, logs, pictures, voices)
+- `mcp_server` - MCP server management (list, get, create, update, delete)
+- `mcp_project` - MCP project config/install (get/update config, get_installed, install, composer_url)
+- `response` - OpenAI-compatible responses (create)
+- `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
 
 It provides structured access to:
 
@@ -209,50 +218,81 @@ environment:
   - AUTH_TOKEN=your-secure-token
 ```
 
-## Deprecated Tools
-
-⚠️ **Important**: This server includes 4 deprecated tools that match deprecated endpoints in Langflow API 1.6.4:
-- `build_vertices` - Use `build_flow` instead
-- `get_vertex` - Use `build_flow` or `get_flow` instead
-- `stream_vertex_build` - Use `get_build_status` with streaming instead
-- `get_task_status` - Use `get_build_status` instead
-
-These tools are **enabled by default** but marked with ⚠️ warnings. To disable them, set:
-```bash
-ENABLE_DEPRECATED_TOOLS=false
-```
-
 ## Available MCP Tools
 
 Once connected, Claude can use:
-- **Standard mode**: 93 individual tools (97 with deprecated tools enabled)
-- **Consolidated mode**: 15 action-based tools (recommended for reduced token usage)
+- **Standard mode**: 163 individual tools
+- **Consolidated mode**: 24 action-based tools (recommended for reduced token usage)
 
-### Standard Mode Tools (93 tools)
+> **Note**: Raw MCP transport endpoints (SSE/streamable, `/api/mcp/*`) and doc-rendering
+> endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
+> tools — they are protocol/transport surfaces, not data operations.
 
-### Flow Management (6 tools)
+### Standard Mode Tools (163 tools)
+
+### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
 - **`list_flows`** - List all flows with pagination and filtering
 - **`get_flow`** - Get details of a specific flow by ID
 - **`update_flow`** - Update an existing flow
 - **`delete_flow`** - Delete a single flow
 - **`delete_flows`** - Delete multiple flows at once
-
-### Flow Execution (2 tools)
-- **`run_flow`** - Execute a flow with input configuration (supports streaming)
-- **`trigger_webhook`** - Trigger a flow via webhook endpoint
-
-### Import/Export (3 tools)
+- **`replace_flow`** - Replace a flow's full definition
+- **`expand_flows`** - Expand flows with embedded component data
 - **`upload_flow`** - Upload a flow from JSON data
 - **`download_flows`** - Download multiple flows as JSON export
 - **`get_basic_examples`** - Get pre-built example flows
+- **`batch_create_flows`** - Create multiple flows in one operation
+- **`get_public_flow`** - Get a public flow without authentication
 
-### Folder Management (5 tools)
+### Flow Execution (7 tools)
+- **`run_flow`** - Execute a flow with input configuration (supports streaming)
+- **`run_flow_advanced`** - Advanced flow execution with full control
+- **`run_flow_session`** - Execute a flow within a session context
+- **`trigger_webhook`** - Trigger a flow via webhook endpoint
+- **`get_webhook_events`** - Get webhook trigger events for a flow
+- **`process_flow`** - Legacy process endpoint for flows
+- **`predict_flow`** - Legacy predict endpoint for flows
+
+### Flow Versions & Events (7 tools)
+- **`list_flow_versions`** - List versions of a flow
+- **`create_flow_version`** - Create a new flow version
+- **`get_flow_version`** - Get a specific flow version
+- **`delete_flow_version`** - Delete a flow version
+- **`activate_flow_version`** - Activate a specific flow version
+- **`get_flow_events`** - Get lifecycle events for a flow
+- **`create_flow_event`** - Create a lifecycle event for a flow
+
+### Build Operations (6 tools)
+- **`build_flow`** - Build/compile a flow and return job_id for async execution
+- **`get_build_status`** - Poll build status and events for a specific job
+- **`cancel_build`** - Cancel a running build job
+- **`get_task_status`** - Get status of an async task
+- **`build_vertices`** - Get vertex build order for a flow
+- **`stream_vertex_build`** - Stream real-time build events for a vertex
+
+### Workflows (v2) (3 tools)
+- **`run_workflow`** - Run a v2 workflow
+- **`get_workflow_result`** - Get the result of a workflow run
+- **`stop_workflow`** - Stop a running workflow
+
+### Agentic (3 tools)
+- **`agentic_assist`** - Get agentic assistance for a flow component
+- **`agentic_check_config`** - Check whether agentic features are configured
+- **`agentic_execute`** - Execute an agentic flow by name
+
+### Responses (2 tools)
+- **`create_response`** - Create an OpenAI-compatible response
+- **`get_session`** - Get a response/conversation session
+
+### Folder Management (7 tools)
 - **`list_folders`** - List all folders with pagination
 - **`create_folder`** - Create a new folder
 - **`get_folder`** - Get folder details by ID
 - **`update_folder`** - Update folder name, description, or parent
 - **`delete_folder`** - Delete a folder
+- **`download_folder`** - Download entire folder as archive
+- **`upload_folder`** - Upload folder from archive
 
 ### Project Management (7 tools)
 - **`list_projects`** - List all projects with pagination
@@ -263,25 +303,25 @@ Once connected, Claude can use:
 - **`upload_project`** - Upload a project from JSON data
 - **`download_project`** - Download a project as JSON export
 
-### Variable Management (4 tools)
+### Variable Management (5 tools)
 - **`list_variables`** - List all global variables
 - **`create_variable`** - Create a new variable
 - **`update_variable`** - Update variable properties
 - **`delete_variable`** - Delete a variable
+- **`detect_variables`** - Detect variables referenced in a value/template
 
-### Build Operations (3 tools)
-- **`build_flow`** - Build/compile a flow and return job_id for async execution
-- **`get_build_status`** - Poll build status and events for a specific job
-- **`cancel_build`** - Cancel a running build job
-
-### Knowledge Base Management (4 tools)
+### Knowledge Base Management (11 tools)
 - **`list_knowledge_bases`** - List all available knowledge bases
+- **`list_knowledge_bases_detailed`** - List knowledge bases with detailed metadata
 - **`get_knowledge_base`** - Get detailed information about a specific knowledge base
+- **`create_knowledge_base`** - Create a new knowledge base
 - **`delete_knowledge_base`** - Delete a specific knowledge base
 - **`bulk_delete_knowledge_bases`** - Delete multiple knowledge bases at once
-
-### Component Discovery (1 tool)
-- **`list_components`** - List all available Langflow components
+- **`upload_knowledge_base`** - Upload a file to create/update a knowledge base
+- **`preview_knowledge_base_chunks`** - Preview how a document will be chunked
+- **`list_knowledge_base_chunks`** - List stored chunks for a knowledge base
+- **`ingest_knowledge_base`** - Ingest documents into a knowledge base
+- **`cancel_knowledge_base_ingest`** - Cancel an in-progress ingest job
 
 ### File Management (5 tools)
 - **`upload_file`** - Upload a file to a specific flow
@@ -290,37 +330,73 @@ Once connected, Claude can use:
 - **`delete_file`** - Delete a file from a flow
 - **`get_file_image`** - Get an image file from a flow
 
-### Monitoring & Analytics (9 tools)
+### Files (v2) (8 tools)
+- **`list_files_v2`** - List all user-scoped v2 files
+- **`upload_file_v2`** - Upload a v2 file
+- **`get_file_v2`** - Get v2 file metadata or content
+- **`rename_file_v2`** - Rename a v2 file
+- **`delete_file_v2`** - Delete a v2 file
+- **`delete_all_files_v2`** - Delete all v2 files
+- **`batch_download_files_v2`** - Download multiple v2 files
+- **`batch_delete_files_v2`** - Delete multiple v2 files
+
+### Component Discovery & Custom Components (3 tools)
+- **`list_components`** - List all available Langflow components
+- **`create_custom_component`** - Create a new custom component
+- **`update_custom_component`** - Update an existing custom component
+
+### Monitoring & Analytics (12 tools)
 - **`get_monitor_builds`** - Get build execution history for a flow
 - **`get_monitor_messages`** - Query chat/message history with filtering
 - **`get_monitor_message`** - Get details of a specific message
+- **`update_monitor_message`** - Update a stored message
 - **`get_monitor_sessions`** - List all chat session IDs
 - **`get_monitor_session_messages`** - Get all messages for a session
 - **`migrate_monitor_session`** - Migrate messages between sessions
 - **`get_monitor_transactions`** - List transaction logs for a flow
 - **`delete_monitor_builds`** - Delete build history for a flow
 - **`delete_monitor_messages`** - Delete multiple messages by ID
+- **`delete_monitor_session_messages`** - Delete all messages for a session
+- **`delete_monitor_sessions`** - Delete chat sessions
 
-### Vertex Operations ⚠️ *DEPRECATED* (3 tools)
-- **`build_vertices`** ⚠️ *DEPRECATED* - Get vertex build order for a flow (use `build_flow` instead)
-- **`get_vertex`** ⚠️ *DEPRECATED* - Get details of a specific vertex/component (use `build_flow` or `get_flow` instead)
-- **`stream_vertex_build`** ⚠️ *DEPRECATED* - Stream real-time build events for a vertex (use `get_build_status` with streaming instead)
+### Traces (4 tools)
+- **`list_traces`** - List execution traces with filters
+- **`get_trace`** - Get a specific execution trace
+- **`delete_trace`** - Delete a specific trace
+- **`delete_traces`** - Delete all traces for a flow
+
+### Shared Messages (5 tools)
+- **`get_shared_messages`** - Get shared messages
+- **`get_shared_sessions`** - Get shared sessions
+- **`update_shared_message`** - Update a shared message
+- **`migrate_shared_session`** - Migrate a shared session
+- **`delete_shared_session`** - Delete a shared session
+
+### Models & Providers (12 tools)
+- **`list_models`** - List available models
+- **`list_model_providers`** - List all model providers
+- **`list_enabled_providers`** - List enabled providers
+- **`list_enabled_models`** - List enabled models
+- **`set_enabled_models`** - Enable/disable models
+- **`get_default_model`** - Get the default model for a type
+- **`set_default_model`** - Set the default model for a type
+- **`delete_default_model`** - Remove the default model for a type
+- **`get_provider_variable_mapping`** - Get provider-to-variable mapping
+- **`validate_model_provider`** - Validate provider credentials
+- **`get_language_model_options`** - Get language model options
+- **`get_embedding_model_options`** - Get embedding model options
 
 ### User Management (5 tools)
 - **`list_users`** - List all users (admin only)
 - **`get_current_user`** - Get current authenticated user info
-- **`get_user`** - Get details of a specific user
 - **`update_user`** - Update user profile information
 - **`reset_user_password`** - Reset password for a user (admin only)
+- **`create_user`** - Create a new user (admin only)
 
 ### API Key Management (3 tools)
 - **`list_api_keys`** - List all API keys for the user
 - **`create_api_key`** - Create a new API key
 - **`delete_api_key`** - Delete an API key
-
-### Custom Components (2 tools)
-- **`list_custom_components`** - List all custom components
-- **`create_custom_component`** - Create a new custom component
 
 ### Authentication (4 tools)
 - **`login`** - Authenticate with username and password
@@ -328,35 +404,41 @@ Once connected, Claude can use:
 - **`refresh_token`** - Refresh authentication token
 - **`logout`** - Logout and invalidate session
 
-### Store & Marketplace (6 tools)
+### Registration (2 tools)
+- **`get_registration`** - Check whether registration is enabled
+- **`register_user`** - Register a new user account
+
+### Store & Marketplace (9 tools)
 - **`check_store`** - Check if component store is enabled
 - **`check_store_api_key`** - Validate a store API key
+- **`save_store_api_key`** - Save a store API key
 - **`list_store_components`** - Browse available components in the store
 - **`get_store_component`** - Get details of a store component
+- **`create_store_component`** - Publish a component to the store
+- **`like_store_component`** - Like a store component
 - **`list_store_tags`** - List all component tags in the store
 - **`get_user_likes`** - Get components liked by user
 
-### Validation Tools (2 tools)
+### Validation (2 tools)
 - **`validate_code`** - Validate Python code for custom components
 - **`validate_prompt`** - Validate prompt template syntax
 
-### Advanced Execution (3 tools)
-- **`run_flow_advanced`** - Advanced flow execution with full control
-- **`process_flow`** - Legacy process endpoint for flows
-- **`predict_flow`** - Legacy predict endpoint for flows
+### MCP Servers (v2) (5 tools)
+- **`list_mcp_servers`** - List MCP servers registered with Langflow
+- **`get_mcp_server`** - Get an MCP server by name
+- **`create_mcp_server`** - Create an MCP server
+- **`update_mcp_server`** - Update an MCP server
+- **`delete_mcp_server`** - Delete an MCP server
 
-### Batch & Public Operations (3 tools)
-- **`get_public_flow`** - Get a public flow without authentication
-- **`batch_create_flows`** - Create multiple flows in one operation
-- **`get_task_status`** ⚠️ *DEPRECATED* - Get status of an async task (use `get_build_status` instead)
+### MCP Project Management (5 tools)
+- **`get_mcp_project_config`** - Get MCP config for a project
+- **`update_mcp_project_config`** - Update MCP config for a project
+- **`get_mcp_project_installed`** - Get installed MCP clients for a project
+- **`install_mcp_project`** - Install MCP for a project into a client
+- **`get_mcp_project_composer_url`** - Get the MCP composer URL for a project
 
-### Folder Operations (2 tools)
-- **`download_folder`** - Download entire folder as archive
-- **`upload_folder`** - Upload folder from archive
-
-### Starter & Templates (2 tools)
+### Starter & Templates (1 tool)
 - **`list_starter_projects`** - List available starter templates
-- **`upload_knowledge_base`** - Upload file to create/update knowledge base
 
 ### Profile & Media (2 tools)
 - **`list_profile_pictures`** - List available profile pictures
@@ -365,9 +447,10 @@ Once connected, Claude can use:
 ### Integration Tools (1 tool)
 - **`list_elevenlabs_voices`** - List ElevenLabs text-to-speech voices
 
-### System & Health (3 tools)
+### System & Health (4 tools)
 - **`get_version`** - Get Langflow API version information
 - **`health_check`** - Check Langflow instance health status
+- **`get_health_check`** - Get a detailed health-check report
 - **`get_logs`** - Retrieve system logs (supports streaming)
 
 ## Example Usage

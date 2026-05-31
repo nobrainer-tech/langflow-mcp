@@ -79,7 +79,6 @@ describe('MCP Tools Definitions', () => {
   describe('Deprecated Tools', () => {
     const deprecatedToolNames = [
       'build_vertices',
-      'get_vertex',
       'stream_vertex_build',
       'get_task_status'
     ];
@@ -104,7 +103,6 @@ describe('MCP Tools Definitions', () => {
     it('should suggest alternative tools', () => {
       const alternatives: Record<string, string[]> = {
         'build_vertices': ['build_flow'],
-        'get_vertex': ['build_flow', 'get_flow'],
         'stream_vertex_build': ['get_build_status'],
         'get_task_status': ['get_build_status']
       };
@@ -123,12 +121,12 @@ describe('MCP Tools Definitions', () => {
       });
     });
 
-    it('should have exactly 4 deprecated tools', () => {
+    it('should have exactly 3 deprecated tools', () => {
       const deprecatedTools = langflowMCPTools.filter(tool =>
         deprecatedToolNames.includes(tool.name)
       );
 
-      expect(deprecatedTools.length).toBe(4);
+      expect(deprecatedTools.length).toBe(3);
     });
   });
 
@@ -179,9 +177,8 @@ describe('MCP Tools Definitions', () => {
 
   describe('Tool Count', () => {
     it('should have expected total number of tools', () => {
-      // Expected: 90 active tools + 4 deprecated tools = 94 total
-      expect(langflowMCPTools.length).toBeGreaterThanOrEqual(90);
-      expect(langflowMCPTools.length).toBeLessThanOrEqual(100);
+      // Expected: 160 active tools + 3 deprecated tools = 163 total
+      expect(langflowMCPTools.length).toBe(163);
     });
 
     it('should maintain consistent tool count', () => {

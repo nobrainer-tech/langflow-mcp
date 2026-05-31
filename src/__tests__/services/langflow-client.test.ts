@@ -102,7 +102,6 @@ import {
 import {
   mockBuildVerticesRequest,
   mockVerticesOrderResponse,
-  mockGetVertexParams,
   mockVertexResponse,
   mockStreamVertexBuildParams,
   mockStreamVertexResponse
@@ -422,6 +421,7 @@ describe('LangflowClient', () => {
       const result = await client.healthCheck();
 
       expect(result).toBe(true);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should return false on failed health check', async () => {
@@ -1680,52 +1680,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('getMonitorMessageById', () => {
-    it('should retrieve a specific message by ID', async () => {
-      const messageId = mockMonitorMessage.id;
-      mock.onGet(`/monitor/messages/${messageId}`).reply(200, mockMonitorMessage);
-
-      const result = await client.getMonitorMessageById(messageId);
-
-      expect(result).toEqual(mockMonitorMessage);
-      expect(result.id).toBe(messageId);
-    });
-
-    it('should handle 404 Not Found for non-existent message', async () => {
-      const messageId = 'non-existent-uuid';
-      mock.onGet(`/monitor/messages/${messageId}`).reply(404, { detail: 'Message not found' });
-
-      await expect(client.getMonitorMessageById(messageId)).rejects.toThrow(
-        'Failed to get monitor message'
-      );
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const messageId = mockMonitorMessage.id;
-      mock.onGet(`/monitor/messages/${messageId}`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getMonitorMessageById(messageId)).rejects.toThrow(
-        'Failed to get monitor message'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const messageId = mockMonitorMessage.id;
-      mock.onGet(`/monitor/messages/${messageId}`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getMonitorMessageById(messageId)).rejects.toThrow(
-        'Failed to get monitor message'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const messageId = mockMonitorMessage.id;
-      mock.onGet(`/monitor/messages/${messageId}`).timeout();
-
-      await expect(client.getMonitorMessageById(messageId)).rejects.toThrow();
-    });
-  });
-
   describe('getMonitorTransactions', () => {
     it('should retrieve all transactions successfully', async () => {
       mock.onGet('/monitor/transactions').reply(200, [mockMonitorTransaction]);
@@ -1764,149 +1718,6 @@ describe('LangflowClient', () => {
       mock.onGet('/monitor/transactions').timeout();
 
       await expect(client.getMonitorTransactions()).rejects.toThrow();
-    });
-  });
-
-  describe('getMonitorTransactionById', () => {
-    it('should retrieve a specific transaction by ID', async () => {
-      const transactionId = mockMonitorTransaction.id;
-      mock.onGet(`/monitor/transactions/${transactionId}`).reply(200, mockMonitorTransaction);
-
-      const result = await client.getMonitorTransactionById(transactionId);
-
-      expect(result).toEqual(mockMonitorTransaction);
-      expect(result.id).toBe(transactionId);
-    });
-
-    it('should handle 404 Not Found for non-existent transaction', async () => {
-      const transactionId = 'non-existent-uuid';
-      mock.onGet(`/monitor/transactions/${transactionId}`).reply(404, { detail: 'Not found' });
-
-      await expect(client.getMonitorTransactionById(transactionId)).rejects.toThrow(
-        'Failed to get monitor transaction'
-      );
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const transactionId = mockMonitorTransaction.id;
-      mock.onGet(`/monitor/transactions/${transactionId}`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getMonitorTransactionById(transactionId)).rejects.toThrow(
-        'Failed to get monitor transaction'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const transactionId = mockMonitorTransaction.id;
-      mock.onGet(`/monitor/transactions/${transactionId}`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getMonitorTransactionById(transactionId)).rejects.toThrow(
-        'Failed to get monitor transaction'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const transactionId = mockMonitorTransaction.id;
-      mock.onGet(`/monitor/transactions/${transactionId}`).timeout();
-
-      await expect(client.getMonitorTransactionById(transactionId)).rejects.toThrow();
-    });
-  });
-
-  describe('getMonitorVertexBuilds', () => {
-    it('should retrieve vertex builds with flow_id', async () => {
-      const flowId = mockVertexBuild.flow_id;
-      mock.onGet('/monitor/vertices/builds').reply(200, [mockVertexBuild]);
-
-      const result = await client.getMonitorVertexBuilds({ flow_id: flowId });
-
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(mockVertexBuild);
-      expect(result[0].flow_id).toBe(flowId);
-    });
-
-    it('should retrieve all vertex builds without filters', async () => {
-      mock.onGet('/monitor/vertices/builds').reply(200, [mockVertexBuild]);
-
-      const result = await client.getMonitorVertexBuilds();
-
-      expect(result).toHaveLength(1);
-    });
-
-    it('should handle 404 Not Found', async () => {
-      mock.onGet('/monitor/vertices/builds').reply(404, { detail: 'Not found' });
-
-      await expect(client.getMonitorVertexBuilds()).rejects.toThrow(
-        'Failed to get monitor vertex builds'
-      );
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      mock.onGet('/monitor/vertices/builds').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getMonitorVertexBuilds()).rejects.toThrow(
-        'Failed to get monitor vertex builds'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      mock.onGet('/monitor/vertices/builds').reply(500, { detail: 'Service error' });
-
-      await expect(client.getMonitorVertexBuilds()).rejects.toThrow(
-        'Failed to get monitor vertex builds'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      mock.onGet('/monitor/vertices/builds').timeout();
-
-      await expect(client.getMonitorVertexBuilds()).rejects.toThrow();
-    });
-  });
-
-  describe('getMonitorVertexBuildById', () => {
-    it('should retrieve a specific vertex build by ID', async () => {
-      const vertexBuildId = mockVertexBuild.id;
-      mock.onGet(`/monitor/vertices/builds/${vertexBuildId}`).reply(200, mockVertexBuild);
-
-      const result = await client.getMonitorVertexBuildById(vertexBuildId);
-
-      expect(result).toEqual(mockVertexBuild);
-      expect(result.id).toBe(vertexBuildId);
-    });
-
-    it('should handle 404 Not Found for non-existent vertex build', async () => {
-      const vertexBuildId = 'non-existent-uuid';
-      mock.onGet(`/monitor/vertices/builds/${vertexBuildId}`).reply(404, { detail: 'Not found' });
-
-      await expect(client.getMonitorVertexBuildById(vertexBuildId)).rejects.toThrow(
-        'Failed to get monitor vertex build'
-      );
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const vertexBuildId = mockVertexBuild.id;
-      mock.onGet(`/monitor/vertices/builds/${vertexBuildId}`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getMonitorVertexBuildById(vertexBuildId)).rejects.toThrow(
-        'Failed to get monitor vertex build'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const vertexBuildId = mockVertexBuild.id;
-      mock.onGet(`/monitor/vertices/builds/${vertexBuildId}`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getMonitorVertexBuildById(vertexBuildId)).rejects.toThrow(
-        'Failed to get monitor vertex build'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const vertexBuildId = mockVertexBuild.id;
-      mock.onGet(`/monitor/vertices/builds/${vertexBuildId}`).timeout();
-
-      await expect(client.getMonitorVertexBuildById(vertexBuildId)).rejects.toThrow();
     });
   });
 
@@ -2129,278 +1940,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('uploadTextData', () => {
-    it('should upload text data successfully', async () => {
-      const flowId = mockFileMetadata.flow_id;
-      const fileName = 'data.txt';
-      const textContent = 'Sample text content';
-      const uploadResponse = { ...mockFileMetadata, file_name: fileName };
-      mock.onPost(`/files/upload/${flowId}/text`).reply(200, uploadResponse);
-
-      const result = await client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent });
-
-      expect(result).toEqual(uploadResponse);
-      expect(result.file_name).toBe(fileName);
-    });
-
-    it('should handle 400 Bad Request for invalid input', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'data.txt';
-      const textContent = 'Sample text';
-      mock.onPost(`/files/upload/${flowId}/text`).reply(400, { detail: 'Invalid request' });
-
-      await expect(client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent })).rejects.toThrow(
-        'Failed to upload text data'
-      );
-    });
-
-    it('should handle 413 Payload Too Large', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'large.txt';
-      const textContent = 'x'.repeat(20 * 1024 * 1024);
-      mock.onPost(`/files/upload/${flowId}/text`).reply(413, { detail: 'Text too large' });
-
-      await expect(client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent })).rejects.toThrow(
-        'Failed to upload text data'
-      );
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'data.txt';
-      const textContent = 'Sample text';
-      mock.onPost(`/files/upload/${flowId}/text`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent })).rejects.toThrow(
-        'Failed to upload text data'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'data.txt';
-      const textContent = 'Sample text';
-      mock.onPost(`/files/upload/${flowId}/text`).reply(500, { detail: 'Service error' });
-
-      await expect(client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent })).rejects.toThrow(
-        'Failed to upload text data'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'data.txt';
-      const textContent = 'Sample text';
-      mock.onPost(`/files/upload/${flowId}/text`).timeout();
-
-      await expect(client.uploadTextData({ flow_id: flowId, file_name: fileName, text_data: textContent })).rejects.toThrow();
-    });
-  });
-
-  describe('listFilesDetailed', () => {
-    it('should list files with detailed metadata successfully', async () => {
-      const flowId = mockFileMetadata.flow_id;
-      mock.onGet(`/files/${flowId}/detailed`).reply(200, [mockFileMetadata]);
-
-      const result = await client.listFilesDetailed({ flow_id: flowId });
-
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(mockFileMetadata);
-      expect(result[0].file_name).toBe(mockFileMetadata.file_name);
-    });
-
-    it('should handle empty detailed file list', async () => {
-      const flowId = 'empty-flow-uuid';
-      mock.onGet(`/files/${flowId}/detailed`).reply(200, []);
-
-      const result = await client.listFilesDetailed({ flow_id: flowId });
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      mock.onGet(`/files/${flowId}/detailed`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.listFilesDetailed({ flow_id: flowId })).rejects.toThrow('Failed to get detailed file list');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onGet(`/files/${flowId}/detailed`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.listFilesDetailed({ flow_id: flowId })).rejects.toThrow('Failed to get detailed file list');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onGet(`/files/${flowId}/detailed`).reply(500, { detail: 'Service error' });
-
-      await expect(client.listFilesDetailed({ flow_id: flowId })).rejects.toThrow('Failed to get detailed file list');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onGet(`/files/${flowId}/detailed`).timeout();
-
-      await expect(client.listFilesDetailed({ flow_id: flowId })).rejects.toThrow();
-    });
-  });
-
-  describe('getFileMetadata', () => {
-    it('should retrieve file metadata successfully', async () => {
-      const flowId = mockFileMetadata.flow_id;
-      const fileName = mockFileMetadata.file_name;
-      mock.onGet(`/files/${flowId}/${fileName}/metadata`).reply(200, mockFileMetadata);
-
-      const result = await client.getFileMetadata({ flow_id: flowId, file_name: fileName });
-
-      expect(result).toEqual(mockFileMetadata);
-      expect(result.file_name).toBe(fileName);
-    });
-
-    it('should handle 404 Not Found for non-existent file', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'non-existent.txt';
-      mock.onGet(`/files/${flowId}/${fileName}/metadata`).reply(404, { detail: 'File not found' });
-
-      await expect(client.getFileMetadata({ flow_id: flowId, file_name: fileName })).rejects.toThrow(
-        'Failed to get file metadata'
-      );
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'test.txt';
-      mock.onGet(`/files/${flowId}/${fileName}/metadata`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.getFileMetadata({ flow_id: flowId, file_name: fileName })).rejects.toThrow(
-        'Failed to get file metadata'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'test.txt';
-      mock.onGet(`/files/${flowId}/${fileName}/metadata`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getFileMetadata({ flow_id: flowId, file_name: fileName })).rejects.toThrow(
-        'Failed to get file metadata'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = 'test-flow-uuid';
-      const fileName = 'test.txt';
-      mock.onGet(`/files/${flowId}/${fileName}/metadata`).timeout();
-
-      await expect(client.getFileMetadata({ flow_id: flowId, file_name: fileName })).rejects.toThrow();
-    });
-  });
-
-  describe('validateFlow', () => {
-    it('should validate a flow successfully', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).reply(200, mockValidationSuccess);
-
-      const result = await client.validateFlow({ flow_id: flowId });
-
-      expect(result).toEqual(mockValidationSuccess);
-      expect(result.is_valid).toBe(true);
-    });
-
-    it('should handle validation errors', async () => {
-      const flowId = 'invalid-flow-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).reply(200, mockValidationError);
-
-      const result = await client.validateFlow({ flow_id: flowId });
-
-      expect(result.is_valid).toBe(false);
-      expect(result.errors).toHaveLength(2);
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.validateFlow({ flow_id: flowId })).rejects.toThrow('Failed to validate flow');
-    });
-
-    it('should handle 400 Bad Request', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).reply(400, { detail: 'Invalid request' });
-
-      await expect(client.validateFlow({ flow_id: flowId })).rejects.toThrow('Failed to validate flow');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).reply(500, { detail: 'Service error' });
-
-      await expect(client.validateFlow({ flow_id: flowId })).rejects.toThrow('Failed to validate flow');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = 'test-flow-uuid';
-      mock.onPost(`/flows/${flowId}/validate`).timeout();
-
-      await expect(client.validateFlow({ flow_id: flowId })).rejects.toThrow();
-    });
-  });
-
-  describe('validateConnection', () => {
-    it('should validate a connection successfully', async () => {
-      const params = {
-        source_id: 'node-1',
-        target_id: 'node-2',
-        source_handle: 'output',
-        target_handle: 'input',
-      };
-      mock.onPost('/validate/connection').reply(200, mockValidationSuccess);
-
-      const result = await client.validateConnection(params);
-
-      expect(result).toEqual(mockValidationSuccess);
-      expect(result.is_valid).toBe(true);
-    });
-
-    it('should handle invalid connection', async () => {
-      const params = {
-        source_id: 'node-1',
-        target_id: 'node-2',
-        source_handle: 'output',
-        target_handle: 'incompatible-input',
-      };
-      mock.onPost('/validate/connection').reply(200, mockValidationError);
-
-      const result = await client.validateConnection(params);
-
-      expect(result.is_valid).toBe(false);
-      expect(result.errors).toBeDefined();
-    });
-
-    it('should handle 400 Bad Request', async () => {
-      const params = { source_id: 'node-1', target_id: 'node-2' };
-      mock.onPost('/validate/connection').reply(400, { detail: 'Invalid request' });
-
-      await expect(client.validateConnection(params)).rejects.toThrow('Failed to validate connection');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const params = { source_id: 'node-1', target_id: 'node-2' };
-      mock.onPost('/validate/connection').reply(500, { detail: 'Service error' });
-
-      await expect(client.validateConnection(params)).rejects.toThrow('Failed to validate connection');
-    });
-
-    it('should handle network timeout', async () => {
-      const params = { source_id: 'node-1', target_id: 'node-2' };
-      mock.onPost('/validate/connection').timeout();
-
-      await expect(client.validateConnection(params)).rejects.toThrow();
-    });
-  });
-
   describe('listStoreComponents', () => {
     it('should list all store components successfully', async () => {
       mock.onGet('/store/components/').reply(200, [mockStoreComponent]);
@@ -2489,98 +2028,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('installStoreComponent', () => {
-    it('should install a store component successfully', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onPost(`/store/components/${componentId}/install`).reply(200, mockStoreInstallResponse);
-
-      const result = await client.installStoreComponent(componentId);
-
-      expect(result).toEqual(mockStoreInstallResponse);
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle already installed component', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onPost(`/store/components/${componentId}/install`).reply(409, { detail: 'Already installed' });
-
-      await expect(client.installStoreComponent(componentId)).rejects.toThrow('Failed to install store component');
-    });
-
-    it('should handle 404 Not Found', async () => {
-      const componentId = 'non-existent-uuid';
-      mock.onPost(`/store/components/${componentId}/install`).reply(404, { detail: 'Component not found' });
-
-      await expect(client.installStoreComponent(componentId)).rejects.toThrow('Failed to install store component');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onPost(`/store/components/${componentId}/install`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.installStoreComponent(componentId)).rejects.toThrow('Failed to install store component');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onPost(`/store/components/${componentId}/install`).reply(500, { detail: 'Installation failed' });
-
-      await expect(client.installStoreComponent(componentId)).rejects.toThrow('Failed to install store component');
-    });
-
-    it('should handle network timeout', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onPost(`/store/components/${componentId}/install`).timeout();
-
-      await expect(client.installStoreComponent(componentId)).rejects.toThrow();
-    });
-  });
-
-  describe('uninstallStoreComponent', () => {
-    it('should uninstall a store component successfully', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onDelete(`/store/components/${componentId}/uninstall`).reply(200, { success: true });
-
-      const result = await client.uninstallStoreComponent(componentId);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle 404 Not Found for non-installed component', async () => {
-      const componentId = 'non-existent-uuid';
-      mock.onDelete(`/store/components/${componentId}/uninstall`).reply(404, { detail: 'Component not installed' });
-
-      await expect(client.uninstallStoreComponent(componentId)).rejects.toThrow(
-        'Failed to uninstall store component'
-      );
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onDelete(`/store/components/${componentId}/uninstall`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.uninstallStoreComponent(componentId)).rejects.toThrow(
-        'Failed to uninstall store component'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onDelete(`/store/components/${componentId}/uninstall`).reply(500, { detail: 'Uninstallation failed' });
-
-      await expect(client.uninstallStoreComponent(componentId)).rejects.toThrow(
-        'Failed to uninstall store component'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const componentId = mockStoreComponent.id;
-      mock.onDelete(`/store/components/${componentId}/uninstall`).timeout();
-
-      await expect(client.uninstallStoreComponent(componentId)).rejects.toThrow();
-    });
-  });
-
   describe('updateStoreComponent', () => {
     it('should update a store component successfully', async () => {
       const componentId = mockStoreComponent.id;
@@ -2630,202 +2077,6 @@ describe('LangflowClient', () => {
       mock.onPatch(`/store/components/${componentId}`).timeout();
 
       await expect(client.updateStoreComponent(componentId, updates)).rejects.toThrow();
-    });
-  });
-
-  describe('searchStoreComponents', () => {
-    it('should search store components by query', async () => {
-      const query = 'openai';
-      mock.onGet('/store/components/search').reply(200, [mockStoreComponent]);
-
-      const result = await client.searchStoreComponents(query);
-
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(mockStoreComponent);
-    });
-
-    it('should handle no search results', async () => {
-      const query = 'nonexistent-component';
-      mock.onGet('/store/components/search').reply(200, []);
-
-      const result = await client.searchStoreComponents(query);
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should handle 400 Bad Request for invalid query', async () => {
-      const query = '';
-      mock.onGet('/store/components/search').reply(400, { detail: 'Invalid query' });
-
-      await expect(client.searchStoreComponents(query)).rejects.toThrow('Failed to search store components');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const query = 'openai';
-      mock.onGet('/store/components/search').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.searchStoreComponents(query)).rejects.toThrow('Failed to search store components');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const query = 'openai';
-      mock.onGet('/store/components/search').reply(500, { detail: 'Service error' });
-
-      await expect(client.searchStoreComponents(query)).rejects.toThrow('Failed to search store components');
-    });
-
-    it('should handle network timeout', async () => {
-      const query = 'openai';
-      mock.onGet('/store/components/search').timeout();
-
-      await expect(client.searchStoreComponents(query)).rejects.toThrow();
-    });
-  });
-
-  describe('runAdvancedExecution', () => {
-    it('should run advanced execution successfully', async () => {
-      const flowId = 'test-flow-uuid';
-      const params = { input_data: { query: 'test' } };
-      mock.onPost(`/executions/${flowId}/advanced`).reply(200, mockAdvancedExecutionResult);
-
-      const result = await client.runAdvancedExecution({ flow_id: flowId, ...params });
-
-      expect(result).toEqual(mockAdvancedExecutionResult);
-      expect(result.execution_id).toBeDefined();
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      const params = { input_data: { query: 'test' } };
-      mock.onPost(`/executions/${flowId}/advanced`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.runAdvancedExecution({ flow_id: flowId, ...params })).rejects.toThrow(
-        'Failed to execute advanced flow'
-      );
-    });
-
-    it('should handle 400 Bad Request for invalid input', async () => {
-      const flowId = 'test-flow-uuid';
-      const params = { input_data: {} };
-      mock.onPost(`/executions/${flowId}/advanced`).reply(400, { detail: 'Invalid input data' });
-
-      await expect(client.runAdvancedExecution({ flow_id: flowId, ...params })).rejects.toThrow(
-        'Failed to execute advanced flow'
-      );
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = 'test-flow-uuid';
-      const params = { input_data: { query: 'test' } };
-      mock.onPost(`/executions/${flowId}/advanced`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.runAdvancedExecution({ flow_id: flowId, ...params })).rejects.toThrow(
-        'Failed to execute advanced flow'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = 'test-flow-uuid';
-      const params = { input_data: { query: 'test' } };
-      mock.onPost(`/executions/${flowId}/advanced`).reply(500, { detail: 'Execution failed' });
-
-      await expect(client.runAdvancedExecution({ flow_id: flowId, ...params })).rejects.toThrow(
-        'Failed to execute advanced flow'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = 'test-flow-uuid';
-      const params = { input_data: { query: 'test' } };
-      mock.onPost(`/executions/${flowId}/advanced`).timeout();
-
-      await expect(client.runAdvancedExecution({ flow_id: flowId, ...params })).rejects.toThrow();
-    });
-  });
-
-  describe('getExecutionResult', () => {
-    it('should retrieve execution result successfully', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onGet(`/executions/${executionId}/result`).reply(200, mockAdvancedExecutionResult);
-
-      const result = await client.getExecutionResult({ execution_id: executionId });
-
-      expect(result).toEqual(mockAdvancedExecutionResult);
-      expect(result.execution_id).toBe(executionId);
-    });
-
-    it('should handle 404 Not Found for non-existent execution', async () => {
-      const executionId = 'non-existent-uuid';
-      mock.onGet(`/executions/${executionId}/result`).reply(404, { detail: 'Execution not found' });
-
-      await expect(client.getExecutionResult({ execution_id: executionId })).rejects.toThrow('Failed to get execution result');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onGet(`/executions/${executionId}/result`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getExecutionResult({ execution_id: executionId })).rejects.toThrow('Failed to get execution result');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onGet(`/executions/${executionId}/result`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getExecutionResult({ execution_id: executionId })).rejects.toThrow('Failed to get execution result');
-    });
-
-    it('should handle network timeout', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onGet(`/executions/${executionId}/result`).timeout();
-
-      await expect(client.getExecutionResult({ execution_id: executionId })).rejects.toThrow();
-    });
-  });
-
-  describe('cancelExecution', () => {
-    it('should cancel execution successfully', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onPost(`/executions/${executionId}/cancel`).reply(200, { success: true, message: 'Execution cancelled' });
-
-      const result = await client.cancelExecution({ execution_id: executionId });
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle 404 Not Found for non-existent execution', async () => {
-      const executionId = 'non-existent-uuid';
-      mock.onPost(`/executions/${executionId}/cancel`).reply(404, { detail: 'Execution not found' });
-
-      await expect(client.cancelExecution({ execution_id: executionId })).rejects.toThrow('Failed to cancel execution');
-    });
-
-    it('should handle 409 Conflict for already completed execution', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onPost(`/executions/${executionId}/cancel`).reply(409, { detail: 'Execution already completed' });
-
-      await expect(client.cancelExecution({ execution_id: executionId })).rejects.toThrow('Failed to cancel execution');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onPost(`/executions/${executionId}/cancel`).reply(403, { detail: 'Permission denied' });
-
-      await expect(client.cancelExecution({ execution_id: executionId })).rejects.toThrow('Failed to cancel execution');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onPost(`/executions/${executionId}/cancel`).reply(500, { detail: 'Service error' });
-
-      await expect(client.cancelExecution({ execution_id: executionId })).rejects.toThrow('Failed to cancel execution');
-    });
-
-    it('should handle network timeout', async () => {
-      const executionId = mockAdvancedExecutionResult.execution_id;
-      mock.onPost(`/executions/${executionId}/cancel`).timeout();
-
-      await expect(client.cancelExecution({ execution_id: executionId })).rejects.toThrow();
     });
   });
 
@@ -3133,53 +2384,6 @@ describe('LangflowClient', () => {
       mock.onGet('/users/').timeout();
 
       await expect(client.listUsers()).rejects.toThrow();
-    });
-  });
-
-  describe('getUserById', () => {
-    it('should retrieve a specific user by ID', async () => {
-      const userId = mockUser.id;
-      mock.onGet(`/users/${userId}`).reply(200, mockUser);
-
-      const result = await client.getUserById(userId);
-
-      expect(result).toEqual(mockUser);
-      expect(result.id).toBe(userId);
-    });
-
-    it('should handle 404 Not Found for non-existent user', async () => {
-      const userId = 'non-existent-uuid';
-      mock.onGet(`/users/${userId}`).reply(404, { detail: 'User not found' });
-
-      await expect(client.getUserById(userId)).rejects.toThrow('Failed to get user');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const userId = mockUser.id;
-      mock.onGet(`/users/${userId}`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getUserById(userId)).rejects.toThrow('Failed to get user');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const userId = mockUser.id;
-      mock.onGet(`/users/${userId}`).reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.getUserById(userId)).rejects.toThrow('Failed to get user');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const userId = mockUser.id;
-      mock.onGet(`/users/${userId}`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getUserById(userId)).rejects.toThrow('Failed to get user');
-    });
-
-    it('should handle network timeout', async () => {
-      const userId = mockUser.id;
-      mock.onGet(`/users/${userId}`).timeout();
-
-      await expect(client.getUserById(userId)).rejects.toThrow();
     });
   });
 
@@ -3495,70 +2699,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('deleteCustomComponent', () => {
-    it('should delete custom component successfully', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_component/${componentId}`).reply(200);
-
-      await client.deleteCustomComponent(componentId);
-
-      // deleteCustomComponent returns void, so we just check it doesn't throw
-      expect(true).toBe(true);
-    });
-
-    it('should handle 404 Not Found for non-existent component', async () => {
-      const componentId = 'non-existent-uuid';
-      mock.onDelete(`/custom_components/${componentId}`).reply(404, { detail: 'Component not found' });
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow(
-        'Failed to delete custom component'
-      );
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_components/${componentId}`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow(
-        'Failed to delete custom component'
-      );
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_components/${componentId}`).reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow(
-        'Failed to delete custom component'
-      );
-    });
-
-    it('should handle 409 Conflict for component in use', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_components/${componentId}`).reply(409, { detail: 'Component is in use' });
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow(
-        'Failed to delete custom component'
-      );
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_components/${componentId}`).reply(500, { detail: 'Service error' });
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow(
-        'Failed to delete custom component'
-      );
-    });
-
-    it('should handle network timeout', async () => {
-      const componentId = mockCustomComponent.id;
-      mock.onDelete(`/custom_components/${componentId}`).timeout();
-
-      await expect(client.deleteCustomComponent(componentId)).rejects.toThrow();
-    });
-  });
-
   describe('login', () => {
     it('should login successfully', async () => {
       const username = 'testuser';
@@ -3633,57 +2773,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('register', () => {
-    it('should register a new user successfully', async () => {
-      const username = 'newuser';
-      const password = 'securepass123';
-      const email = 'newuser@example.com';
-      const registeredUser = { ...mockUser, username, email };
-      mock.onPost('/register').reply(200, registeredUser);
-
-      const result = await client.register(username, password, email);
-
-      expect(result).toEqual(registeredUser);
-      expect(result.username).toBe(username);
-    });
-
-    it('should handle 400 Bad Request for invalid data', async () => {
-      const username = '';
-      const password = '123';
-      const email = 'invalid-email';
-      mock.onPost('/register').reply(400, { detail: 'Invalid registration data' });
-
-      await expect(client.register(username, password, email)).rejects.toThrow('Failed to register user');
-    });
-
-    it('should handle 409 Conflict for duplicate username', async () => {
-      const username = 'existinguser';
-      const password = 'pass123';
-      const email = 'user@example.com';
-      mock.onPost('/register').reply(409, { detail: 'Username already exists' });
-
-      await expect(client.register(username, password, email)).rejects.toThrow('Failed to register user');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const username = 'newuser';
-      const password = 'securepass123';
-      const email = 'newuser@example.com';
-      mock.onPost('/register').reply(500, { detail: 'Service error' });
-
-      await expect(client.register(username, password, email)).rejects.toThrow('Failed to register user');
-    });
-
-    it('should handle network timeout', async () => {
-      const username = 'newuser';
-      const password = 'securepass123';
-      const email = 'newuser@example.com';
-      mock.onPost('/register').timeout();
-
-      await expect(client.register(username, password, email)).rejects.toThrow();
-    });
-  });
-
   describe('refreshToken', () => {
     it('should refresh token successfully', async () => {
       mock.onPost('/refresh').reply(200, mockRefreshTokenResponse);
@@ -3750,6 +2839,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual(mockHealthStatus);
       expect(result.status).toBe('healthy');
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should handle unhealthy status', async () => {
@@ -3850,314 +2940,6 @@ describe('LangflowClient', () => {
     });
   });
 
-  describe('updateConfig', () => {
-    it('should update configuration successfully', async () => {
-      const configData = { max_workers: 10, timeout: 300 };
-      mock.onPatch('/config').reply(200, { ...mockConfig, ...configData });
-
-      const result = await client.updateConfig(configData);
-
-      expect(result.max_workers).toBe(configData.max_workers);
-    });
-
-    it('should handle 400 Bad Request for invalid configuration', async () => {
-      const configData = { max_workers: -5 };
-      mock.onPatch('/config').reply(400, { detail: 'Invalid configuration value' });
-
-      await expect(client.updateConfig(configData)).rejects.toThrow('Failed to update configuration');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const configData = { max_workers: 10 };
-      mock.onPatch('/config').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.updateConfig(configData)).rejects.toThrow('Failed to update configuration');
-    });
-
-    it('should handle 403 Forbidden for non-admin users', async () => {
-      const configData = { max_workers: 10 };
-      mock.onPatch('/config').reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.updateConfig(configData)).rejects.toThrow('Failed to update configuration');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const configData = { max_workers: 10 };
-      mock.onPatch('/config').reply(500, { detail: 'Service error' });
-
-      await expect(client.updateConfig(configData)).rejects.toThrow('Failed to update configuration');
-    });
-
-    it('should handle network timeout', async () => {
-      const configData = { max_workers: 10 };
-      mock.onPatch('/config').timeout();
-
-      await expect(client.updateConfig(configData)).rejects.toThrow();
-    });
-  });
-
-  describe('getStats', () => {
-    it('should retrieve statistics successfully', async () => {
-      mock.onGet('/stats').reply(200, mockStats);
-
-      const result = await client.getStats();
-
-      expect(result).toEqual(mockStats);
-      expect(result.total_flows).toBeDefined();
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      mock.onGet('/stats').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getStats()).rejects.toThrow('Failed to get statistics');
-    });
-
-    it('should handle 403 Forbidden for non-admin users', async () => {
-      mock.onGet('/stats').reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.getStats()).rejects.toThrow('Failed to get statistics');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      mock.onGet('/stats').reply(500, { detail: 'Service error' });
-
-      await expect(client.getStats()).rejects.toThrow('Failed to get statistics');
-    });
-
-    it('should handle network timeout', async () => {
-      mock.onGet('/stats').timeout();
-
-      await expect(client.getStats()).rejects.toThrow();
-    });
-  });
-
-  describe('exportFlow', () => {
-    it('should export flow successfully', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/export`).reply(200, mockExportedFlow);
-
-      const result = await client.exportFlow(flowId);
-
-      expect(result).toEqual(mockExportedFlow);
-      expect(result.flow).toBeDefined();
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      mock.onGet(`/flows/${flowId}/export`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.exportFlow(flowId)).rejects.toThrow('Failed to export flow');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/export`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.exportFlow(flowId)).rejects.toThrow('Failed to export flow');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/export`).reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.exportFlow(flowId)).rejects.toThrow('Failed to export flow');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/export`).reply(500, { detail: 'Service error' });
-
-      await expect(client.exportFlow(flowId)).rejects.toThrow('Failed to export flow');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/export`).timeout();
-
-      await expect(client.exportFlow(flowId)).rejects.toThrow();
-    });
-  });
-
-  describe('importFlow', () => {
-    it('should import flow successfully', async () => {
-      const flowData = mockExportedFlow;
-      mock.onPost('/flows/import').reply(200, mockFlow);
-
-      const result = await client.importFlow(flowData);
-
-      expect(result).toEqual(mockFlow);
-      expect(result.id).toBeDefined();
-    });
-
-    it('should handle 400 Bad Request for invalid flow data', async () => {
-      const flowData = { invalid: 'data' };
-      mock.onPost('/flows/import').reply(400, { detail: 'Invalid flow data' });
-
-      await expect(client.importFlow(flowData)).rejects.toThrow('Failed to import flow');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const flowData = mockExportedFlow;
-      mock.onPost('/flows/import').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.importFlow(flowData)).rejects.toThrow('Failed to import flow');
-    });
-
-    it('should handle 409 Conflict for duplicate flow', async () => {
-      const flowData = mockExportedFlow;
-      mock.onPost('/flows/import').reply(409, { detail: 'Flow already exists' });
-
-      await expect(client.importFlow(flowData)).rejects.toThrow('Failed to import flow');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowData = mockExportedFlow;
-      mock.onPost('/flows/import').reply(500, { detail: 'Import failed' });
-
-      await expect(client.importFlow(flowData)).rejects.toThrow('Failed to import flow');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowData = mockExportedFlow;
-      mock.onPost('/flows/import').timeout();
-
-      await expect(client.importFlow(flowData)).rejects.toThrow();
-    });
-  });
-
-  describe('cloneFlow', () => {
-    it('should clone flow successfully', async () => {
-      const flowId = mockFlow.id;
-      const cloneName = 'Cloned Flow';
-      const clonedFlow = { ...mockFlow, id: 'cloned-flow-uuid', name: cloneName };
-      mock.onPost(`/flows/${flowId}/clone`).reply(200, clonedFlow);
-
-      const result = await client.cloneFlow(flowId, cloneName);
-
-      expect(result.name).toBe(cloneName);
-      expect(result.id).not.toBe(flowId);
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      mock.onPost(`/flows/${flowId}/clone`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.cloneFlow(flowId)).rejects.toThrow('Failed to clone flow');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const flowId = mockFlow.id;
-      mock.onPost(`/flows/${flowId}/clone`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.cloneFlow(flowId)).rejects.toThrow('Failed to clone flow');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = mockFlow.id;
-      mock.onPost(`/flows/${flowId}/clone`).reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.cloneFlow(flowId)).rejects.toThrow('Failed to clone flow');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = mockFlow.id;
-      mock.onPost(`/flows/${flowId}/clone`).reply(500, { detail: 'Clone failed' });
-
-      await expect(client.cloneFlow(flowId)).rejects.toThrow('Failed to clone flow');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = mockFlow.id;
-      mock.onPost(`/flows/${flowId}/clone`).timeout();
-
-      await expect(client.cloneFlow(flowId)).rejects.toThrow();
-    });
-  });
-
-  describe('getFlowDependencies', () => {
-    it('should retrieve flow dependencies successfully', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/dependencies`).reply(200, mockFlowDependencies);
-
-      const result = await client.getFlowDependencies(flowId);
-
-      expect(result).toEqual(mockFlowDependencies);
-      expect(result.dependencies).toBeDefined();
-    });
-
-    it('should handle 404 Not Found for non-existent flow', async () => {
-      const flowId = 'non-existent-uuid';
-      mock.onGet(`/flows/${flowId}/dependencies`).reply(404, { detail: 'Flow not found' });
-
-      await expect(client.getFlowDependencies(flowId)).rejects.toThrow('Failed to get flow dependencies');
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/dependencies`).reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getFlowDependencies(flowId)).rejects.toThrow('Failed to get flow dependencies');
-    });
-
-    it('should handle 403 Forbidden', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/dependencies`).reply(403, { detail: 'Insufficient permissions' });
-
-      await expect(client.getFlowDependencies(flowId)).rejects.toThrow('Failed to get flow dependencies');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/dependencies`).reply(500, { detail: 'Service error' });
-
-      await expect(client.getFlowDependencies(flowId)).rejects.toThrow('Failed to get flow dependencies');
-    });
-
-    it('should handle network timeout', async () => {
-      const flowId = mockFlow.id;
-      mock.onGet(`/flows/${flowId}/dependencies`).timeout();
-
-      await expect(client.getFlowDependencies(flowId)).rejects.toThrow();
-    });
-  });
-
-  describe('getAiNodes', () => {
-    it('should retrieve AI nodes successfully', async () => {
-      mock.onGet('/ai_nodes').reply(200, [mockAiNode]);
-
-      const result = await client.getAiNodes();
-
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(mockAiNode);
-    });
-
-    it('should handle empty AI nodes list', async () => {
-      mock.onGet('/ai_nodes').reply(200, []);
-
-      const result = await client.getAiNodes();
-
-      expect(result).toHaveLength(0);
-    });
-
-    it('should handle 401 Unauthorized', async () => {
-      mock.onGet('/ai_nodes').reply(401, { detail: 'Unauthorized' });
-
-      await expect(client.getAiNodes()).rejects.toThrow('Failed to get AI nodes');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      mock.onGet('/ai_nodes').reply(500, { detail: 'Service error' });
-
-      await expect(client.getAiNodes()).rejects.toThrow('Failed to get AI nodes');
-    });
-
-    it('should handle network timeout', async () => {
-      mock.onGet('/ai_nodes').timeout();
-
-      await expect(client.getAiNodes()).rejects.toThrow();
-    });
-  });
-
   describe('runFlowAdvanced', () => {
     it('should run flow with name instead of UUID', async () => {
       const flowName = 'my-flow-name';
@@ -4242,6 +3024,7 @@ describe('LangflowClient', () => {
 
       expect(result.registered).toBe(true);
       expect(result.email).toBe('test@example.com');
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should get registration status for non-registered user', async () => {
@@ -4276,6 +3059,7 @@ describe('LangflowClient', () => {
 
       expect(result.registered).toBe(true);
       expect(result.email).toBe(email);
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should handle 400 Bad Request for invalid email', async () => {
@@ -4297,6 +3081,836 @@ describe('LangflowClient', () => {
       mock.onPost('/api/v2/registration/').timeout();
 
       await expect(client.registerUser(email)).rejects.toThrow();
+    });
+  });
+
+  // --- Langflow 1.9.5 additional endpoints ---
+
+  describe('replaceFlow', () => {
+    it('should replace a flow via PUT', async () => {
+      const flowId = mockFlowRead.id;
+      mock.onPut(`/flows/${flowId}`).reply(200, mockFlowRead);
+
+      const result = await client.replaceFlow(flowId, mockFlowCreate);
+
+      expect(result).toEqual(mockFlowRead);
+      expect(mock.history.put[0].data).toBe(JSON.stringify(mockFlowCreate));
+    });
+
+    it('should handle 404 Not Found', async () => {
+      mock.onPut('/flows/missing').reply(404, { detail: 'Flow not found' });
+
+      await expect(client.replaceFlow('missing', mockFlowCreate)).rejects.toThrow(
+        'Failed to replace flow'
+      );
+    });
+  });
+
+  describe('expandFlows', () => {
+    it('should expand flows', async () => {
+      const body = { nodes: ['a', 'b'] };
+      const response = { expanded: true };
+      mock.onPost('/flows/expand/').reply(200, response);
+
+      const result = await client.expandFlows(body);
+
+      expect(result).toEqual(response);
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getFlowEvents', () => {
+    it('should get flow events with since param', async () => {
+      const flowId = 'flow-1';
+      const events = [{ type: 'created' }];
+      mock.onGet(`/flows/${flowId}/events`).reply(200, events);
+
+      const result = await client.getFlowEvents(flowId, { since: 100 });
+
+      expect(result).toEqual(events);
+      expect(mock.history.get[0].params).toEqual({ since: 100 });
+    });
+
+    it('should handle errors', async () => {
+      mock.onGet('/flows/flow-1/events').reply(500);
+      await expect(client.getFlowEvents('flow-1')).rejects.toThrow('Failed to get events for flow');
+    });
+  });
+
+  describe('createFlowEvent', () => {
+    it('should create a flow event', async () => {
+      const flowId = 'flow-1';
+      const body = { type: 'flow_settled' as const, summary: 'shipped' };
+      mock.onPost(`/flows/${flowId}/events`).reply(200, { id: 'ev-1' });
+
+      const result = await client.createFlowEvent(flowId, body);
+
+      expect(result).toEqual({ id: 'ev-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('listFlowVersions', () => {
+    it('should list versions with pagination params', async () => {
+      const flowId = 'flow-1';
+      const versions = [{ id: 'v1' }];
+      mock.onGet(`/flows/${flowId}/versions/`).reply(200, versions);
+
+      const result = await client.listFlowVersions(flowId, { limit: 5, offset: 0 });
+
+      expect(result).toEqual(versions);
+      expect(mock.history.get[0].params).toEqual({ limit: 5, offset: 0 });
+    });
+  });
+
+  describe('createFlowVersion', () => {
+    it('should create a version with empty body by default', async () => {
+      const flowId = 'flow-1';
+      mock.onPost(`/flows/${flowId}/versions/`).reply(200, { id: 'v2' });
+
+      const result = await client.createFlowVersion(flowId);
+
+      expect(result).toEqual({ id: 'v2' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({}));
+    });
+  });
+
+  describe('getFlowVersion', () => {
+    it('should get a specific version', async () => {
+      mock.onGet('/flows/flow-1/versions/v1').reply(200, { id: 'v1' });
+
+      const result = await client.getFlowVersion('flow-1', 'v1');
+
+      expect(result).toEqual({ id: 'v1' });
+    });
+  });
+
+  describe('deleteFlowVersion', () => {
+    it('should delete a version', async () => {
+      mock.onDelete('/flows/flow-1/versions/v1').reply(204);
+
+      await expect(client.deleteFlowVersion('flow-1', 'v1')).resolves.toBeUndefined();
+    });
+
+    it('should handle 404', async () => {
+      mock.onDelete('/flows/flow-1/versions/v1').reply(404);
+      await expect(client.deleteFlowVersion('flow-1', 'v1')).rejects.toThrow(
+        'Failed to delete version'
+      );
+    });
+  });
+
+  describe('activateFlowVersion', () => {
+    it('should activate a version with save_draft param', async () => {
+      mock.onPost('/flows/flow-1/versions/v1/activate').reply(200, { active: true });
+
+      const result = await client.activateFlowVersion('flow-1', 'v1', { save_draft: true });
+
+      expect(result).toEqual({ active: true });
+      expect(mock.history.post[0].params).toEqual({ save_draft: true });
+    });
+  });
+
+  describe('detectVariables', () => {
+    it('should detect variables', async () => {
+      const body = { flow_version_ids: ['v1', 'v2'] };
+      mock.onPost('/variables/detections').reply(200, { variables: ['OPENAI_API_KEY'] });
+
+      const result = await client.detectVariables(body);
+
+      expect(result).toEqual({ variables: ['OPENAI_API_KEY'] });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('should handle errors', async () => {
+      mock.onPost('/variables/detections').reply(422, { detail: 'bad' });
+      await expect(client.detectVariables({ flow_version_ids: [] })).rejects.toThrow(
+        'Failed to detect variables'
+      );
+    });
+  });
+
+  describe('saveStoreApiKey', () => {
+    it('should save the store api key with api_key body', async () => {
+      mock.onPost('/api_key/store').reply(200, { ok: true });
+
+      const result = await client.saveStoreApiKey('secret-key');
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({ api_key: 'secret-key' }));
+    });
+  });
+
+  describe('updateCustomComponentCode', () => {
+    it('should post the update payload', async () => {
+      const body = { code: 'print(1)', field: 'code', template: {} };
+      mock.onPost('/custom_component/update').reply(200, { updated: true });
+
+      const result = await client.updateCustomComponentCode(body);
+
+      expect(result).toEqual({ updated: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('createStoreComponent', () => {
+    it('should create a store component and return id', async () => {
+      const body = {
+        name: 'My Comp',
+        description: 'desc',
+        data: {},
+        tags: [],
+        is_component: true
+      };
+      mock.onPost('/store/components/').reply(201, { id: 'comp-1' });
+
+      const result = await client.createStoreComponent(body);
+
+      expect(result).toEqual({ id: 'comp-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('likeStoreComponent', () => {
+    it('should like a store component', async () => {
+      mock.onPost('/store/users/likes/comp-1').reply(200, { likes: 1 });
+
+      const result = await client.likeStoreComponent('comp-1');
+
+      expect(result).toEqual({ likes: 1 });
+    });
+  });
+
+  describe('createResponse', () => {
+    it('should create an OpenAI-style response', async () => {
+      const body = { model: 'flow-1', input: 'hi' };
+      mock.onPost('/responses').reply(200, { id: 'resp-1' });
+
+      const result = await client.createResponse(body);
+
+      expect(result).toEqual({ id: 'resp-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getSession', () => {
+    it('should get the session', async () => {
+      mock.onGet('/session').reply(200, { authenticated: true });
+
+      const result = await client.getSession();
+
+      expect(result).toEqual({ authenticated: true });
+    });
+  });
+
+  describe('createUser', () => {
+    it('should create a user', async () => {
+      const body = { username: 'bob', password: 'pw' };
+      mock.onPost('/users/').reply(201, mockUserRead);
+
+      const result = await client.createUser(body);
+
+      expect(result).toEqual(mockUserRead);
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getWebhookEvents', () => {
+    it('should get webhook events with user_id param', async () => {
+      mock.onGet('/webhook-events/flow-1').reply(200, [{ id: 'e1' }]);
+
+      const result = await client.getWebhookEvents('flow-1', { user_id: 'u1' });
+
+      expect(result).toEqual([{ id: 'e1' }]);
+      expect(mock.history.get[0].params).toEqual({ user_id: 'u1' });
+    });
+  });
+
+  describe('getHealthCheck', () => {
+    it('should hit root /health_check with baseURL override', async () => {
+      mock.onGet('/health_check').reply(200, { status: 'ok', chat: 'ok', db: 'ok' });
+
+      const result = await client.getHealthCheck();
+
+      expect(result).toEqual({ status: 'ok', chat: 'ok', db: 'ok' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+  });
+
+  describe('uploadFlowFileLegacy', () => {
+    it('should upload a file to a flow via v1 legacy endpoint', async () => {
+      mock.onPost('/upload/flow-1').reply(200, { file_path: 'flow-1/x.txt' });
+
+      const result = await client.uploadFlowFileLegacy('flow-1', Buffer.from('x'), 'x.txt');
+
+      expect(result).toEqual({ file_path: 'flow-1/x.txt' });
+    });
+
+    it('should handle errors', async () => {
+      mock.onPost('/upload/flow-1').reply(500);
+      await expect(
+        client.uploadFlowFileLegacy('flow-1', Buffer.from('x'), 'x.txt')
+      ).rejects.toThrow('Failed to upload legacy file');
+    });
+  });
+
+  describe('files v2', () => {
+    it('listFilesV2 should list files at root path', async () => {
+      mock.onGet('/api/v2/files').reply(200, [{ id: 'f1' }]);
+
+      const result = await client.listFilesV2();
+
+      expect(result).toEqual([{ id: 'f1' }]);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('uploadFileV2 should upload with append/ephemeral params', async () => {
+      mock.onPost('/api/v2/files').reply(201, { id: 'f2' });
+
+      const result = await client.uploadFileV2(Buffer.from('x'), 'x.txt', { append: true });
+
+      expect(result).toEqual({ id: 'f2' });
+      expect(mock.history.post[0].params).toEqual({ append: true });
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('getFileV2 should get a file with return_content param', async () => {
+      mock.onGet('/api/v2/files/f1').reply(200, { id: 'f1', content: 'data' });
+
+      const result = await client.getFileV2('f1', { return_content: true });
+
+      expect(result).toEqual({ id: 'f1', content: 'data' });
+      expect(mock.history.get[0].params).toEqual({ return_content: true });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('renameFileV2 should PUT with name query param', async () => {
+      mock.onPut('/api/v2/files/f1').reply(200, { id: 'f1', name: 'new' });
+
+      const result = await client.renameFileV2('f1', 'new');
+
+      expect(result).toEqual({ id: 'f1', name: 'new' });
+      expect(mock.history.put[0].params).toEqual({ name: 'new' });
+      expect(mock.history.put[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('deleteFileV2 should delete a single file', async () => {
+      mock.onDelete('/api/v2/files/f1').reply(200, { deleted: true });
+
+      const result = await client.deleteFileV2('f1');
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('deleteAllFilesV2 should delete all files', async () => {
+      mock.onDelete('/api/v2/files').reply(200, { deleted: 5 });
+
+      const result = await client.deleteAllFilesV2();
+
+      expect(result).toEqual({ deleted: 5 });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('batchDownloadFilesV2 should post file ids', async () => {
+      const ids = ['f1', 'f2'];
+      mock.onPost('/api/v2/files/batch/').reply(200, { url: 'zip' });
+
+      const result = await client.batchDownloadFilesV2(ids);
+
+      expect(result).toEqual({ url: 'zip' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(ids));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('batchDeleteFilesV2 should send ids in delete body', async () => {
+      const ids = ['f1', 'f2'];
+      mock.onDelete('/api/v2/files/batch/').reply(200, { deleted: 2 });
+
+      const result = await client.batchDeleteFilesV2(ids);
+
+      expect(result).toEqual({ deleted: 2 });
+      expect(mock.history.delete[0].data).toBe(JSON.stringify(ids));
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
+    });
+  });
+
+  describe('knowledge bases extras', () => {
+    it('listKnowledgeBasesDetailed should hit trailing-slash path', async () => {
+      mock.onGet('/knowledge_bases/').reply(200, [{ name: 'kb1' }]);
+
+      const result = await client.listKnowledgeBasesDetailed();
+
+      expect(result).toEqual([{ name: 'kb1' }]);
+    });
+
+    it('createKnowledgeBase should post the create body', async () => {
+      const body = {
+        name: 'kb1',
+        embedding_provider: 'openai',
+        embedding_model: 'text-embedding-3-small'
+      };
+      mock.onPost('/knowledge_bases').reply(201, { name: 'kb1' });
+
+      const result = await client.createKnowledgeBase(body);
+
+      expect(result).toEqual({ name: 'kb1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('previewKnowledgeBaseChunks should post multipart and preserve filename', async () => {
+      mock.onPost('/knowledge_bases/preview-chunks').reply(200, { chunks: 3 });
+
+      const result = await client.previewKnowledgeBaseChunks(
+        [{ buffer: Buffer.from('a'), filename: 'notes.txt' }],
+        { size: 100 }
+      );
+
+      expect(result).toEqual({ chunks: 3 });
+
+      const serialized = mock.history.post[0].data.getBuffer().toString();
+      expect(serialized).toContain('filename="notes.txt"');
+    });
+
+    it('listKnowledgeBaseChunks should pass pagination params', async () => {
+      mock.onGet('/knowledge_bases/kb1/chunks').reply(200, { items: [] });
+
+      const result = await client.listKnowledgeBaseChunks('kb1', { page: 2, limit: 10 });
+
+      expect(result).toEqual({ items: [] });
+      expect(mock.history.get[0].params).toEqual({ page: 2, limit: 10 });
+    });
+
+    it('ingestKnowledgeBase should post multipart body with files field', async () => {
+      mock.onPost('/knowledge_bases/kb1/ingest').reply(200, { status: 'started' });
+
+      const result = await client.ingestKnowledgeBase(
+        'kb1',
+        [{ buffer: Buffer.from('x'), filename: 'doc.pdf' }],
+        { mode: 'append' }
+      );
+
+      expect(result).toEqual({ status: 'started' });
+
+      // Inspect the multipart payload: the file buffer must be under field name "files"
+      const formData = mock.history.post[0].data;
+      const serialized = formData.getBuffer().toString();
+      expect(serialized).toContain('name="files"');
+      expect(serialized).not.toContain('name="file"');
+      expect(serialized).toContain('filename="doc.pdf"');
+      expect(serialized).toContain('name="mode"');
+    });
+
+    it('cancelKnowledgeBaseIngest should post cancel', async () => {
+      mock.onPost('/knowledge_bases/kb1/cancel').reply(200, { cancelled: true });
+
+      const result = await client.cancelKnowledgeBaseIngest('kb1');
+
+      expect(result).toEqual({ cancelled: true });
+    });
+  });
+
+  describe('monitor extras', () => {
+    it('updateMonitorMessage should PUT the update', async () => {
+      const body = { text: 'edited', edit: true };
+      mock.onPut('/monitor/messages/m1').reply(200, { id: 'm1' });
+
+      const result = await client.updateMonitorMessage('m1', body);
+
+      expect(result).toEqual({ id: 'm1' });
+      expect(mock.history.put[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('deleteMonitorSessionMessages should delete by session', async () => {
+      mock.onDelete('/monitor/messages/session/s1').reply(200, { deleted: 3 });
+
+      const result = await client.deleteMonitorSessionMessages('s1');
+
+      expect(result).toEqual({ deleted: 3 });
+    });
+
+    it('deleteMonitorSessions should send ids in body', async () => {
+      const ids = ['s1', 's2'];
+      mock.onDelete('/monitor/messages/sessions').reply(200, { deleted: 2 });
+
+      const result = await client.deleteMonitorSessions(ids);
+
+      expect(result).toEqual({ deleted: 2 });
+      expect(mock.history.delete[0].data).toBe(JSON.stringify(ids));
+    });
+  });
+
+  describe('monitor shared', () => {
+    it('getSharedMessages should pass required source_flow_id', async () => {
+      mock.onGet('/monitor/messages/shared').reply(200, [{ id: 'm1' }]);
+
+      const result = await client.getSharedMessages({ source_flow_id: 'flow-1' });
+
+      expect(result).toEqual([{ id: 'm1' }]);
+      expect(mock.history.get[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('getSharedSessions should pass source_flow_id param', async () => {
+      mock.onGet('/monitor/messages/shared/sessions').reply(200, ['s1']);
+
+      const result = await client.getSharedSessions('flow-1');
+
+      expect(result).toEqual(['s1']);
+      expect(mock.history.get[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('updateSharedMessage should PUT with source_flow_id param', async () => {
+      const body = { edit: true };
+      mock.onPut('/monitor/messages/shared/m1').reply(200, { id: 'm1' });
+
+      const result = await client.updateSharedMessage('m1', 'flow-1', body);
+
+      expect(result).toEqual({ id: 'm1' });
+      expect(mock.history.put[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('migrateSharedSession should PATCH with new_session_id + source_flow_id', async () => {
+      mock.onPatch('/monitor/messages/shared/session/old').reply(200, [{ id: 'm1' }]);
+
+      const result = await client.migrateSharedSession('old', {
+        new_session_id: 'new',
+        source_flow_id: 'flow-1'
+      });
+
+      expect(result).toEqual([{ id: 'm1' }]);
+      expect(mock.history.patch[0].params).toEqual({
+        new_session_id: 'new',
+        source_flow_id: 'flow-1'
+      });
+    });
+
+    it('deleteSharedSession should delete with source_flow_id param', async () => {
+      mock.onDelete('/monitor/messages/shared/session/s1').reply(200, { deleted: true });
+
+      const result = await client.deleteSharedSession('s1', 'flow-1');
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+  });
+
+  describe('monitor traces', () => {
+    it('listTraces should pass filter params', async () => {
+      mock.onGet('/monitor/traces').reply(200, { items: [] });
+
+      const result = await client.listTraces({ flow_id: 'flow-1', page: 1 });
+
+      expect(result).toEqual({ items: [] });
+      expect(mock.history.get[0].params).toEqual({ flow_id: 'flow-1', page: 1 });
+    });
+
+    it('deleteTraces should delete with flow_id query', async () => {
+      mock.onDelete('/monitor/traces').reply(200, { deleted: 4 });
+
+      const result = await client.deleteTraces('flow-1');
+
+      expect(result).toEqual({ deleted: 4 });
+      expect(mock.history.delete[0].params).toEqual({ flow_id: 'flow-1' });
+    });
+
+    it('getTrace should get a single trace', async () => {
+      mock.onGet('/monitor/traces/t1').reply(200, { id: 't1' });
+
+      const result = await client.getTrace('t1');
+
+      expect(result).toEqual({ id: 't1' });
+    });
+
+    it('deleteTrace should delete a single trace', async () => {
+      mock.onDelete('/monitor/traces/t1').reply(204);
+
+      await expect(client.deleteTrace('t1')).resolves.toBeUndefined();
+    });
+  });
+
+  describe('models', () => {
+    it('listModels should pass filter params', async () => {
+      mock.onGet('/models').reply(200, { models: [] });
+
+      const result = await client.listModels({ provider: 'openai' });
+
+      expect(result).toEqual({ models: [] });
+      expect(mock.history.get[0].params).toEqual({ provider: 'openai' });
+    });
+
+    it('listModelProviders should return string array', async () => {
+      mock.onGet('/models/providers').reply(200, ['openai', 'anthropic']);
+
+      const result = await client.listModelProviders();
+
+      expect(result).toEqual(['openai', 'anthropic']);
+    });
+
+    it('listEnabledProviders should pass providers param', async () => {
+      mock.onGet('/models/enabled_providers').reply(200, { providers: [] });
+
+      const result = await client.listEnabledProviders({ providers: ['openai'] });
+
+      expect(result).toEqual({ providers: [] });
+      expect(mock.history.get[0].params).toEqual({ providers: ['openai'] });
+    });
+
+    it('listEnabledModels should pass model_names param', async () => {
+      mock.onGet('/models/enabled_models').reply(200, { models: [] });
+
+      const result = await client.listEnabledModels({ model_names: ['gpt-4'] });
+
+      expect(result).toEqual({ models: [] });
+      expect(mock.history.get[0].params).toEqual({ model_names: ['gpt-4'] });
+    });
+
+    it('setEnabledModels should post status updates', async () => {
+      const body = [{ provider: 'openai', model_id: 'gpt-4', enabled: true }];
+      mock.onPost('/models/enabled_models').reply(200, { updated: 1 });
+
+      const result = await client.setEnabledModels(body);
+
+      expect(result).toEqual({ updated: 1 });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getDefaultModel should pass model_type param', async () => {
+      mock.onGet('/models/default_model').reply(200, { model_name: 'gpt-4' });
+
+      const result = await client.getDefaultModel({ model_type: 'language' });
+
+      expect(result).toEqual({ model_name: 'gpt-4' });
+      expect(mock.history.get[0].params).toEqual({ model_type: 'language' });
+    });
+
+    it('setDefaultModel should post the body', async () => {
+      const body = { provider: 'openai', model_name: 'gpt-4', model_type: 'language' };
+      mock.onPost('/models/default_model').reply(200, { ok: true });
+
+      const result = await client.setDefaultModel(body);
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('deleteDefaultModel should delete with model_type param', async () => {
+      mock.onDelete('/models/default_model').reply(200, { deleted: true });
+
+      const result = await client.deleteDefaultModel({ model_type: 'language' });
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].params).toEqual({ model_type: 'language' });
+    });
+
+    it('getProviderVariableMapping should return mapping', async () => {
+      mock.onGet('/models/provider-variable-mapping').reply(200, { openai: ['OPENAI_API_KEY'] });
+
+      const result = await client.getProviderVariableMapping();
+
+      expect(result).toEqual({ openai: ['OPENAI_API_KEY'] });
+    });
+
+    it('validateModelProvider should post and return validity', async () => {
+      const body = { provider: 'openai', variables: { OPENAI_API_KEY: 'sk' } };
+      mock.onPost('/models/validate-provider').reply(200, { valid: true });
+
+      const result = await client.validateModelProvider(body);
+
+      expect(result).toEqual({ valid: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('validateModelProvider should handle errors', async () => {
+      mock.onPost('/models/validate-provider').reply(400, { detail: 'bad' });
+      await expect(
+        client.validateModelProvider({ provider: 'x', variables: {} })
+      ).rejects.toThrow('Failed to validate model provider');
+    });
+  });
+
+  describe('model options', () => {
+    it('getLanguageModelOptions should return options', async () => {
+      mock.onGet('/model_options/language').reply(200, { options: [] });
+
+      const result = await client.getLanguageModelOptions();
+
+      expect(result).toEqual({ options: [] });
+    });
+
+    it('getEmbeddingModelOptions should return options', async () => {
+      mock.onGet('/model_options/embedding').reply(200, { options: [] });
+
+      const result = await client.getEmbeddingModelOptions();
+
+      expect(result).toEqual({ options: [] });
+    });
+  });
+
+  describe('agentic', () => {
+    it('agenticAssist should post the request', async () => {
+      const body = { flow_id: 'flow-1', input_value: 'help' };
+      mock.onPost('/agentic/assist').reply(200, { result: 'ok' });
+
+      const result = await client.agenticAssist(body);
+
+      expect(result).toEqual({ result: 'ok' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('agenticCheckConfig should return config status', async () => {
+      mock.onGet('/agentic/check-config').reply(200, { configured: true });
+
+      const result = await client.agenticCheckConfig();
+
+      expect(result).toEqual({ configured: true });
+    });
+
+    it('agenticExecute should post to the named flow', async () => {
+      const body = { flow_id: 'flow-1' };
+      mock.onPost('/agentic/execute/my-flow').reply(200, { result: 'done' });
+
+      const result = await client.agenticExecute('my-flow', body);
+
+      expect(result).toEqual({ result: 'done' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('workflows v2', () => {
+    it('getWorkflowResult should GET with job_id param and root baseURL', async () => {
+      mock.onGet('/api/v2/workflows').reply(200, { status: 'completed' });
+
+      const result = await client.getWorkflowResult({ job_id: 'job-1' });
+
+      expect(result).toEqual({ status: 'completed' });
+      expect(mock.history.get[0].params).toEqual({ job_id: 'job-1' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('runWorkflow should POST the body', async () => {
+      const body = { flow_id: 'flow-1', inputs: { x: 1 } };
+      mock.onPost('/api/v2/workflows').reply(200, { job_id: 'job-1' });
+
+      const result = await client.runWorkflow(body);
+
+      expect(result).toEqual({ job_id: 'job-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('stopWorkflow should POST job_id body', async () => {
+      mock.onPost('/api/v2/workflows/stop').reply(200, { job_id: 'job-1', message: 'stopped' });
+
+      const result = await client.stopWorkflow('job-1');
+
+      expect(result).toEqual({ job_id: 'job-1', message: 'stopped' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({ job_id: 'job-1' }));
+    });
+  });
+
+  describe('mcp v2 servers', () => {
+    it('listMcpServers should GET with action_count param', async () => {
+      mock.onGet('/api/v2/mcp/servers').reply(200, { servers: [] });
+
+      const result = await client.listMcpServers({ action_count: true });
+
+      expect(result).toEqual({ servers: [] });
+      expect(mock.history.get[0].params).toEqual({ action_count: true });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('getMcpServer should GET a single server', async () => {
+      mock.onGet('/api/v2/mcp/servers/srv1').reply(200, { name: 'srv1' });
+
+      const result = await client.getMcpServer('srv1');
+
+      expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('createMcpServer should POST config', async () => {
+      const body = { command: 'node', args: ['x.js'] };
+      mock.onPost('/api/v2/mcp/servers/srv1').reply(201, { name: 'srv1' });
+
+      const result = await client.createMcpServer('srv1', body);
+
+      expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('updateMcpServer should PATCH config', async () => {
+      const body = { url: 'http://x' };
+      mock.onPatch('/api/v2/mcp/servers/srv1').reply(200, { name: 'srv1' });
+
+      const result = await client.updateMcpServer('srv1', body);
+
+      expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.patch[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.patch[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('deleteMcpServer should DELETE a server', async () => {
+      mock.onDelete('/api/v2/mcp/servers/srv1').reply(200, { deleted: true });
+
+      const result = await client.deleteMcpServer('srv1');
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
+    });
+  });
+
+  describe('mcp v1 project', () => {
+    it('getMcpProjectConfig should GET with mcp_enabled param', async () => {
+      mock.onGet('/mcp/project/p1').reply(200, { settings: [] });
+
+      const result = await client.getMcpProjectConfig('p1', { mcp_enabled: true });
+
+      expect(result).toEqual({ settings: [] });
+      expect(mock.history.get[0].params).toEqual({ mcp_enabled: true });
+    });
+
+    it('updateMcpProjectConfig should PATCH the body', async () => {
+      const body = { settings: [{ id: 's1' }] };
+      mock.onPatch('/mcp/project/p1').reply(200, { ok: true });
+
+      const result = await client.updateMcpProjectConfig('p1', body);
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.patch[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getMcpProjectInstalled should GET installed clients', async () => {
+      mock.onGet('/mcp/project/p1/installed').reply(200, { installed: [] });
+
+      const result = await client.getMcpProjectInstalled('p1');
+
+      expect(result).toEqual({ installed: [] });
+    });
+
+    it('installMcpProject should POST install body', async () => {
+      const body = { client: 'cursor', transport: 'sse' as const };
+      mock.onPost('/mcp/project/p1/install').reply(200, { installed: true });
+
+      const result = await client.installMcpProject('p1', body);
+
+      expect(result).toEqual({ installed: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getMcpProjectComposerUrl should GET composer url', async () => {
+      mock.onGet('/mcp/project/p1/composer-url').reply(200, { url: 'http://composer' });
+
+      const result = await client.getMcpProjectComposerUrl('p1');
+
+      expect(result).toEqual({ url: 'http://composer' });
+    });
+
+    it('installMcpProject should handle errors', async () => {
+      mock.onPost('/mcp/project/p1/install').reply(500);
+      await expect(
+        client.installMcpProject('p1', { client: 'cursor' })
+      ).rejects.toThrow('Failed to install MCP project');
     });
   });
 });

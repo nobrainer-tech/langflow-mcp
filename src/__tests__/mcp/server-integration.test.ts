@@ -111,7 +111,7 @@ describe('LangflowMCPServer Integration', () => {
   });
 
   describe('Deprecated Tools Filtering', () => {
-    const deprecatedTools = ['build_vertices', 'get_vertex', 'stream_vertex_build', 'get_task_status'];
+    const deprecatedTools = ['build_vertices', 'stream_vertex_build', 'get_task_status'];
 
     it('should include deprecated tools when ENABLE_DEPRECATED_TOOLS is true', () => {
       process.env.ENABLE_DEPRECATED_TOOLS = 'true';
@@ -145,7 +145,6 @@ describe('LangflowMCPServer Integration', () => {
     it('should suggest alternatives in deprecated tool descriptions', () => {
       const toolAlternatives: Record<string, string> = {
         'build_vertices': 'build_flow',
-        'get_vertex': 'build_flow',
         'stream_vertex_build': 'get_build_status',
         'get_task_status': 'get_build_status'
       };
@@ -247,8 +246,8 @@ describe('LangflowMCPServer Integration', () => {
     });
 
     it('should have the expected number of tools', () => {
-      // 90 tools + 4 deprecated tools = 94 total
-      expect(langflowMCPTools.length).toBeGreaterThanOrEqual(90);
+      // 160 active tools + 3 deprecated tools = 163 total
+      expect(langflowMCPTools.length).toBeGreaterThanOrEqual(160);
     });
   });
 });

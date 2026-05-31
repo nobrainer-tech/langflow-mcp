@@ -1,7 +1,6 @@
 import {
   BuildVerticesRequest,
   VerticesOrderResponse,
-  GetVertexParams,
   StreamVertexBuildParams
 } from '../../types';
 
@@ -25,11 +24,6 @@ export const mockVerticesOrderResponse: VerticesOrderResponse = {
     { vertex_id: 'vertex-2', position: 1 },
     { vertex_id: 'vertex-3', position: 2 }
   ]
-};
-
-export const mockGetVertexParams: GetVertexParams = {
-  flow_id: 'flow-123',
-  vertex_id: 'vertex-1'
 };
 
 export const mockVertexResponse = {
