@@ -30,7 +30,16 @@ import {
   StoreToolSchema,
   RegistrationToolSchema,
   ValidationToolSchema,
-  SystemToolSchema
+  SystemToolSchema,
+  FlowVersionToolSchema,
+  FileV2ToolSchema,
+  ModelToolSchema,
+  AgenticToolSchema,
+  WorkflowToolSchema,
+  McpServerToolSchema,
+  McpProjectToolSchema,
+  TraceToolSchema,
+  ResponseToolSchema
 } from './validation-consolidated';
 
 export class LangflowMCPServerConsolidated {
@@ -309,6 +318,24 @@ export class LangflowMCPServerConsolidated {
             return await this.handleValidationTool(args);
           case 'system':
             return await this.handleSystemTool(args);
+          case 'flow_version':
+            return await this.handleFlowVersionTool(args);
+          case 'file_v2':
+            return await this.handleFileV2Tool(args);
+          case 'model':
+            return await this.handleModelTool(args);
+          case 'agentic':
+            return await this.handleAgenticTool(args);
+          case 'workflow':
+            return await this.handleWorkflowTool(args);
+          case 'mcp_server':
+            return await this.handleMcpServerTool(args);
+          case 'mcp_project':
+            return await this.handleMcpProjectTool(args);
+          case 'trace':
+            return await this.handleTraceTool(args);
+          case 'response':
+            return await this.handleResponseTool(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -372,6 +399,15 @@ export class LangflowMCPServerConsolidated {
       case 'get_starters': {
         const starters = await this.client!.listStarterProjects();
         return this.formatSuccessResponse(starters);
+      }
+      case 'replace': {
+        const { action: _, flow_id, ...body } = validated;
+        const result = await this.client!.replaceFlow(flow_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'expand': {
+        const result = await this.client!.expandFlows(validated.body);
+        return this.formatSuccessResponse(result);
       }
     }
   }
@@ -547,6 +583,10 @@ export class LangflowMCPServerConsolidated {
         await this.client!.deleteVariable(validated.variable_id);
         return this.formatSuccessResponse({ success: true, message: 'Variable deleted successfully' });
       }
+      case 'detect': {
+        const result = await this.client!.detectVariables({ flow_version_ids: validated.flow_version_ids });
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -573,6 +613,35 @@ export class LangflowMCPServerConsolidated {
       case 'upload': {
         const fileBuffer = this.validateFileSize(validated.file_content);
         const result = await this.client!.uploadKnowledgeBase(validated.kb_name, fileBuffer, validated.file_name);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createKnowledgeBase(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_detailed': {
+        const result = await this.client!.listKnowledgeBasesDetailed();
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_chunks': {
+        const { action: _, kb_name, ...params } = validated;
+        const result = await this.client!.listKnowledgeBaseChunks(kb_name, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'ingest': {
+        const fileBuffer = this.validateFileSize(validated.file_content);
+        const body: Record<string, unknown> = { ...(validated.params ?? {}), file: fileBuffer };
+        const result = await this.client!.ingestKnowledgeBase(validated.kb_name, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'preview_chunks': {
+        const fileBuffer = this.validateFileSize(validated.file_content);
+        const result = await this.client!.previewKnowledgeBaseChunks([fileBuffer], validated.params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'cancel_ingest': {
+        const result = await this.client!.cancelKnowledgeBaseIngest(validated.kb_name);
         return this.formatSuccessResponse(result);
       }
     }
@@ -669,6 +738,44 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.getMonitorTransactions({ flow_id: flow_id!, ...params });
         return this.formatSuccessResponse(result);
       }
+      case 'update_message': {
+        const { action: _, message_id, ...body } = validated;
+        const result = await this.client!.updateMonitorMessage(message_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_session_messages': {
+        const result = await this.client!.deleteMonitorSessionMessages(validated.session_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_sessions': {
+        const result = await this.client!.deleteMonitorSessions(validated.session_ids);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_shared': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.getSharedMessages(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_shared_sessions': {
+        const result = await this.client!.getSharedSessions(validated.source_flow_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_shared': {
+        const { action: _, message_id, source_flow_id, ...body } = validated;
+        const result = await this.client!.updateSharedMessage(message_id, source_flow_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'migrate_shared_session': {
+        const result = await this.client!.migrateSharedSession(validated.session_id, {
+          new_session_id: validated.new_session_id,
+          source_flow_id: validated.source_flow_id
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_shared_session': {
+        const result = await this.client!.deleteSharedSession(validated.session_id, validated.source_flow_id);
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -695,6 +802,11 @@ export class LangflowMCPServerConsolidated {
       }
       case 'reset_password': {
         const result = await this.client!.resetUserPassword(validated.user_id, validated.new_password);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createUser(body);
         return this.formatSuccessResponse(result);
       }
     }
@@ -735,6 +847,10 @@ export class LangflowMCPServerConsolidated {
         await this.client!.deleteApiKey(validated.api_key_id);
         return this.formatSuccessResponse({ success: true, message: 'API key deleted successfully' });
       }
+      case 'save_store_key': {
+        const result = await this.client!.saveStoreApiKey(validated.api_key);
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -774,6 +890,25 @@ export class LangflowMCPServerConsolidated {
       case 'get_likes': {
         const likes = await this.client!.getUserLikes();
         return this.formatSuccessResponse(likes);
+      }
+      case 'create_store': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createStoreComponent({
+          description: null,
+          tags: null,
+          is_component: null,
+          ...body
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'like': {
+        const result = await this.client!.likeStoreComponent(validated.component_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_custom': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.updateCustomComponentCode(body);
+        return this.formatSuccessResponse(result);
       }
     }
   }
@@ -837,6 +972,322 @@ export class LangflowMCPServerConsolidated {
       case 'list_voices': {
         const voices = await this.client!.listElevenLabsVoices();
         return this.formatSuccessResponse(voices);
+      }
+      case 'session': {
+        const result = await this.client!.getSession();
+        return this.formatSuccessResponse(result);
+      }
+      case 'webhook_events': {
+        const result = await this.client!.getWebhookEvents(
+          validated.flow_id_or_name,
+          validated.user_id ? { user_id: validated.user_id } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'health_check': {
+        const result = await this.client!.getHealthCheck();
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleFlowVersionTool(args: Record<string, unknown>) {
+    const validated = FlowVersionToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list': {
+        const { action: _, flow_id, ...params } = validated;
+        const result = await this.client!.listFlowVersions(flow_id, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create': {
+        const result = await this.client!.createFlowVersion(validated.flow_id, validated.body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get': {
+        const result = await this.client!.getFlowVersion(validated.flow_id, validated.version_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete': {
+        await this.client!.deleteFlowVersion(validated.flow_id, validated.version_id);
+        return this.formatSuccessResponse({ success: true, message: 'Flow version deleted successfully' });
+      }
+      case 'activate': {
+        const result = await this.client!.activateFlowVersion(
+          validated.flow_id,
+          validated.version_id,
+          validated.save_draft !== undefined ? { save_draft: validated.save_draft } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_events': {
+        const result = await this.client!.getFlowEvents(
+          validated.flow_id,
+          validated.since !== undefined ? { since: validated.since } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'create_event': {
+        const { action: _, flow_id, ...body } = validated;
+        const result = await this.client!.createFlowEvent(flow_id, body);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleFileV2Tool(args: Record<string, unknown>) {
+    const validated = FileV2ToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list': {
+        const result = await this.client!.listFilesV2();
+        return this.formatSuccessResponse(result);
+      }
+      case 'upload': {
+        const fileBuffer = this.validateFileSize(validated.file_content);
+        const params: { append?: boolean; ephemeral?: boolean } = {};
+        if (validated.append !== undefined) params.append = validated.append;
+        if (validated.ephemeral !== undefined) params.ephemeral = validated.ephemeral;
+        const result = await this.client!.uploadFileV2(fileBuffer, validated.file_name, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get': {
+        const result = await this.client!.getFileV2(
+          validated.file_id,
+          validated.return_content !== undefined ? { return_content: validated.return_content } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'rename': {
+        const result = await this.client!.renameFileV2(validated.file_id, validated.name);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete': {
+        const result = await this.client!.deleteFileV2(validated.file_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_all': {
+        const result = await this.client!.deleteAllFilesV2();
+        return this.formatSuccessResponse(result);
+      }
+      case 'batch_download': {
+        const result = await this.client!.batchDownloadFilesV2(validated.file_ids);
+        return this.formatSuccessResponse(result);
+      }
+      case 'batch_delete': {
+        const result = await this.client!.batchDeleteFilesV2(validated.file_ids);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleModelTool(args: Record<string, unknown>) {
+    const validated = ModelToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listModels(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'providers': {
+        const result = await this.client!.listModelProviders();
+        return this.formatSuccessResponse(result);
+      }
+      case 'enabled_providers': {
+        const result = await this.client!.listEnabledProviders(
+          validated.providers ? { providers: validated.providers } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'enabled_models': {
+        const result = await this.client!.listEnabledModels(
+          validated.model_names ? { model_names: validated.model_names } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'set_enabled': {
+        const result = await this.client!.setEnabledModels(validated.models);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_default': {
+        const result = await this.client!.getDefaultModel({ model_type: validated.model_type });
+        return this.formatSuccessResponse(result);
+      }
+      case 'set_default': {
+        const result = await this.client!.setDefaultModel({
+          provider: validated.provider,
+          model_name: validated.model_name,
+          model_type: validated.model_type
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_default': {
+        const result = await this.client!.deleteDefaultModel({ model_type: validated.model_type });
+        return this.formatSuccessResponse(result);
+      }
+      case 'provider_mapping': {
+        const result = await this.client!.getProviderVariableMapping();
+        return this.formatSuccessResponse(result);
+      }
+      case 'validate_provider': {
+        const result = await this.client!.validateModelProvider({
+          provider: validated.provider,
+          variables: validated.variables
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'options_language': {
+        const result = await this.client!.getLanguageModelOptions();
+        return this.formatSuccessResponse(result);
+      }
+      case 'options_embedding': {
+        const result = await this.client!.getEmbeddingModelOptions();
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleAgenticTool(args: Record<string, unknown>) {
+    const validated = AgenticToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'assist': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.agenticAssist(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'check_config': {
+        const result = await this.client!.agenticCheckConfig();
+        return this.formatSuccessResponse(result);
+      }
+      case 'execute': {
+        const { action: _, flow_name, ...body } = validated;
+        const result = await this.client!.agenticExecute(flow_name, body);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleWorkflowTool(args: Record<string, unknown>) {
+    const validated = WorkflowToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'run': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.runWorkflow(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_result': {
+        const result = await this.client!.getWorkflowResult(
+          validated.job_id ? { job_id: validated.job_id } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'stop': {
+        const result = await this.client!.stopWorkflow(validated.job_id);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleMcpServerTool(args: Record<string, unknown>) {
+    const validated = McpServerToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list': {
+        const result = await this.client!.listMcpServers(
+          validated.action_count !== undefined ? { action_count: validated.action_count } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'get': {
+        const result = await this.client!.getMcpServer(validated.server_name);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create': {
+        const result = await this.client!.createMcpServer(validated.server_name, validated.config);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update': {
+        const result = await this.client!.updateMcpServer(validated.server_name, validated.config);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete': {
+        const result = await this.client!.deleteMcpServer(validated.server_name);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleMcpProjectTool(args: Record<string, unknown>) {
+    const validated = McpProjectToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'get_config': {
+        const result = await this.client!.getMcpProjectConfig(
+          validated.project_id,
+          validated.mcp_enabled !== undefined ? { mcp_enabled: validated.mcp_enabled } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_config': {
+        const result = await this.client!.updateMcpProjectConfig(validated.project_id, {
+          settings: validated.settings,
+          auth_settings: validated.auth_settings
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_installed': {
+        const result = await this.client!.getMcpProjectInstalled(validated.project_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'install': {
+        const result = await this.client!.installMcpProject(validated.project_id, {
+          client: validated.client,
+          transport: validated.transport
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_composer_url': {
+        const result = await this.client!.getMcpProjectComposerUrl(validated.project_id);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleTraceTool(args: Record<string, unknown>) {
+    const validated = TraceToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listTraces(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get': {
+        const result = await this.client!.getTrace(validated.trace_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete': {
+        await this.client!.deleteTrace(validated.trace_id);
+        return this.formatSuccessResponse({ success: true, message: 'Trace deleted successfully' });
+      }
+      case 'delete_by_flow': {
+        const result = await this.client!.deleteTraces(validated.flow_id);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleResponseTool(args: Record<string, unknown>) {
+    const validated = ResponseToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'create': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createResponse(body);
+        return this.formatSuccessResponse(result);
       }
     }
   }
