@@ -371,11 +371,6 @@ export interface VerticesOrderResponse {
   [key: string]: any;
 }
 
-export interface GetVertexParams {
-  flow_id: string;
-  vertex_id: string;
-}
-
 export interface StreamVertexBuildParams {
   flow_id: string;
   vertex_id: string;

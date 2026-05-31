@@ -153,11 +153,6 @@ export const BuildToolSchema = z.discriminatedUnion('action', [
     start_component_id: z.string().optional()
   }),
   z.object({
-    action: z.literal('get_vertex'),
-    flow_id: uuidSchema('flow ID'),
-    vertex_id: z.string().min(1)
-  }),
-  z.object({
     action: z.literal('stream_vertex'),
     flow_id: uuidSchema('flow ID'),
     vertex_id: z.string().min(1)
@@ -321,7 +316,6 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
 // User tool schema
 export const UserToolSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('list'), ...paginationSchema }),
-  z.object({ action: z.literal('get'), user_id: uuidSchema('user ID') }),
   z.object({ action: z.literal('get_current') }),
   z.object({
     action: z.literal('update'),
@@ -356,7 +350,6 @@ export const AuthToolSchema = z.discriminatedUnion('action', [
 // Store tool schema
 export const StoreToolSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('list_components') }),
-  z.object({ action: z.literal('list_custom') }),
   z.object({
     action: z.literal('create_custom'),
     name: z.string().min(1),

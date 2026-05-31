@@ -2072,31 +2072,6 @@ Related Tools:
     }
   },
   {
-    name: 'get_vertex',
-    description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "build_flow" tool instead to build specific components, or "get_flow" to retrieve flow structure.\n\nGet detailed information about a specific vertex (component) in a flow. Retrieves vertex configuration, state, and metadata. Essential for inspecting individual component details, debugging component issues, and understanding flow structure at the component level.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        flow_id: {
-          type: 'string',
-          format: 'uuid',
-          description: 'Flow ID (UUID) containing the vertex'
-        },
-        vertex_id: {
-          type: 'string',
-          description: 'Vertex ID to retrieve details for'
-        }
-      },
-      required: ['flow_id', 'vertex_id']
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
-    }
-  },
-  {
     name: 'stream_vertex_build',
     description: '⚠️ DEPRECATED: This endpoint is deprecated in Langflow API 1.6.4 and will be removed in a future version. Use "get_build_status" tool with event_delivery="streaming" to monitor build progress.\n\nStream real-time build events for a specific vertex. Provides live updates during vertex build process using server-sent events (SSE). Essential for monitoring long-running component builds, debugging build failures in real-time, and providing live build status to users.',
     inputSchema: {
@@ -2163,27 +2138,6 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: true
-    }
-  },
-  {
-    name: 'get_user',
-    description: 'Get details about a specific user by ID. Returns user profile information including username, email, active status, and profile picture.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        user_id: {
-          type: 'string',
-          format: 'uuid',
-          description: 'User ID (UUID)'
-        }
-      },
-      required: ['user_id']
     },
     annotations: {
       readOnlyHint: true,
@@ -2301,20 +2255,6 @@ Related Tools:
     annotations: {
       readOnlyHint: false,
       destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: true
-    }
-  },
-  {
-    name: 'list_custom_components',
-    description: 'List all custom components created by the user. Returns array of custom component objects with code, name, description, and return type.',
-    inputSchema: {
-      type: 'object',
-      properties: {}
-    },
-    annotations: {
-      readOnlyHint: true,
-      destructiveHint: false,
       idempotentHint: true,
       openWorldHint: true
     }

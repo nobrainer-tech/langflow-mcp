@@ -435,10 +435,6 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.buildVertices(flow_id, request);
         return this.formatSuccessResponse(result);
       }
-      case 'get_vertex': {
-        const result = await this.client!.getVertex({ flow_id: validated.flow_id, vertex_id: validated.vertex_id });
-        return this.formatSuccessResponse(result);
-      }
       case 'stream_vertex': {
         const result = await this.client!.streamVertexBuild({ flow_id: validated.flow_id, vertex_id: validated.vertex_id });
         return this.formatSuccessResponse(result);
@@ -688,10 +684,6 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.listUsers(params);
         return this.formatSuccessResponse(result);
       }
-      case 'get': {
-        const result = await this.client!.getUser(validated.user_id);
-        return this.formatSuccessResponse(result);
-      }
       case 'get_current': {
         const result = await this.client!.getCurrentUser();
         return this.formatSuccessResponse(result);
@@ -753,10 +745,6 @@ export class LangflowMCPServerConsolidated {
       case 'list_components': {
         const components = await this.client!.listComponents();
         return this.formatSuccessResponse(components);
-      }
-      case 'list_custom': {
-        const result = await this.client!.listCustomComponents();
-        return this.formatSuccessResponse(result);
       }
       case 'create_custom': {
         const result = await this.client!.createCustomComponent({ name: validated.name, code: validated.code });

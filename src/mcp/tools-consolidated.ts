@@ -106,7 +106,6 @@ Actions:
 - status: Get build job status
 - cancel: Cancel a running build
 - vertices: Build specific vertices
-- get_vertex: Get vertex details
 - stream_vertex: Stream vertex build (deprecated)
 - task_status: Get async task status
 
@@ -119,13 +118,13 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['start', 'status', 'cancel', 'vertices', 'get_vertex', 'stream_vertex', 'task_status'],
+          enum: ['start', 'status', 'cancel', 'vertices', 'stream_vertex', 'task_status'],
           description: 'Build action'
         },
         flow_id: { type: 'string', description: 'Flow ID (UUID)' },
         job_id: { type: 'string', description: 'Build job ID - for status, cancel' },
         task_id: { type: 'string', description: 'Task ID - for task_status' },
-        vertex_id: { type: 'string', description: 'Vertex ID - for get_vertex, stream_vertex' },
+        vertex_id: { type: 'string', description: 'Vertex ID - for stream_vertex' },
         inputs: { type: 'object', description: 'Build inputs' },
         data: { type: 'object', description: 'Build data - for vertices' },
         files: { type: 'array', description: 'Files for build' },
@@ -382,7 +381,6 @@ Examples:
 
 Actions:
 - list: List all users (admin)
-- get: Get user by ID
 - get_current: Get current authenticated user
 - update: Update user profile
 - reset_password: Reset user password (admin)
@@ -395,7 +393,7 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'get', 'get_current', 'update', 'reset_password'],
+          enum: ['list', 'get_current', 'update', 'reset_password'],
           description: 'User action'
         },
         user_id: { type: 'string', description: 'User ID (UUID)' },
@@ -460,7 +458,6 @@ Examples:
 
 Actions:
 - list_components: List available components
-- list_custom: List custom components
 - create_custom: Create custom component
 - check: Check store availability
 - check_key: Validate store API key
@@ -477,7 +474,7 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['list_components', 'list_custom', 'create_custom', 'check', 'check_key', 'list_store', 'get_store', 'list_tags', 'get_likes'],
+          enum: ['list_components', 'create_custom', 'check', 'check_key', 'list_store', 'get_store', 'list_tags', 'get_likes'],
           description: 'Store action'
         },
         component_id: { type: 'string', description: 'Component ID' },

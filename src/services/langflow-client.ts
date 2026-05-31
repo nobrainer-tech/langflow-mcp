@@ -51,10 +51,8 @@ import {
   DeleteMonitorMessagesRequest,
   MigrateSessionParams,
   MonitorTransactionsParams,
-  TransactionResponse,
   BuildVerticesRequest,
   VerticesOrderResponse,
-  GetVertexParams,
   StreamVertexBuildParams,
   VersionResponse,
   UserRead,
@@ -644,8 +642,12 @@ export class LangflowClient {
 
   async getMonitorMessage(messageId: string): Promise<MessageResponse> {
     try {
-      const response = await this.client.get<MessageResponse>(`/monitor/messages/${encodeURIComponent(messageId)}`);
-      return response.data;
+      const response = await this.client.get<MessageResponse[]>('/monitor/messages');
+      const message = response.data.find(m => m.id === messageId);
+      if (!message) {
+        throw new Error(`Monitor message ${messageId} not found`);
+      }
+      return message;
     } catch (error) {
       throw this.handleError(error, `Failed to get monitor message ${messageId}`);
     }
@@ -662,7 +664,9 @@ export class LangflowClient {
 
   async getMonitorSessionMessages(sessionId: string): Promise<MessageResponse[]> {
     try {
-      const response = await this.client.get<MessageResponse[]>(`/monitor/messages/session/${encodeURIComponent(sessionId)}`);
+      const response = await this.client.get<MessageResponse[]>('/monitor/messages', {
+        params: { session_id: sessionId }
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get session messages for ${sessionId}`);
@@ -725,15 +729,6 @@ export class LangflowClient {
     }
   }
 
-  async getVertex(params: GetVertexParams): Promise<any> {
-    try {
-      const response = await this.client.get(`/build/${encodeURIComponent(params.flow_id)}/vertices/${encodeURIComponent(params.vertex_id)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get vertex ${params.vertex_id}`);
-    }
-  }
-
   async streamVertexBuild(params: StreamVertexBuildParams): Promise<any> {
     try {
       const response = await this.client.get(`/build/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.vertex_id)}/stream`);
@@ -767,15 +762,6 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get current user');
-    }
-  }
-
-  async getUser(userId: string): Promise<UserRead> {
-    try {
-      const response = await this.client.get<UserRead>(`/users/${encodeURIComponent(userId)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get user ${userId}`);
     }
   }
 
@@ -822,15 +808,6 @@ export class LangflowClient {
       await this.client.delete(`/api_key/${encodeURIComponent(apiKeyId)}`);
     } catch (error) {
       throw this.handleError(error, `Failed to delete API key ${apiKeyId}`);
-    }
-  }
-
-  async listCustomComponents(): Promise<CustomComponentRead[]> {
-    try {
-      const response = await this.client.get<CustomComponentRead[]>('/custom_component');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to list custom components');
     }
   }
 
@@ -997,80 +974,6 @@ export class LangflowClient {
     }
   }
 
-  async getMonitorMessageById(messageId: string): Promise<MessageResponse> {
-    try {
-      const response = await this.client.get<MessageResponse>(`/monitor/messages/${encodeURIComponent(messageId)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get monitor message');
-    }
-  }
-
-  async getMonitorTransactionById(transactionId: string): Promise<TransactionResponse> {
-    try {
-      const response = await this.client.get<TransactionResponse>(`/monitor/transactions/${encodeURIComponent(transactionId)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get monitor transaction');
-    }
-  }
-
-  async getMonitorVertexBuilds(params?: { flow_id?: string }): Promise<any[]> {
-    try {
-      const response = await this.client.get<any[]>('/monitor/vertices/builds', { params });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get monitor vertex builds');
-    }
-  }
-
-  async getMonitorVertexBuildById(vertexBuildId: string): Promise<any> {
-    try {
-      const response = await this.client.get<any>(`/monitor/vertices/builds/${encodeURIComponent(vertexBuildId)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get monitor vertex build');
-    }
-  }
-
-  async uploadTextData(params: { flow_id: string; text_data: string; file_name?: string }): Promise<any> {
-    try {
-      const response = await this.client.post(`/files/upload/${encodeURIComponent(params.flow_id)}/text`, {
-        text: params.text_data,
-        file_name: params.file_name
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to upload text data to flow ${params.flow_id}`);
-    }
-  }
-
-  async installStoreComponent(componentId: string): Promise<any> {
-    try {
-      const response = await this.client.post(`/store/components/${componentId}/install`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to install store component ${componentId}`);
-    }
-  }
-
-  async updateCustomComponent(componentId: string, updates: Partial<CustomComponentCreate>): Promise<CustomComponentRead> {
-    try {
-      const response = await this.client.patch<CustomComponentRead>(`/custom_component/${encodeURIComponent(componentId)}`, updates);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to update custom component ${componentId}`);
-    }
-  }
-
-  async deleteCustomComponent(componentId: string): Promise<void> {
-    try {
-      await this.client.delete(`/custom_component/${encodeURIComponent(componentId)}`);
-    } catch (error) {
-      throw this.handleError(error, `Failed to delete custom component ${componentId}`);
-    }
-  }
-
   async deleteUser(userId: string): Promise<void> {
     try {
       await this.client.delete(`/users/${encodeURIComponent(userId)}`);
@@ -1088,69 +991,6 @@ export class LangflowClient {
     }
   }
 
-  async updateConfig(config: any): Promise<any> {
-    try {
-      const response = await this.client.patch('/config', config);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to update configuration');
-    }
-  }
-
-  async getStats(): Promise<any> {
-    try {
-      const response = await this.client.get('/stats');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get statistics');
-    }
-  }
-
-  async exportFlow(flowId: string): Promise<any> {
-    try {
-      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/export`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to export flow ${flowId}`);
-    }
-  }
-
-  async importFlow(flowData: any): Promise<FlowRead> {
-    try {
-      const response = await this.client.post<FlowRead>('/flows/import', flowData);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to import flow');
-    }
-  }
-
-  async cloneFlow(flowId: string, name?: string): Promise<FlowRead> {
-    try {
-      const response = await this.client.post<FlowRead>(`/flows/${encodeURIComponent(flowId)}/clone`, { name });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to clone flow ${flowId}`);
-    }
-  }
-
-  async getFlowDependencies(flowId: string): Promise<any> {
-    try {
-      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/dependencies`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get flow dependencies ${flowId}`);
-    }
-  }
-
-  async getAiNodes(): Promise<any[]> {
-    try {
-      const response = await this.client.get<any[]>('/ai_nodes');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get AI nodes');
-    }
-  }
-
   async buildVertex(params: { flow_id: string; vertex_id: string; inputs?: any }): Promise<any> {
     try {
       const response = await this.client.post(`/build/${encodeURIComponent(params.flow_id)}/vertices/${encodeURIComponent(params.vertex_id)}`, params.inputs || {});
@@ -1160,100 +1000,12 @@ export class LangflowClient {
     }
   }
 
-  async cancelExecution(params: { execution_id: string }): Promise<any> {
-    try {
-      const response = await this.client.post(`/executions/${encodeURIComponent(params.execution_id)}/cancel`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to cancel execution ${params.execution_id}`);
-    }
-  }
-
-  async getExecutionResult(params: { execution_id: string }): Promise<any> {
-    try {
-      const response = await this.client.get(`/executions/${encodeURIComponent(params.execution_id)}/result`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get execution result ${params.execution_id}`);
-    }
-  }
-
-  async getFileMetadata(params: { flow_id: string; file_name: string }): Promise<any> {
-    try {
-      const response = await this.client.get(`/files/${encodeURIComponent(params.flow_id)}/${encodeURIComponent(params.file_name)}/metadata`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get file metadata ${params.file_name}`);
-    }
-  }
-
   async getHealth(): Promise<any> {
     try {
       const response = await this.client.get('/health');
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get health status');
-    }
-  }
-
-  async getUserById(userId: string): Promise<UserRead> {
-    try {
-      const response = await this.client.get<UserRead>(`/users/${encodeURIComponent(userId)}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get user ${userId}`);
-    }
-  }
-
-  async listFilesDetailed(params: { flow_id: string }): Promise<any[]> {
-    try {
-      const response = await this.client.get<any[]>(`/files/${encodeURIComponent(params.flow_id)}/detailed`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to get detailed file list for flow ${params.flow_id}`);
-    }
-  }
-
-  async register(username: string, password: string, email?: string): Promise<any> {
-    try {
-      const response = await this.client.post('/register', {
-        username,
-        password,
-        email
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to register user');
-    }
-  }
-
-  async runAdvancedExecution(params: { flow_id: string; [key: string]: any }): Promise<any> {
-    try {
-      const { flow_id, ...request } = params;
-      const response = await this.client.post(`/executions/${encodeURIComponent(flow_id)}/advanced`, request);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to execute advanced flow ${params.flow_id}`);
-    }
-  }
-
-  async searchStoreComponents(query: string, params?: any): Promise<any[]> {
-    try {
-      const response = await this.client.get<any[]>('/store/components/search', {
-        params: { q: query, ...params }
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to search store components');
-    }
-  }
-
-  async uninstallStoreComponent(componentId: string): Promise<any> {
-    try {
-      const response = await this.client.delete(`/store/components/${componentId}/uninstall`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to uninstall store component ${componentId}`);
     }
   }
 
@@ -1305,24 +1057,6 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to register user');
-    }
-  }
-
-  async validateConnection(connectionData: any): Promise<any> {
-    try {
-      const response = await this.client.post('/validate/connection', connectionData);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to validate connection');
-    }
-  }
-
-  async validateFlow(params: { flow_id: string }): Promise<any> {
-    try {
-      const response = await this.client.post(`/flows/${encodeURIComponent(params.flow_id)}/validate`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to validate flow ${params.flow_id}`);
     }
   }
 

@@ -82,18 +82,15 @@ import {
   DeleteMonitorBuildsSchema,
   DeleteMonitorMessagesSchema,
   BuildVerticesSchema,
-  GetVertexSchema,
   StreamVertexBuildSchema,
   GetVersionSchema,
   ListUsersSchema,
   GetCurrentUserSchema,
-  GetUserSchema,
   UpdateUserSchema,
   ResetUserPasswordSchema,
   ListApiKeysSchema,
   CreateApiKeySchema,
   DeleteApiKeySchema,
-  ListCustomComponentsSchema,
   CreateCustomComponentSchema,
   LoginSchema,
   AutoLoginSchema,
@@ -897,12 +894,6 @@ export class LangflowMCPServer {
             return this.formatSuccessResponse(result);
           }
 
-          case 'get_vertex': {
-            const validated = GetVertexSchema.parse(args);
-            const result = await this.client.getVertex(validated);
-            return this.formatSuccessResponse(result);
-          }
-
           case 'stream_vertex_build': {
             const validated = StreamVertexBuildSchema.parse(args);
             const result = await this.client.streamVertexBuild(validated);
@@ -924,12 +915,6 @@ export class LangflowMCPServer {
           case 'get_current_user': {
             GetCurrentUserSchema.parse(args);
             const result = await this.client.getCurrentUser();
-            return this.formatSuccessResponse(result);
-          }
-
-          case 'get_user': {
-            const validated = GetUserSchema.parse(args);
-            const result = await this.client.getUser(validated.user_id);
             return this.formatSuccessResponse(result);
           }
 
@@ -965,12 +950,6 @@ export class LangflowMCPServer {
             const validated = DeleteApiKeySchema.parse(args);
             await this.client.deleteApiKey(validated.api_key_id);
             return this.formatSuccessResponse({ success: true, message: 'API key deleted successfully' });
-          }
-
-          case 'list_custom_components': {
-            ListCustomComponentsSchema.parse(args);
-            const result = await this.client.listCustomComponents();
-            return this.formatSuccessResponse(result);
           }
 
           case 'create_custom_component': {

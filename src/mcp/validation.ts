@@ -381,11 +381,6 @@ export const BuildVerticesSchema = z.object({
   start_component_id: z.string().optional()
 }).strict();
 
-export const GetVertexSchema = z.object({
-  flow_id: z.string().uuid('Invalid flow ID format'),
-  vertex_id: z.string().min(1, 'Vertex ID is required')
-}).strict();
-
 export const StreamVertexBuildSchema = z.object({
   flow_id: z.string().uuid('Invalid flow ID format'),
   vertex_id: z.string().min(1, 'Vertex ID is required')
@@ -399,10 +394,6 @@ export const ListUsersSchema = z.object({
 }).strict();
 
 export const GetCurrentUserSchema = z.object({}).strict();
-
-export const GetUserSchema = z.object({
-  user_id: z.string().uuid('Invalid user ID format')
-}).strict();
 
 export const UpdateUserSchema = z.object({
   user_id: z.string().uuid('Invalid user ID format'),
@@ -428,8 +419,6 @@ export const CreateApiKeySchema = z.object({
 export const DeleteApiKeySchema = z.object({
   api_key_id: z.string().uuid('Invalid API key ID format')
 }).strict();
-
-export const ListCustomComponentsSchema = z.object({}).strict();
 
 export const CreateCustomComponentSchema = z.object({
   code: z.string().min(1, 'Component code is required'),
@@ -563,18 +552,15 @@ export type GetMonitorTransactionsInput = z.infer<typeof GetMonitorTransactionsS
 export type DeleteMonitorBuildsInput = z.infer<typeof DeleteMonitorBuildsSchema>;
 export type DeleteMonitorMessagesInput = z.infer<typeof DeleteMonitorMessagesSchema>;
 export type BuildVerticesInput = z.infer<typeof BuildVerticesSchema>;
-export type GetVertexInput = z.infer<typeof GetVertexSchema>;
 export type StreamVertexBuildInput = z.infer<typeof StreamVertexBuildSchema>;
 export type GetVersionInput = z.infer<typeof GetVersionSchema>;
 export type ListUsersInput = z.infer<typeof ListUsersSchema>;
 export type GetCurrentUserInput = z.infer<typeof GetCurrentUserSchema>;
-export type GetUserInput = z.infer<typeof GetUserSchema>;
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type ResetUserPasswordInput = z.infer<typeof ResetUserPasswordSchema>;
 export type ListApiKeysInput = z.infer<typeof ListApiKeysSchema>;
 export type CreateApiKeyInput = z.infer<typeof CreateApiKeySchema>;
 export type DeleteApiKeyInput = z.infer<typeof DeleteApiKeySchema>;
-export type ListCustomComponentsInput = z.infer<typeof ListCustomComponentsSchema>;
 export type CreateCustomComponentInput = z.infer<typeof CreateCustomComponentSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type AutoLoginInput = z.infer<typeof AutoLoginSchema>;
