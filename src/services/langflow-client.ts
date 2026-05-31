@@ -990,7 +990,7 @@ export class LangflowClient {
 
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.get('/health');
+      await this.client.get('/health', { baseURL: this.config.baseUrl });
       return true;
     } catch (error) {
       return false;
@@ -1037,7 +1037,7 @@ export class LangflowClient {
 
   async getHealth(): Promise<any> {
     try {
-      const response = await this.client.get('/health');
+      const response = await this.client.get('/health', { baseURL: this.config.baseUrl });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get health status');
@@ -1472,9 +1472,10 @@ export class LangflowClient {
   async ingestKnowledgeBase(kbName: string, body: Record<string, any>): Promise<any> {
     try {
       const formData = new FormData();
+      let fileIdx = 0;
       Object.entries(body).forEach(([key, value]) => {
         if (Buffer.isBuffer(value)) {
-          formData.append(key, value);
+          formData.append('files', value, `file-${fileIdx++}`);
         } else {
           formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
         }

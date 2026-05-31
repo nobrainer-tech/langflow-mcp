@@ -455,7 +455,8 @@ describe('New Tool Schemas', () => {
     expect(FlowVersionToolSchema.safeParse({ action: 'list', flow_id: VALID_UUID }).success).toBe(true);
     expect(FlowVersionToolSchema.safeParse({ action: 'create', flow_id: VALID_UUID }).success).toBe(true);
     expect(FlowVersionToolSchema.safeParse({ action: 'activate', flow_id: VALID_UUID, version_id: 'v1' }).success).toBe(true);
-    expect(FlowVersionToolSchema.safeParse({ action: 'create_event', flow_id: VALID_UUID, type: 'deploy' }).success).toBe(true);
+    expect(FlowVersionToolSchema.safeParse({ action: 'create_event', flow_id: VALID_UUID, type: 'flow_settled' }).success).toBe(true);
+    expect(FlowVersionToolSchema.safeParse({ action: 'create_event', flow_id: VALID_UUID, type: 'deploy' }).success).toBe(false);
     expect(FlowVersionToolSchema.safeParse({ action: 'get', flow_id: VALID_UUID }).success).toBe(false);
   });
 
@@ -571,7 +572,8 @@ describe('Consolidated handler dispatch', () => {
     const [kbName, body] = client.ingestKnowledgeBase.mock.calls[0];
     expect(kbName).toBe('kb');
     expect(body.chunk_size).toBe(100);
-    expect(Buffer.isBuffer(body.file)).toBe(true);
+    expect(Buffer.isBuffer(body.files)).toBe(true);
+    expect(body.file).toBeUndefined();
   });
 
   it('knowledge_base.preview_chunks passes buffer array', async () => {
@@ -628,8 +630,8 @@ describe('Consolidated handler dispatch', () => {
   });
 
   it('flow_version.create_event dispatches to createFlowEvent', async () => {
-    await server.handleFlowVersionTool({ action: 'create_event', flow_id: VALID_UUID, type: 'deploy', summary: 's' });
-    expect(client.createFlowEvent).toHaveBeenCalledWith(VALID_UUID, { type: 'deploy', summary: 's' });
+    await server.handleFlowVersionTool({ action: 'create_event', flow_id: VALID_UUID, type: 'flow_settled', summary: 's' });
+    expect(client.createFlowEvent).toHaveBeenCalledWith(VALID_UUID, { type: 'flow_settled', summary: 's' });
   });
 
   it('file_v2.upload passes buffer and params', async () => {
@@ -660,6 +662,29 @@ describe('Consolidated handler dispatch', () => {
     expect(client.agenticExecute).toHaveBeenCalledWith('n', { flow_id: 'f1', input_value: 'hi' });
   });
 
+  it('flow_execution.run dispatches to runFlow with input request and stream', async () => {
+    await server.handleFlowExecutionTool({
+      action: 'run', flow_id_or_name: 'my-flow', input_value: 'hi', output_type: 'chat'
+    });
+    expect(client.runFlow).toHaveBeenCalledWith(
+      'my-flow',
+      { input_value: 'hi', output_type: 'chat' },
+      false
+    );
+  });
+
+  it('flow_execution.run_advanced dispatches to runFlowAdvanced with user_id and stream', async () => {
+    await server.handleFlowExecutionTool({
+      action: 'run_advanced', flow_id_or_name: 'my-flow', input_value: 'hi', user_id: VALID_UUID, stream: true
+    });
+    expect(client.runFlowAdvanced).toHaveBeenCalledWith(
+      'my-flow',
+      { input_value: 'hi' },
+      true,
+      VALID_UUID
+    );
+  });
+
   it('workflow.run dispatches to runWorkflow', async () => {
     await server.handleWorkflowTool({ action: 'run', flow_id: 'f1', inputs: { a: 1 } });
     expect(client.runWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', inputs: { a: 1 } });
@@ -676,8 +701,8 @@ describe('Consolidated handler dispatch', () => {
   });
 
   it('mcp_project.install dispatches to installMcpProject', async () => {
-    await server.handleMcpProjectTool({ action: 'install', project_id: VALID_UUID, client: 'cursor', transport: 'stdio' });
-    expect(client.installMcpProject).toHaveBeenCalledWith(VALID_UUID, { client: 'cursor', transport: 'stdio' });
+    await server.handleMcpProjectTool({ action: 'install', project_id: VALID_UUID, client: 'cursor', transport: 'sse' });
+    expect(client.installMcpProject).toHaveBeenCalledWith(VALID_UUID, { client: 'cursor', transport: 'sse' });
   });
 
   it('trace.delete_by_flow dispatches to deleteTraces', async () => {

@@ -405,6 +405,8 @@ export interface UserUpdate {
   username?: string;
   password?: string;
   profile_image?: string;
+  is_active?: boolean;
+  is_superuser?: boolean;
   [key: string]: any;
 }
 
@@ -492,7 +494,14 @@ export interface HealthResponse {
 // --- Langflow 1.9.5 additional endpoints ---
 
 export interface FlowEventCreate {
-  type: string;
+  type:
+    | 'component_added'
+    | 'component_removed'
+    | 'component_configured'
+    | 'connection_added'
+    | 'connection_removed'
+    | 'flow_updated'
+    | 'flow_settled';
   summary?: string;
 }
 
@@ -603,7 +612,7 @@ export interface MigrateSharedSessionParams {
 export interface ListTracesParams {
   flow_id?: string;
   session_id?: string;
-  status?: string;
+  status?: 'unset' | 'ok' | 'error';
   query?: string;
   start_time?: string;
   end_time?: string;
@@ -705,7 +714,7 @@ export interface MCPProjectUpdateRequest {
 
 export interface MCPInstallRequest {
   client: string;
-  transport?: string;
+  transport?: 'sse' | 'streamablehttp';
   [key: string]: any;
 }
 

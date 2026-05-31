@@ -209,6 +209,14 @@ export class LangflowMCPServerConsolidated {
       throw new Error('Invalid base64 format');
     }
 
+    // Reject lossy base64: length must be a multiple of 4 and round-trip exactly
+    if (
+      fileContent.length % 4 !== 0 ||
+      Buffer.from(fileContent, 'base64').toString('base64') !== fileContent
+    ) {
+      throw new Error('Invalid base64 format');
+    }
+
     const estimatedSize = (fileContent.length * 3) / 4;
     if (estimatedSize > maxSizeBytes) {
       throw new Error(`File size exceeds maximum allowed size of ${maxSizeBytes} bytes (10MB)`);
@@ -631,7 +639,7 @@ export class LangflowMCPServerConsolidated {
       }
       case 'ingest': {
         const fileBuffer = this.validateFileSize(validated.file_content);
-        const body: Record<string, unknown> = { ...(validated.params ?? {}), file: fileBuffer };
+        const body: Record<string, unknown> = { ...(validated.params ?? {}), files: fileBuffer };
         const result = await this.client!.ingestKnowledgeBase(validated.kb_name, body);
         return this.formatSuccessResponse(result);
       }
@@ -669,7 +677,7 @@ export class LangflowMCPServerConsolidated {
           flow_id: validated.flow_id,
           file_name: validated.file_name
         });
-        if (!fileData) throw new Error('No file data received from server');
+        if (!fileData || (fileData.byteLength ?? fileData.length) === 0) throw new Error('No file data received from server');
         const base64Data = Buffer.from(fileData).toString('base64');
         return this.formatSuccessResponse({ file_name: validated.file_name, content: base64Data });
       }
@@ -685,7 +693,7 @@ export class LangflowMCPServerConsolidated {
           flow_id: validated.flow_id,
           file_name: validated.file_name
         });
-        if (!imageData) throw new Error('No image data received from server');
+        if (!imageData || (imageData.byteLength ?? imageData.length) === 0) throw new Error('No image data received from server');
         const base64Data = Buffer.from(imageData).toString('base64');
         return this.formatSuccessResponse({ file_name: validated.file_name, content: base64Data });
       }
@@ -965,7 +973,7 @@ export class LangflowMCPServerConsolidated {
       }
       case 'get_picture': {
         const pictureData = await this.client!.getProfilePicture(validated.folder_name, validated.file_name);
-        if (!pictureData) throw new Error('No picture data received from server');
+        if (!pictureData || (pictureData.byteLength ?? pictureData.length) === 0) throw new Error('No picture data received from server');
         const base64Data = Buffer.from(pictureData).toString('base64');
         return this.formatSuccessResponse({ file_name: validated.file_name, content: base64Data });
       }

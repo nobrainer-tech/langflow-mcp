@@ -44,6 +44,8 @@ describe('Langflow 1.9.5 new full-mode tools dispatch', () => {
     clientMock.getTrace = vi.fn().mockResolvedValue({ id: 'trace-1' });
     clientMock.activateFlowVersion = vi.fn().mockResolvedValue({ activated: true });
     clientMock.detectVariables = vi.fn().mockResolvedValue({ variables: [] });
+    clientMock.runFlow = vi.fn().mockResolvedValue({ outputs: [] });
+    clientMock.buildFlow = vi.fn().mockResolvedValue({ job_id: 'build-1' });
   });
 
   afterEach(() => {
@@ -58,6 +60,36 @@ describe('Langflow 1.9.5 new full-mode tools dispatch', () => {
     expect(clientMock.listModels).toHaveBeenCalledTimes(1);
     expect(clientMock.listModels).toHaveBeenCalledWith({ provider: 'openai', search: 'gpt' });
     expect(res.isError).toBeUndefined();
+  });
+
+  it('dispatches run_flow to client.runFlow with flow id, input request and stream', async () => {
+    const server = new LangflowMCPServer();
+    await callTool(server, 'run_flow', {
+      flow_id_or_name: 'my-flow',
+      input_request: { input_value: 'hi', output_type: 'chat' }
+    });
+
+    expect(clientMock.runFlow).toHaveBeenCalledTimes(1);
+    expect(clientMock.runFlow).toHaveBeenCalledWith(
+      'my-flow',
+      { input_value: 'hi', output_type: 'chat' },
+      false
+    );
+  });
+
+  it('dispatches build_flow to client.buildFlow with payload and params', async () => {
+    const server = new LangflowMCPServer();
+    await callTool(server, 'build_flow', {
+      flow_id: '12345678-1234-4234-a234-123456789012',
+      inputs: { x: 1 }
+    });
+
+    expect(clientMock.buildFlow).toHaveBeenCalledTimes(1);
+    expect(clientMock.buildFlow).toHaveBeenCalledWith(
+      '12345678-1234-4234-a234-123456789012',
+      { inputs: { x: 1 }, data: undefined, files: undefined },
+      { log_builds: true, event_delivery: 'polling' }
+    );
   });
 
   it('dispatches run_workflow to client.runWorkflow', async () => {

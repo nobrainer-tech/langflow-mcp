@@ -421,6 +421,7 @@ describe('LangflowClient', () => {
       const result = await client.healthCheck();
 
       expect(result).toBe(true);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should return false on failed health check', async () => {
@@ -2838,6 +2839,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual(mockHealthStatus);
       expect(result.status).toBe('healthy');
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should handle unhealthy status', async () => {
@@ -3022,6 +3024,7 @@ describe('LangflowClient', () => {
 
       expect(result.registered).toBe(true);
       expect(result.email).toBe('test@example.com');
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should get registration status for non-registered user', async () => {
@@ -3056,6 +3059,7 @@ describe('LangflowClient', () => {
 
       expect(result.registered).toBe(true);
       expect(result.email).toBe(email);
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should handle 400 Bad Request for invalid email', async () => {
@@ -3136,7 +3140,7 @@ describe('LangflowClient', () => {
   describe('createFlowEvent', () => {
     it('should create a flow event', async () => {
       const flowId = 'flow-1';
-      const body = { type: 'deployed', summary: 'shipped' };
+      const body = { type: 'flow_settled' as const, summary: 'shipped' };
       mock.onPost(`/flows/${flowId}/events`).reply(200, { id: 'ev-1' });
 
       const result = await client.createFlowEvent(flowId, body);
@@ -3377,6 +3381,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ id: 'f1', content: 'data' });
       expect(mock.history.get[0].params).toEqual({ return_content: true });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('renameFileV2 should PUT with name query param', async () => {
@@ -3386,6 +3391,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ id: 'f1', name: 'new' });
       expect(mock.history.put[0].params).toEqual({ name: 'new' });
+      expect(mock.history.put[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('deleteFileV2 should delete a single file', async () => {
@@ -3394,6 +3400,7 @@ describe('LangflowClient', () => {
       const result = await client.deleteFileV2('f1');
 
       expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('deleteAllFilesV2 should delete all files', async () => {
@@ -3402,6 +3409,7 @@ describe('LangflowClient', () => {
       const result = await client.deleteAllFilesV2();
 
       expect(result).toEqual({ deleted: 5 });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('batchDownloadFilesV2 should post file ids', async () => {
@@ -3412,6 +3420,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ url: 'zip' });
       expect(mock.history.post[0].data).toBe(JSON.stringify(ids));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('batchDeleteFilesV2 should send ids in delete body', async () => {
@@ -3422,6 +3431,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ deleted: 2 });
       expect(mock.history.delete[0].data).toBe(JSON.stringify(ids));
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
     });
   });
 
@@ -3465,12 +3475,19 @@ describe('LangflowClient', () => {
       expect(mock.history.get[0].params).toEqual({ page: 2, limit: 10 });
     });
 
-    it('ingestKnowledgeBase should post multipart body', async () => {
+    it('ingestKnowledgeBase should post multipart body with files field', async () => {
       mock.onPost('/knowledge_bases/kb1/ingest').reply(200, { status: 'started' });
 
       const result = await client.ingestKnowledgeBase('kb1', { file: Buffer.from('x'), mode: 'append' });
 
       expect(result).toEqual({ status: 'started' });
+
+      // Inspect the multipart payload: the file buffer must be under field name "files"
+      const formData = mock.history.post[0].data;
+      const serialized = formData.getBuffer().toString();
+      expect(serialized).toContain('name="files"');
+      expect(serialized).not.toContain('name="file"');
+      expect(serialized).toContain('name="mode"');
     });
 
     it('cancelKnowledgeBaseIngest should post cancel', async () => {
@@ -3767,6 +3784,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ job_id: 'job-1' });
       expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('stopWorkflow should POST job_id body', async () => {
@@ -3796,6 +3814,7 @@ describe('LangflowClient', () => {
       const result = await client.getMcpServer('srv1');
 
       expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('createMcpServer should POST config', async () => {
@@ -3806,6 +3825,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ name: 'srv1' });
       expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('updateMcpServer should PATCH config', async () => {
@@ -3816,6 +3836,7 @@ describe('LangflowClient', () => {
 
       expect(result).toEqual({ name: 'srv1' });
       expect(mock.history.patch[0].data).toBe(JSON.stringify(body));
+      expect(mock.history.patch[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('deleteMcpServer should DELETE a server', async () => {
@@ -3824,6 +3845,7 @@ describe('LangflowClient', () => {
       const result = await client.deleteMcpServer('srv1');
 
       expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].baseURL).toBe('http://localhost:7860');
     });
   });
 
@@ -3856,7 +3878,7 @@ describe('LangflowClient', () => {
     });
 
     it('installMcpProject should POST install body', async () => {
-      const body = { client: 'cursor', transport: 'stdio' };
+      const body = { client: 'cursor', transport: 'sse' as const };
       mock.onPost('/mcp/project/p1/install').reply(200, { installed: true });
 
       const result = await client.installMcpProject('p1', body);

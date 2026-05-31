@@ -382,6 +382,14 @@ export class LangflowMCPServer {
       throw new Error('Invalid base64 format');
     }
 
+    // Reject lossy base64: length must be a multiple of 4 and round-trip exactly
+    if (
+      fileContent.length % 4 !== 0 ||
+      Buffer.from(fileContent, 'base64').toString('base64') !== fileContent
+    ) {
+      throw new Error('Invalid base64 format');
+    }
+
     // Estimate decoded size BEFORE decoding (base64 is ~4/3 of original)
     const estimatedSize = (fileContent.length * 3) / 4;
     if (estimatedSize > maxSizeBytes) {
@@ -742,7 +750,7 @@ export class LangflowMCPServer {
             });
 
             // Validate fileData before base64 conversion
-            if (!fileData) {
+            if (!fileData || (fileData.byteLength ?? fileData.length) === 0) {
               throw new Error('No file data received from server');
             }
 
@@ -776,7 +784,7 @@ export class LangflowMCPServer {
             });
 
             // Validate imageData before base64 conversion
-            if (!imageData) {
+            if (!imageData || (imageData.byteLength ?? imageData.length) === 0) {
               throw new Error('No image data received from server');
             }
 
@@ -801,7 +809,7 @@ export class LangflowMCPServer {
             );
 
             // Validate pictureData before base64 conversion
-            if (!pictureData) {
+            if (!pictureData || (pictureData.byteLength ?? pictureData.length) === 0) {
               throw new Error('No picture data received from server');
             }
 
@@ -1344,7 +1352,7 @@ export class LangflowMCPServer {
           case 'ingest_knowledge_base': {
             const validated = IngestKnowledgeBaseSchema.parse(args);
             const fileBuffer = this.validateFileSize(validated.file_content);
-            const body: Record<string, unknown> = { ...(validated.params ?? {}), file: fileBuffer };
+            const body: Record<string, unknown> = { ...(validated.params ?? {}), files: fileBuffer };
             const result = await this.client.ingestKnowledgeBase(validated.kb_name, body);
             return this.formatSuccessResponse(result);
           }

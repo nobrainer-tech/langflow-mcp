@@ -118,7 +118,15 @@ export const FlowVersionToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create_event'),
     flow_id: uuidSchema('flow ID'),
-    type: z.string().min(1),
+    type: z.enum([
+      'component_added',
+      'component_removed',
+      'component_configured',
+      'connection_added',
+      'connection_removed',
+      'flow_updated',
+      'flow_settled'
+    ]),
     summary: z.string().optional()
   })
 ]);
@@ -407,7 +415,7 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
     sender_name: z.string().optional(),
     order_by: z.string().optional()
   }),
-  z.object({ action: z.literal('get_message'), message_id: z.string().min(1) }),
+  z.object({ action: z.literal('get_message'), message_id: uuidSchema('message ID') }),
   z.object({
     action: z.literal('delete_messages'),
     message_ids: z.array(z.string().min(1)).min(1)
@@ -491,6 +499,7 @@ export const UserToolSchema = z.discriminatedUnion('action', [
     action: z.literal('update'),
     user_id: uuidSchema('user ID'),
     username: z.string().optional(),
+    password: z.string().min(1, 'Password cannot be empty').optional(),
     profile_image: z.string().optional(),
     is_active: z.boolean().optional(),
     is_superuser: z.boolean().optional()
@@ -726,7 +735,7 @@ export const McpProjectToolSchema = z.discriminatedUnion('action', [
     action: z.literal('install'),
     project_id: uuidSchema('project ID'),
     client: z.string().min(1),
-    transport: z.string().optional()
+    transport: z.enum(['sse', 'streamablehttp']).optional()
   }),
   z.object({ action: z.literal('get_composer_url'), project_id: uuidSchema('project ID') })
 ]);
@@ -737,7 +746,7 @@ export const TraceToolSchema = z.discriminatedUnion('action', [
     action: z.literal('list'),
     flow_id: z.string().optional(),
     session_id: z.string().optional(),
-    status: z.string().optional(),
+    status: z.enum(['unset', 'ok', 'error']).optional(),
     query: z.string().optional(),
     start_time: z.string().optional(),
     end_time: z.string().optional(),

@@ -399,9 +399,16 @@ export const UpdateUserSchema = z.object({
   user_id: z.string().uuid('Invalid user ID format'),
   username: z.string().min(1, 'Username is required').max(255, 'Username too long').optional(),
   password: z.string().min(1, 'Password cannot be empty').optional(),
-  profile_image: z.string().optional()
+  profile_image: z.string().optional(),
+  is_active: z.boolean().optional(),
+  is_superuser: z.boolean().optional()
 }).strict().refine(
-  data => data.username !== undefined || data.password !== undefined || data.profile_image !== undefined,
+  data =>
+    data.username !== undefined ||
+    data.password !== undefined ||
+    data.profile_image !== undefined ||
+    data.is_active !== undefined ||
+    data.is_superuser !== undefined,
   { message: 'At least one field must be provided for update' }
 );
 
@@ -508,7 +515,15 @@ export const GetFlowEventsSchema = z.object({
 
 export const CreateFlowEventSchema = z.object({
   flow_id: z.string().uuid('Invalid flow ID format'),
-  type: z.string().min(1, 'Event type is required'),
+  type: z.enum([
+    'component_added',
+    'component_removed',
+    'component_configured',
+    'connection_added',
+    'connection_removed',
+    'flow_updated',
+    'flow_settled'
+  ]),
   summary: z.string().optional()
 }).strict();
 
@@ -733,7 +748,7 @@ export const DeleteSharedSessionSchema = z.object({
 export const ListTracesSchema = z.object({
   flow_id: z.string().optional(),
   session_id: z.string().optional(),
-  status: z.string().optional(),
+  status: z.enum(['unset', 'ok', 'error']).optional(),
   query: z.string().optional(),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
@@ -895,7 +910,7 @@ export const GetMcpProjectInstalledSchema = z.object({
 export const InstallMcpProjectSchema = z.object({
   project_id: z.string().uuid('Invalid project ID format'),
   client: z.string().min(1, 'Client is required'),
-  transport: z.string().optional()
+  transport: z.enum(['sse', 'streamablehttp']).optional()
 }).strict();
 
 export const GetMcpProjectComposerUrlSchema = z.object({

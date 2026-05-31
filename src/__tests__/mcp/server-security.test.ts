@@ -116,6 +116,14 @@ class TestableSecurityMethods {
       throw new Error('Invalid base64 format');
     }
 
+    // Reject lossy base64: length must be a multiple of 4 and round-trip exactly
+    if (
+      fileContent.length % 4 !== 0 ||
+      Buffer.from(fileContent, 'base64').toString('base64') !== fileContent
+    ) {
+      throw new Error('Invalid base64 format');
+    }
+
     // Estimate decoded size BEFORE decoding (base64 is ~4/3 of original)
     const estimatedSize = (fileContent.length * 3) / 4;
     if (estimatedSize > maxSizeBytes) {
@@ -451,14 +459,28 @@ describe('Server Security Features', () => {
     });
 
     it('should handle base64 with padding correctly', () => {
-      // Different padding scenarios
-      const noPadding = Buffer.from('a').toString('base64').replace(/=/g, '');
-      const onePadding = Buffer.from('ab').toString('base64');
-      const twoPadding = Buffer.from('a').toString('base64');
+      // Properly padded base64 must be accepted
+      const onePadding = Buffer.from('ab').toString('base64'); // "YWI="
+      const twoPadding = Buffer.from('a').toString('base64');  // "YQ=="
 
-      expect(() => testClass.testValidateFileSize(noPadding)).not.toThrow();
       expect(() => testClass.testValidateFileSize(onePadding)).not.toThrow();
       expect(() => testClass.testValidateFileSize(twoPadding)).not.toThrow();
+    });
+
+    it('should reject lossy base64 with stripped padding', () => {
+      // Padding-stripped base64 is lossy and must be rejected
+      const strippedPadding = Buffer.from('a').toString('base64').replace(/=/g, ''); // "YQ"
+
+      expect(() => testClass.testValidateFileSize(strippedPadding))
+        .toThrow('Invalid base64 format');
+    });
+
+    it('should reject base64 strings whose length is not a multiple of 4', () => {
+      // "a" (length 1) and "ab" (length 2) pass the character regex but are lossy
+      expect(() => testClass.testValidateFileSize('a'))
+        .toThrow('Invalid base64 format');
+      expect(() => testClass.testValidateFileSize('ab'))
+        .toThrow('Invalid base64 format');
     });
 
     it('should default to 10MB limit', () => {
