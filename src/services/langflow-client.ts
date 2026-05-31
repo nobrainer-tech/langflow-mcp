@@ -69,7 +69,42 @@ import {
   TaskStatusResponse,
   StarterProject,
   ElevenLabsVoice,
-  HealthResponse
+  HealthResponse,
+  FlowEventCreate,
+  ListFlowVersionsParams,
+  FlowEventsParams,
+  DetectVarsRequest,
+  DetectVarsResponse,
+  UpdateCustomComponentRequest,
+  StoreComponentCreate,
+  OpenAIResponsesRequest,
+  CreateUserRequest,
+  UploadFileV2Params,
+  GetFileV2Params,
+  CreateKnowledgeBaseRequest,
+  ListKnowledgeBaseChunksParams,
+  MessageUpdate,
+  SharedMessagesParams,
+  MigrateSharedSessionParams,
+  ListTracesParams,
+  ListModelsParams,
+  EnabledProvidersParams,
+  EnabledModelsParams,
+  ModelStatusUpdate,
+  DefaultModelTypeParams,
+  DefaultModelRequest,
+  ValidateProviderRequest,
+  ValidateProviderResponse,
+  AssistantRequest,
+  GetWorkflowResultParams,
+  RunWorkflowRequest,
+  StopWorkflowResponse,
+  ListMcpServersParams,
+  MCPProjectConfigParams,
+  MCPProjectUpdateRequest,
+  MCPInstallRequest,
+  WebhookEventsParams,
+  MCPServerConfigBody
 } from '../types';
 
 export class LangflowClient {
@@ -1057,6 +1092,845 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to register user');
+    }
+  }
+
+  // --- Flows / Versions / Events ---
+
+  async replaceFlow(flowId: string, body: FlowCreate): Promise<FlowRead> {
+    try {
+      const response = await this.client.put<FlowRead>(`/flows/${encodeURIComponent(flowId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to replace flow ${flowId}`);
+    }
+  }
+
+  async expandFlows(body: object): Promise<any> {
+    try {
+      const response = await this.client.post('/flows/expand/', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to expand flows');
+    }
+  }
+
+  async getFlowEvents(flowId: string, params?: FlowEventsParams): Promise<any> {
+    try {
+      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/events`, { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get events for flow ${flowId}`);
+    }
+  }
+
+  async createFlowEvent(flowId: string, body: FlowEventCreate): Promise<any> {
+    try {
+      const response = await this.client.post(`/flows/${encodeURIComponent(flowId)}/events`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to create event for flow ${flowId}`);
+    }
+  }
+
+  async listFlowVersions(flowId: string, params?: ListFlowVersionsParams): Promise<any> {
+    try {
+      const response = await this.client.get(`/flows/${encodeURIComponent(flowId)}/versions/`, { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list versions for flow ${flowId}`);
+    }
+  }
+
+  async createFlowVersion(flowId: string, body?: object): Promise<any> {
+    try {
+      const response = await this.client.post(`/flows/${encodeURIComponent(flowId)}/versions/`, body ?? {});
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to create version for flow ${flowId}`);
+    }
+  }
+
+  async getFlowVersion(flowId: string, versionId: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/flows/${encodeURIComponent(flowId)}/versions/${encodeURIComponent(versionId)}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get version ${versionId} for flow ${flowId}`);
+    }
+  }
+
+  async deleteFlowVersion(flowId: string, versionId: string): Promise<void> {
+    try {
+      await this.client.delete(
+        `/flows/${encodeURIComponent(flowId)}/versions/${encodeURIComponent(versionId)}`
+      );
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete version ${versionId} for flow ${flowId}`);
+    }
+  }
+
+  async activateFlowVersion(
+    flowId: string,
+    versionId: string,
+    params?: { save_draft?: boolean }
+  ): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/flows/${encodeURIComponent(flowId)}/versions/${encodeURIComponent(versionId)}/activate`,
+        undefined,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to activate version ${versionId} for flow ${flowId}`);
+    }
+  }
+
+  // --- Variables ---
+
+  async detectVariables(body: DetectVarsRequest): Promise<DetectVarsResponse> {
+    try {
+      const response = await this.client.post<DetectVarsResponse>('/variables/detections', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to detect variables');
+    }
+  }
+
+  // --- API Key ---
+
+  async saveStoreApiKey(apiKey: string): Promise<any> {
+    try {
+      const response = await this.client.post('/api_key/store', { api_key: apiKey });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to save store API key');
+    }
+  }
+
+  // --- Custom Component ---
+
+  async updateCustomComponentCode(body: UpdateCustomComponentRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/custom_component/update', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to update custom component code');
+    }
+  }
+
+  // --- Store ---
+
+  async createStoreComponent(body: StoreComponentCreate): Promise<{ id: string }> {
+    try {
+      const response = await this.client.post<{ id: string }>('/store/components/', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create store component');
+    }
+  }
+
+  async likeStoreComponent(componentId: string): Promise<any> {
+    try {
+      const response = await this.client.post(`/store/users/likes/${encodeURIComponent(componentId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to like store component ${componentId}`);
+    }
+  }
+
+  // --- Responses ---
+
+  async createResponse(body: OpenAIResponsesRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/responses', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create response');
+    }
+  }
+
+  // --- Session ---
+
+  async getSession(): Promise<any> {
+    try {
+      const response = await this.client.get('/session');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get session');
+    }
+  }
+
+  // --- Users ---
+
+  async createUser(body: CreateUserRequest): Promise<UserRead> {
+    try {
+      const response = await this.client.post<UserRead>('/users/', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create user');
+    }
+  }
+
+  // --- Webhook Events ---
+
+  async getWebhookEvents(flowIdOrName: string, params?: WebhookEventsParams): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/webhook-events/${encodeURIComponent(flowIdOrName)}`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get webhook events for ${flowIdOrName}`);
+    }
+  }
+
+  // --- Health (root) ---
+
+  async getHealthCheck(): Promise<any> {
+    try {
+      const response = await this.client.get('/health_check', { baseURL: this.config.baseUrl });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get health check');
+    }
+  }
+
+  // --- Files V1 (legacy) ---
+
+  async uploadFlowFileLegacy(flowId: string, file: Buffer, fileName: string): Promise<any> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file, fileName);
+
+      const response = await this.client.post(`/upload/${encodeURIComponent(flowId)}`, formData, {
+        headers: {
+          ...formData.getHeaders()
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to upload legacy file to flow ${flowId}`);
+    }
+  }
+
+  // --- Files V2 (root /api/v2) ---
+
+  async listFilesV2(): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/api/v2/files', { baseURL: this.config.baseUrl });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list files (v2)');
+    }
+  }
+
+  async uploadFileV2(file: Buffer, fileName: string, params?: UploadFileV2Params): Promise<any> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file, fileName);
+
+      const response = await this.client.post('/api/v2/files', formData, {
+        baseURL: this.config.baseUrl,
+        params,
+        headers: {
+          ...formData.getHeaders()
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to upload file (v2)');
+    }
+  }
+
+  async getFileV2(fileId: string, params?: GetFileV2Params): Promise<any> {
+    try {
+      const response = await this.client.get(`/api/v2/files/${encodeURIComponent(fileId)}`, {
+        baseURL: this.config.baseUrl,
+        params
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get file ${fileId} (v2)`);
+    }
+  }
+
+  async renameFileV2(fileId: string, name: string): Promise<any> {
+    try {
+      const response = await this.client.put(`/api/v2/files/${encodeURIComponent(fileId)}`, undefined, {
+        baseURL: this.config.baseUrl,
+        params: { name }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to rename file ${fileId} (v2)`);
+    }
+  }
+
+  async deleteFileV2(fileId: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/api/v2/files/${encodeURIComponent(fileId)}`, {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete file ${fileId} (v2)`);
+    }
+  }
+
+  async deleteAllFilesV2(): Promise<any> {
+    try {
+      const response = await this.client.delete('/api/v2/files', { baseURL: this.config.baseUrl });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete all files (v2)');
+    }
+  }
+
+  async batchDownloadFilesV2(fileIds: string[]): Promise<any> {
+    try {
+      const response = await this.client.post('/api/v2/files/batch/', fileIds, {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to batch download files (v2)');
+    }
+  }
+
+  async batchDeleteFilesV2(fileIds: string[]): Promise<any> {
+    try {
+      const response = await this.client.delete('/api/v2/files/batch/', {
+        baseURL: this.config.baseUrl,
+        data: fileIds
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to batch delete files (v2)');
+    }
+  }
+
+  // --- Knowledge Bases (extras) ---
+
+  async listKnowledgeBasesDetailed(): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/knowledge_bases/');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list knowledge bases (detailed)');
+    }
+  }
+
+  async createKnowledgeBase(body: CreateKnowledgeBaseRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/knowledge_bases', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create knowledge base');
+    }
+  }
+
+  async previewKnowledgeBaseChunks(files: Buffer[], body?: Record<string, any>): Promise<any> {
+    try {
+      const formData = new FormData();
+      files.forEach((file, idx) => {
+        formData.append('files', file, `file-${idx}`);
+      });
+      if (body) {
+        Object.entries(body).forEach(([key, value]) => {
+          formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
+        });
+      }
+
+      const response = await this.client.post('/knowledge_bases/preview-chunks', formData, {
+        headers: {
+          ...formData.getHeaders()
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to preview knowledge base chunks');
+    }
+  }
+
+  async listKnowledgeBaseChunks(kbName: string, params?: ListKnowledgeBaseChunksParams): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/chunks`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list chunks for knowledge base ${kbName}`);
+    }
+  }
+
+  async ingestKnowledgeBase(kbName: string, body: Record<string, any>): Promise<any> {
+    try {
+      const formData = new FormData();
+      Object.entries(body).forEach(([key, value]) => {
+        if (Buffer.isBuffer(value)) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
+        }
+      });
+
+      const response = await this.client.post(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/ingest`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders()
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to ingest knowledge base ${kbName}`);
+    }
+  }
+
+  async cancelKnowledgeBaseIngest(kbName: string): Promise<any> {
+    try {
+      const response = await this.client.post(`/knowledge_bases/${encodeURIComponent(kbName)}/cancel`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to cancel ingest for knowledge base ${kbName}`);
+    }
+  }
+
+  // --- Monitor (extras) ---
+
+  async updateMonitorMessage(messageId: string, body: MessageUpdate): Promise<any> {
+    try {
+      const response = await this.client.put(
+        `/monitor/messages/${encodeURIComponent(messageId)}`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update monitor message ${messageId}`);
+    }
+  }
+
+  async deleteMonitorSessionMessages(sessionId: string): Promise<any> {
+    try {
+      const response = await this.client.delete(
+        `/monitor/messages/session/${encodeURIComponent(sessionId)}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete messages for session ${sessionId}`);
+    }
+  }
+
+  async deleteMonitorSessions(sessionIds: string[]): Promise<any> {
+    try {
+      const response = await this.client.delete('/monitor/messages/sessions', { data: sessionIds });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete monitor sessions');
+    }
+  }
+
+  // --- Monitor Shared ---
+
+  async getSharedMessages(params: SharedMessagesParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/monitor/messages/shared', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get shared messages');
+    }
+  }
+
+  async getSharedSessions(sourceFlowId: string): Promise<string[]> {
+    try {
+      const response = await this.client.get<string[]>('/monitor/messages/shared/sessions', {
+        params: { source_flow_id: sourceFlowId }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get shared sessions');
+    }
+  }
+
+  async updateSharedMessage(
+    messageId: string,
+    sourceFlowId: string,
+    body: MessageUpdate
+  ): Promise<any> {
+    try {
+      const response = await this.client.put(
+        `/monitor/messages/shared/${encodeURIComponent(messageId)}`,
+        body,
+        { params: { source_flow_id: sourceFlowId } }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update shared message ${messageId}`);
+    }
+  }
+
+  async migrateSharedSession(oldSessionId: string, params: MigrateSharedSessionParams): Promise<any[]> {
+    try {
+      const response = await this.client.patch<any[]>(
+        `/monitor/messages/shared/session/${encodeURIComponent(oldSessionId)}`,
+        null,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to migrate shared session ${oldSessionId}`);
+    }
+  }
+
+  async deleteSharedSession(sessionId: string, sourceFlowId: string): Promise<any> {
+    try {
+      const response = await this.client.delete(
+        `/monitor/messages/shared/session/${encodeURIComponent(sessionId)}`,
+        { params: { source_flow_id: sourceFlowId } }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete shared session ${sessionId}`);
+    }
+  }
+
+  // --- Monitor Traces ---
+
+  async listTraces(params?: ListTracesParams): Promise<any> {
+    try {
+      const response = await this.client.get('/monitor/traces', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list traces');
+    }
+  }
+
+  async deleteTraces(flowId: string): Promise<any> {
+    try {
+      const response = await this.client.delete('/monitor/traces', { params: { flow_id: flowId } });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete traces for flow ${flowId}`);
+    }
+  }
+
+  async getTrace(traceId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/monitor/traces/${encodeURIComponent(traceId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get trace ${traceId}`);
+    }
+  }
+
+  async deleteTrace(traceId: string): Promise<void> {
+    try {
+      await this.client.delete(`/monitor/traces/${encodeURIComponent(traceId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete trace ${traceId}`);
+    }
+  }
+
+  // --- Models ---
+
+  async listModels(params?: ListModelsParams): Promise<any> {
+    try {
+      const response = await this.client.get('/models', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list models');
+    }
+  }
+
+  async listModelProviders(): Promise<string[]> {
+    try {
+      const response = await this.client.get<string[]>('/models/providers');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list model providers');
+    }
+  }
+
+  async listEnabledProviders(params?: EnabledProvidersParams): Promise<any> {
+    try {
+      const response = await this.client.get('/models/enabled_providers', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list enabled providers');
+    }
+  }
+
+  async listEnabledModels(params?: EnabledModelsParams): Promise<any> {
+    try {
+      const response = await this.client.get('/models/enabled_models', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list enabled models');
+    }
+  }
+
+  async setEnabledModels(body: ModelStatusUpdate[]): Promise<any> {
+    try {
+      const response = await this.client.post('/models/enabled_models', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to set enabled models');
+    }
+  }
+
+  async getDefaultModel(params: DefaultModelTypeParams): Promise<any> {
+    try {
+      const response = await this.client.get('/models/default_model', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get default model');
+    }
+  }
+
+  async setDefaultModel(body: DefaultModelRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/models/default_model', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to set default model');
+    }
+  }
+
+  async deleteDefaultModel(params: DefaultModelTypeParams): Promise<any> {
+    try {
+      const response = await this.client.delete('/models/default_model', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete default model');
+    }
+  }
+
+  async getProviderVariableMapping(): Promise<any> {
+    try {
+      const response = await this.client.get('/models/provider-variable-mapping');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get provider variable mapping');
+    }
+  }
+
+  async validateModelProvider(body: ValidateProviderRequest): Promise<ValidateProviderResponse> {
+    try {
+      const response = await this.client.post<ValidateProviderResponse>('/models/validate-provider', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to validate model provider');
+    }
+  }
+
+  // --- Model Options ---
+
+  async getLanguageModelOptions(): Promise<any> {
+    try {
+      const response = await this.client.get('/model_options/language');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get language model options');
+    }
+  }
+
+  async getEmbeddingModelOptions(): Promise<any> {
+    try {
+      const response = await this.client.get('/model_options/embedding');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get embedding model options');
+    }
+  }
+
+  // --- Agentic ---
+
+  async agenticAssist(body: AssistantRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/agentic/assist', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to run agentic assist');
+    }
+  }
+
+  async agenticCheckConfig(): Promise<any> {
+    try {
+      const response = await this.client.get('/agentic/check-config');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to check agentic config');
+    }
+  }
+
+  async agenticExecute(flowName: string, body: AssistantRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/agentic/execute/${encodeURIComponent(flowName)}`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to run agentic execute for flow ${flowName}`);
+    }
+  }
+
+  // --- Workflows V2 (root) ---
+
+  async getWorkflowResult(params?: GetWorkflowResultParams): Promise<any> {
+    try {
+      const response = await this.client.get('/api/v2/workflows', {
+        baseURL: this.config.baseUrl,
+        params
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get workflow result');
+    }
+  }
+
+  async runWorkflow(body: RunWorkflowRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/api/v2/workflows', body, {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to run workflow');
+    }
+  }
+
+  async stopWorkflow(jobId: string): Promise<StopWorkflowResponse> {
+    try {
+      const response = await this.client.post<StopWorkflowResponse>(
+        '/api/v2/workflows/stop',
+        { job_id: jobId },
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to stop workflow ${jobId}`);
+    }
+  }
+
+  // --- MCP V2 Servers (root /api/v2/mcp) ---
+
+  async listMcpServers(params?: ListMcpServersParams): Promise<any> {
+    try {
+      const response = await this.client.get('/api/v2/mcp/servers', {
+        baseURL: this.config.baseUrl,
+        params
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list MCP servers');
+    }
+  }
+
+  async getMcpServer(serverName: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/api/v2/mcp/servers/${encodeURIComponent(serverName)}`, {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get MCP server ${serverName}`);
+    }
+  }
+
+  async createMcpServer(serverName: string, body: MCPServerConfigBody): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/api/v2/mcp/servers/${encodeURIComponent(serverName)}`,
+        body,
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to create MCP server ${serverName}`);
+    }
+  }
+
+  async updateMcpServer(serverName: string, body: MCPServerConfigBody): Promise<any> {
+    try {
+      const response = await this.client.patch(
+        `/api/v2/mcp/servers/${encodeURIComponent(serverName)}`,
+        body,
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update MCP server ${serverName}`);
+    }
+  }
+
+  async deleteMcpServer(serverName: string): Promise<any> {
+    try {
+      const response = await this.client.delete(
+        `/api/v2/mcp/servers/${encodeURIComponent(serverName)}`,
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete MCP server ${serverName}`);
+    }
+  }
+
+  // --- MCP V1 Project (management only) ---
+
+  async getMcpProjectConfig(projectId: string, params?: MCPProjectConfigParams): Promise<any> {
+    try {
+      const response = await this.client.get(`/mcp/project/${encodeURIComponent(projectId)}`, { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get MCP project config ${projectId}`);
+    }
+  }
+
+  async updateMcpProjectConfig(projectId: string, body: MCPProjectUpdateRequest): Promise<any> {
+    try {
+      const response = await this.client.patch(`/mcp/project/${encodeURIComponent(projectId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update MCP project config ${projectId}`);
+    }
+  }
+
+  async getMcpProjectInstalled(projectId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/mcp/project/${encodeURIComponent(projectId)}/installed`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get MCP project installed ${projectId}`);
+    }
+  }
+
+  async installMcpProject(projectId: string, body: MCPInstallRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/mcp/project/${encodeURIComponent(projectId)}/install`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to install MCP project ${projectId}`);
+    }
+  }
+
+  async getMcpProjectComposerUrl(projectId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/mcp/project/${encodeURIComponent(projectId)}/composer-url`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get MCP project composer URL ${projectId}`);
     }
   }
 

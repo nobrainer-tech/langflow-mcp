@@ -3079,4 +3079,805 @@ describe('LangflowClient', () => {
       await expect(client.registerUser(email)).rejects.toThrow();
     });
   });
+
+  // --- Langflow 1.9.5 additional endpoints ---
+
+  describe('replaceFlow', () => {
+    it('should replace a flow via PUT', async () => {
+      const flowId = mockFlowRead.id;
+      mock.onPut(`/flows/${flowId}`).reply(200, mockFlowRead);
+
+      const result = await client.replaceFlow(flowId, mockFlowCreate);
+
+      expect(result).toEqual(mockFlowRead);
+      expect(mock.history.put[0].data).toBe(JSON.stringify(mockFlowCreate));
+    });
+
+    it('should handle 404 Not Found', async () => {
+      mock.onPut('/flows/missing').reply(404, { detail: 'Flow not found' });
+
+      await expect(client.replaceFlow('missing', mockFlowCreate)).rejects.toThrow(
+        'Failed to replace flow'
+      );
+    });
+  });
+
+  describe('expandFlows', () => {
+    it('should expand flows', async () => {
+      const body = { nodes: ['a', 'b'] };
+      const response = { expanded: true };
+      mock.onPost('/flows/expand/').reply(200, response);
+
+      const result = await client.expandFlows(body);
+
+      expect(result).toEqual(response);
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getFlowEvents', () => {
+    it('should get flow events with since param', async () => {
+      const flowId = 'flow-1';
+      const events = [{ type: 'created' }];
+      mock.onGet(`/flows/${flowId}/events`).reply(200, events);
+
+      const result = await client.getFlowEvents(flowId, { since: 100 });
+
+      expect(result).toEqual(events);
+      expect(mock.history.get[0].params).toEqual({ since: 100 });
+    });
+
+    it('should handle errors', async () => {
+      mock.onGet('/flows/flow-1/events').reply(500);
+      await expect(client.getFlowEvents('flow-1')).rejects.toThrow('Failed to get events for flow');
+    });
+  });
+
+  describe('createFlowEvent', () => {
+    it('should create a flow event', async () => {
+      const flowId = 'flow-1';
+      const body = { type: 'deployed', summary: 'shipped' };
+      mock.onPost(`/flows/${flowId}/events`).reply(200, { id: 'ev-1' });
+
+      const result = await client.createFlowEvent(flowId, body);
+
+      expect(result).toEqual({ id: 'ev-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('listFlowVersions', () => {
+    it('should list versions with pagination params', async () => {
+      const flowId = 'flow-1';
+      const versions = [{ id: 'v1' }];
+      mock.onGet(`/flows/${flowId}/versions/`).reply(200, versions);
+
+      const result = await client.listFlowVersions(flowId, { limit: 5, offset: 0 });
+
+      expect(result).toEqual(versions);
+      expect(mock.history.get[0].params).toEqual({ limit: 5, offset: 0 });
+    });
+  });
+
+  describe('createFlowVersion', () => {
+    it('should create a version with empty body by default', async () => {
+      const flowId = 'flow-1';
+      mock.onPost(`/flows/${flowId}/versions/`).reply(200, { id: 'v2' });
+
+      const result = await client.createFlowVersion(flowId);
+
+      expect(result).toEqual({ id: 'v2' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({}));
+    });
+  });
+
+  describe('getFlowVersion', () => {
+    it('should get a specific version', async () => {
+      mock.onGet('/flows/flow-1/versions/v1').reply(200, { id: 'v1' });
+
+      const result = await client.getFlowVersion('flow-1', 'v1');
+
+      expect(result).toEqual({ id: 'v1' });
+    });
+  });
+
+  describe('deleteFlowVersion', () => {
+    it('should delete a version', async () => {
+      mock.onDelete('/flows/flow-1/versions/v1').reply(204);
+
+      await expect(client.deleteFlowVersion('flow-1', 'v1')).resolves.toBeUndefined();
+    });
+
+    it('should handle 404', async () => {
+      mock.onDelete('/flows/flow-1/versions/v1').reply(404);
+      await expect(client.deleteFlowVersion('flow-1', 'v1')).rejects.toThrow(
+        'Failed to delete version'
+      );
+    });
+  });
+
+  describe('activateFlowVersion', () => {
+    it('should activate a version with save_draft param', async () => {
+      mock.onPost('/flows/flow-1/versions/v1/activate').reply(200, { active: true });
+
+      const result = await client.activateFlowVersion('flow-1', 'v1', { save_draft: true });
+
+      expect(result).toEqual({ active: true });
+      expect(mock.history.post[0].params).toEqual({ save_draft: true });
+    });
+  });
+
+  describe('detectVariables', () => {
+    it('should detect variables', async () => {
+      const body = { flow_version_ids: ['v1', 'v2'] };
+      mock.onPost('/variables/detections').reply(200, { variables: ['OPENAI_API_KEY'] });
+
+      const result = await client.detectVariables(body);
+
+      expect(result).toEqual({ variables: ['OPENAI_API_KEY'] });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('should handle errors', async () => {
+      mock.onPost('/variables/detections').reply(422, { detail: 'bad' });
+      await expect(client.detectVariables({ flow_version_ids: [] })).rejects.toThrow(
+        'Failed to detect variables'
+      );
+    });
+  });
+
+  describe('saveStoreApiKey', () => {
+    it('should save the store api key with api_key body', async () => {
+      mock.onPost('/api_key/store').reply(200, { ok: true });
+
+      const result = await client.saveStoreApiKey('secret-key');
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({ api_key: 'secret-key' }));
+    });
+  });
+
+  describe('updateCustomComponentCode', () => {
+    it('should post the update payload', async () => {
+      const body = { code: 'print(1)', field: 'code', template: {} };
+      mock.onPost('/custom_component/update').reply(200, { updated: true });
+
+      const result = await client.updateCustomComponentCode(body);
+
+      expect(result).toEqual({ updated: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('createStoreComponent', () => {
+    it('should create a store component and return id', async () => {
+      const body = {
+        name: 'My Comp',
+        description: 'desc',
+        data: {},
+        tags: [],
+        is_component: true
+      };
+      mock.onPost('/store/components/').reply(201, { id: 'comp-1' });
+
+      const result = await client.createStoreComponent(body);
+
+      expect(result).toEqual({ id: 'comp-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('likeStoreComponent', () => {
+    it('should like a store component', async () => {
+      mock.onPost('/store/users/likes/comp-1').reply(200, { likes: 1 });
+
+      const result = await client.likeStoreComponent('comp-1');
+
+      expect(result).toEqual({ likes: 1 });
+    });
+  });
+
+  describe('createResponse', () => {
+    it('should create an OpenAI-style response', async () => {
+      const body = { model: 'flow-1', input: 'hi' };
+      mock.onPost('/responses').reply(200, { id: 'resp-1' });
+
+      const result = await client.createResponse(body);
+
+      expect(result).toEqual({ id: 'resp-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getSession', () => {
+    it('should get the session', async () => {
+      mock.onGet('/session').reply(200, { authenticated: true });
+
+      const result = await client.getSession();
+
+      expect(result).toEqual({ authenticated: true });
+    });
+  });
+
+  describe('createUser', () => {
+    it('should create a user', async () => {
+      const body = { username: 'bob', password: 'pw' };
+      mock.onPost('/users/').reply(201, mockUserRead);
+
+      const result = await client.createUser(body);
+
+      expect(result).toEqual(mockUserRead);
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('getWebhookEvents', () => {
+    it('should get webhook events with user_id param', async () => {
+      mock.onGet('/webhook-events/flow-1').reply(200, [{ id: 'e1' }]);
+
+      const result = await client.getWebhookEvents('flow-1', { user_id: 'u1' });
+
+      expect(result).toEqual([{ id: 'e1' }]);
+      expect(mock.history.get[0].params).toEqual({ user_id: 'u1' });
+    });
+  });
+
+  describe('getHealthCheck', () => {
+    it('should hit root /health_check with baseURL override', async () => {
+      mock.onGet('/health_check').reply(200, { status: 'ok', chat: 'ok', db: 'ok' });
+
+      const result = await client.getHealthCheck();
+
+      expect(result).toEqual({ status: 'ok', chat: 'ok', db: 'ok' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+  });
+
+  describe('uploadFlowFileLegacy', () => {
+    it('should upload a file to a flow via v1 legacy endpoint', async () => {
+      mock.onPost('/upload/flow-1').reply(200, { file_path: 'flow-1/x.txt' });
+
+      const result = await client.uploadFlowFileLegacy('flow-1', Buffer.from('x'), 'x.txt');
+
+      expect(result).toEqual({ file_path: 'flow-1/x.txt' });
+    });
+
+    it('should handle errors', async () => {
+      mock.onPost('/upload/flow-1').reply(500);
+      await expect(
+        client.uploadFlowFileLegacy('flow-1', Buffer.from('x'), 'x.txt')
+      ).rejects.toThrow('Failed to upload legacy file');
+    });
+  });
+
+  describe('files v2', () => {
+    it('listFilesV2 should list files at root path', async () => {
+      mock.onGet('/api/v2/files').reply(200, [{ id: 'f1' }]);
+
+      const result = await client.listFilesV2();
+
+      expect(result).toEqual([{ id: 'f1' }]);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('uploadFileV2 should upload with append/ephemeral params', async () => {
+      mock.onPost('/api/v2/files').reply(201, { id: 'f2' });
+
+      const result = await client.uploadFileV2(Buffer.from('x'), 'x.txt', { append: true });
+
+      expect(result).toEqual({ id: 'f2' });
+      expect(mock.history.post[0].params).toEqual({ append: true });
+      expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('getFileV2 should get a file with return_content param', async () => {
+      mock.onGet('/api/v2/files/f1').reply(200, { id: 'f1', content: 'data' });
+
+      const result = await client.getFileV2('f1', { return_content: true });
+
+      expect(result).toEqual({ id: 'f1', content: 'data' });
+      expect(mock.history.get[0].params).toEqual({ return_content: true });
+    });
+
+    it('renameFileV2 should PUT with name query param', async () => {
+      mock.onPut('/api/v2/files/f1').reply(200, { id: 'f1', name: 'new' });
+
+      const result = await client.renameFileV2('f1', 'new');
+
+      expect(result).toEqual({ id: 'f1', name: 'new' });
+      expect(mock.history.put[0].params).toEqual({ name: 'new' });
+    });
+
+    it('deleteFileV2 should delete a single file', async () => {
+      mock.onDelete('/api/v2/files/f1').reply(200, { deleted: true });
+
+      const result = await client.deleteFileV2('f1');
+
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('deleteAllFilesV2 should delete all files', async () => {
+      mock.onDelete('/api/v2/files').reply(200, { deleted: 5 });
+
+      const result = await client.deleteAllFilesV2();
+
+      expect(result).toEqual({ deleted: 5 });
+    });
+
+    it('batchDownloadFilesV2 should post file ids', async () => {
+      const ids = ['f1', 'f2'];
+      mock.onPost('/api/v2/files/batch/').reply(200, { url: 'zip' });
+
+      const result = await client.batchDownloadFilesV2(ids);
+
+      expect(result).toEqual({ url: 'zip' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(ids));
+    });
+
+    it('batchDeleteFilesV2 should send ids in delete body', async () => {
+      const ids = ['f1', 'f2'];
+      mock.onDelete('/api/v2/files/batch/').reply(200, { deleted: 2 });
+
+      const result = await client.batchDeleteFilesV2(ids);
+
+      expect(result).toEqual({ deleted: 2 });
+      expect(mock.history.delete[0].data).toBe(JSON.stringify(ids));
+    });
+  });
+
+  describe('knowledge bases extras', () => {
+    it('listKnowledgeBasesDetailed should hit trailing-slash path', async () => {
+      mock.onGet('/knowledge_bases/').reply(200, [{ name: 'kb1' }]);
+
+      const result = await client.listKnowledgeBasesDetailed();
+
+      expect(result).toEqual([{ name: 'kb1' }]);
+    });
+
+    it('createKnowledgeBase should post the create body', async () => {
+      const body = {
+        name: 'kb1',
+        embedding_provider: 'openai',
+        embedding_model: 'text-embedding-3-small'
+      };
+      mock.onPost('/knowledge_bases').reply(201, { name: 'kb1' });
+
+      const result = await client.createKnowledgeBase(body);
+
+      expect(result).toEqual({ name: 'kb1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('previewKnowledgeBaseChunks should post multipart', async () => {
+      mock.onPost('/knowledge_bases/preview-chunks').reply(200, { chunks: 3 });
+
+      const result = await client.previewKnowledgeBaseChunks([Buffer.from('a')], { size: 100 });
+
+      expect(result).toEqual({ chunks: 3 });
+    });
+
+    it('listKnowledgeBaseChunks should pass pagination params', async () => {
+      mock.onGet('/knowledge_bases/kb1/chunks').reply(200, { items: [] });
+
+      const result = await client.listKnowledgeBaseChunks('kb1', { page: 2, limit: 10 });
+
+      expect(result).toEqual({ items: [] });
+      expect(mock.history.get[0].params).toEqual({ page: 2, limit: 10 });
+    });
+
+    it('ingestKnowledgeBase should post multipart body', async () => {
+      mock.onPost('/knowledge_bases/kb1/ingest').reply(200, { status: 'started' });
+
+      const result = await client.ingestKnowledgeBase('kb1', { file: Buffer.from('x'), mode: 'append' });
+
+      expect(result).toEqual({ status: 'started' });
+    });
+
+    it('cancelKnowledgeBaseIngest should post cancel', async () => {
+      mock.onPost('/knowledge_bases/kb1/cancel').reply(200, { cancelled: true });
+
+      const result = await client.cancelKnowledgeBaseIngest('kb1');
+
+      expect(result).toEqual({ cancelled: true });
+    });
+  });
+
+  describe('monitor extras', () => {
+    it('updateMonitorMessage should PUT the update', async () => {
+      const body = { text: 'edited', edit: true };
+      mock.onPut('/monitor/messages/m1').reply(200, { id: 'm1' });
+
+      const result = await client.updateMonitorMessage('m1', body);
+
+      expect(result).toEqual({ id: 'm1' });
+      expect(mock.history.put[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('deleteMonitorSessionMessages should delete by session', async () => {
+      mock.onDelete('/monitor/messages/session/s1').reply(200, { deleted: 3 });
+
+      const result = await client.deleteMonitorSessionMessages('s1');
+
+      expect(result).toEqual({ deleted: 3 });
+    });
+
+    it('deleteMonitorSessions should send ids in body', async () => {
+      const ids = ['s1', 's2'];
+      mock.onDelete('/monitor/messages/sessions').reply(200, { deleted: 2 });
+
+      const result = await client.deleteMonitorSessions(ids);
+
+      expect(result).toEqual({ deleted: 2 });
+      expect(mock.history.delete[0].data).toBe(JSON.stringify(ids));
+    });
+  });
+
+  describe('monitor shared', () => {
+    it('getSharedMessages should pass required source_flow_id', async () => {
+      mock.onGet('/monitor/messages/shared').reply(200, [{ id: 'm1' }]);
+
+      const result = await client.getSharedMessages({ source_flow_id: 'flow-1' });
+
+      expect(result).toEqual([{ id: 'm1' }]);
+      expect(mock.history.get[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('getSharedSessions should pass source_flow_id param', async () => {
+      mock.onGet('/monitor/messages/shared/sessions').reply(200, ['s1']);
+
+      const result = await client.getSharedSessions('flow-1');
+
+      expect(result).toEqual(['s1']);
+      expect(mock.history.get[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('updateSharedMessage should PUT with source_flow_id param', async () => {
+      const body = { edit: true };
+      mock.onPut('/monitor/messages/shared/m1').reply(200, { id: 'm1' });
+
+      const result = await client.updateSharedMessage('m1', 'flow-1', body);
+
+      expect(result).toEqual({ id: 'm1' });
+      expect(mock.history.put[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+
+    it('migrateSharedSession should PATCH with new_session_id + source_flow_id', async () => {
+      mock.onPatch('/monitor/messages/shared/session/old').reply(200, [{ id: 'm1' }]);
+
+      const result = await client.migrateSharedSession('old', {
+        new_session_id: 'new',
+        source_flow_id: 'flow-1'
+      });
+
+      expect(result).toEqual([{ id: 'm1' }]);
+      expect(mock.history.patch[0].params).toEqual({
+        new_session_id: 'new',
+        source_flow_id: 'flow-1'
+      });
+    });
+
+    it('deleteSharedSession should delete with source_flow_id param', async () => {
+      mock.onDelete('/monitor/messages/shared/session/s1').reply(200, { deleted: true });
+
+      const result = await client.deleteSharedSession('s1', 'flow-1');
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].params).toEqual({ source_flow_id: 'flow-1' });
+    });
+  });
+
+  describe('monitor traces', () => {
+    it('listTraces should pass filter params', async () => {
+      mock.onGet('/monitor/traces').reply(200, { items: [] });
+
+      const result = await client.listTraces({ flow_id: 'flow-1', page: 1 });
+
+      expect(result).toEqual({ items: [] });
+      expect(mock.history.get[0].params).toEqual({ flow_id: 'flow-1', page: 1 });
+    });
+
+    it('deleteTraces should delete with flow_id query', async () => {
+      mock.onDelete('/monitor/traces').reply(200, { deleted: 4 });
+
+      const result = await client.deleteTraces('flow-1');
+
+      expect(result).toEqual({ deleted: 4 });
+      expect(mock.history.delete[0].params).toEqual({ flow_id: 'flow-1' });
+    });
+
+    it('getTrace should get a single trace', async () => {
+      mock.onGet('/monitor/traces/t1').reply(200, { id: 't1' });
+
+      const result = await client.getTrace('t1');
+
+      expect(result).toEqual({ id: 't1' });
+    });
+
+    it('deleteTrace should delete a single trace', async () => {
+      mock.onDelete('/monitor/traces/t1').reply(204);
+
+      await expect(client.deleteTrace('t1')).resolves.toBeUndefined();
+    });
+  });
+
+  describe('models', () => {
+    it('listModels should pass filter params', async () => {
+      mock.onGet('/models').reply(200, { models: [] });
+
+      const result = await client.listModels({ provider: 'openai' });
+
+      expect(result).toEqual({ models: [] });
+      expect(mock.history.get[0].params).toEqual({ provider: 'openai' });
+    });
+
+    it('listModelProviders should return string array', async () => {
+      mock.onGet('/models/providers').reply(200, ['openai', 'anthropic']);
+
+      const result = await client.listModelProviders();
+
+      expect(result).toEqual(['openai', 'anthropic']);
+    });
+
+    it('listEnabledProviders should pass providers param', async () => {
+      mock.onGet('/models/enabled_providers').reply(200, { providers: [] });
+
+      const result = await client.listEnabledProviders({ providers: ['openai'] });
+
+      expect(result).toEqual({ providers: [] });
+      expect(mock.history.get[0].params).toEqual({ providers: ['openai'] });
+    });
+
+    it('listEnabledModels should pass model_names param', async () => {
+      mock.onGet('/models/enabled_models').reply(200, { models: [] });
+
+      const result = await client.listEnabledModels({ model_names: ['gpt-4'] });
+
+      expect(result).toEqual({ models: [] });
+      expect(mock.history.get[0].params).toEqual({ model_names: ['gpt-4'] });
+    });
+
+    it('setEnabledModels should post status updates', async () => {
+      const body = [{ provider: 'openai', model_id: 'gpt-4', enabled: true }];
+      mock.onPost('/models/enabled_models').reply(200, { updated: 1 });
+
+      const result = await client.setEnabledModels(body);
+
+      expect(result).toEqual({ updated: 1 });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getDefaultModel should pass model_type param', async () => {
+      mock.onGet('/models/default_model').reply(200, { model_name: 'gpt-4' });
+
+      const result = await client.getDefaultModel({ model_type: 'language' });
+
+      expect(result).toEqual({ model_name: 'gpt-4' });
+      expect(mock.history.get[0].params).toEqual({ model_type: 'language' });
+    });
+
+    it('setDefaultModel should post the body', async () => {
+      const body = { provider: 'openai', model_name: 'gpt-4', model_type: 'language' };
+      mock.onPost('/models/default_model').reply(200, { ok: true });
+
+      const result = await client.setDefaultModel(body);
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('deleteDefaultModel should delete with model_type param', async () => {
+      mock.onDelete('/models/default_model').reply(200, { deleted: true });
+
+      const result = await client.deleteDefaultModel({ model_type: 'language' });
+
+      expect(result).toEqual({ deleted: true });
+      expect(mock.history.delete[0].params).toEqual({ model_type: 'language' });
+    });
+
+    it('getProviderVariableMapping should return mapping', async () => {
+      mock.onGet('/models/provider-variable-mapping').reply(200, { openai: ['OPENAI_API_KEY'] });
+
+      const result = await client.getProviderVariableMapping();
+
+      expect(result).toEqual({ openai: ['OPENAI_API_KEY'] });
+    });
+
+    it('validateModelProvider should post and return validity', async () => {
+      const body = { provider: 'openai', variables: { OPENAI_API_KEY: 'sk' } };
+      mock.onPost('/models/validate-provider').reply(200, { valid: true });
+
+      const result = await client.validateModelProvider(body);
+
+      expect(result).toEqual({ valid: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('validateModelProvider should handle errors', async () => {
+      mock.onPost('/models/validate-provider').reply(400, { detail: 'bad' });
+      await expect(
+        client.validateModelProvider({ provider: 'x', variables: {} })
+      ).rejects.toThrow('Failed to validate model provider');
+    });
+  });
+
+  describe('model options', () => {
+    it('getLanguageModelOptions should return options', async () => {
+      mock.onGet('/model_options/language').reply(200, { options: [] });
+
+      const result = await client.getLanguageModelOptions();
+
+      expect(result).toEqual({ options: [] });
+    });
+
+    it('getEmbeddingModelOptions should return options', async () => {
+      mock.onGet('/model_options/embedding').reply(200, { options: [] });
+
+      const result = await client.getEmbeddingModelOptions();
+
+      expect(result).toEqual({ options: [] });
+    });
+  });
+
+  describe('agentic', () => {
+    it('agenticAssist should post the request', async () => {
+      const body = { flow_id: 'flow-1', input_value: 'help' };
+      mock.onPost('/agentic/assist').reply(200, { result: 'ok' });
+
+      const result = await client.agenticAssist(body);
+
+      expect(result).toEqual({ result: 'ok' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('agenticCheckConfig should return config status', async () => {
+      mock.onGet('/agentic/check-config').reply(200, { configured: true });
+
+      const result = await client.agenticCheckConfig();
+
+      expect(result).toEqual({ configured: true });
+    });
+
+    it('agenticExecute should post to the named flow', async () => {
+      const body = { flow_id: 'flow-1' };
+      mock.onPost('/agentic/execute/my-flow').reply(200, { result: 'done' });
+
+      const result = await client.agenticExecute('my-flow', body);
+
+      expect(result).toEqual({ result: 'done' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+  });
+
+  describe('workflows v2', () => {
+    it('getWorkflowResult should GET with job_id param and root baseURL', async () => {
+      mock.onGet('/api/v2/workflows').reply(200, { status: 'completed' });
+
+      const result = await client.getWorkflowResult({ job_id: 'job-1' });
+
+      expect(result).toEqual({ status: 'completed' });
+      expect(mock.history.get[0].params).toEqual({ job_id: 'job-1' });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('runWorkflow should POST the body', async () => {
+      const body = { flow_id: 'flow-1', inputs: { x: 1 } };
+      mock.onPost('/api/v2/workflows').reply(200, { job_id: 'job-1' });
+
+      const result = await client.runWorkflow(body);
+
+      expect(result).toEqual({ job_id: 'job-1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('stopWorkflow should POST job_id body', async () => {
+      mock.onPost('/api/v2/workflows/stop').reply(200, { job_id: 'job-1', message: 'stopped' });
+
+      const result = await client.stopWorkflow('job-1');
+
+      expect(result).toEqual({ job_id: 'job-1', message: 'stopped' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify({ job_id: 'job-1' }));
+    });
+  });
+
+  describe('mcp v2 servers', () => {
+    it('listMcpServers should GET with action_count param', async () => {
+      mock.onGet('/api/v2/mcp/servers').reply(200, { servers: [] });
+
+      const result = await client.listMcpServers({ action_count: true });
+
+      expect(result).toEqual({ servers: [] });
+      expect(mock.history.get[0].params).toEqual({ action_count: true });
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
+    });
+
+    it('getMcpServer should GET a single server', async () => {
+      mock.onGet('/api/v2/mcp/servers/srv1').reply(200, { name: 'srv1' });
+
+      const result = await client.getMcpServer('srv1');
+
+      expect(result).toEqual({ name: 'srv1' });
+    });
+
+    it('createMcpServer should POST config', async () => {
+      const body = { command: 'node', args: ['x.js'] };
+      mock.onPost('/api/v2/mcp/servers/srv1').reply(201, { name: 'srv1' });
+
+      const result = await client.createMcpServer('srv1', body);
+
+      expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('updateMcpServer should PATCH config', async () => {
+      const body = { url: 'http://x' };
+      mock.onPatch('/api/v2/mcp/servers/srv1').reply(200, { name: 'srv1' });
+
+      const result = await client.updateMcpServer('srv1', body);
+
+      expect(result).toEqual({ name: 'srv1' });
+      expect(mock.history.patch[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('deleteMcpServer should DELETE a server', async () => {
+      mock.onDelete('/api/v2/mcp/servers/srv1').reply(200, { deleted: true });
+
+      const result = await client.deleteMcpServer('srv1');
+
+      expect(result).toEqual({ deleted: true });
+    });
+  });
+
+  describe('mcp v1 project', () => {
+    it('getMcpProjectConfig should GET with mcp_enabled param', async () => {
+      mock.onGet('/mcp/project/p1').reply(200, { settings: [] });
+
+      const result = await client.getMcpProjectConfig('p1', { mcp_enabled: true });
+
+      expect(result).toEqual({ settings: [] });
+      expect(mock.history.get[0].params).toEqual({ mcp_enabled: true });
+    });
+
+    it('updateMcpProjectConfig should PATCH the body', async () => {
+      const body = { settings: [{ id: 's1' }] };
+      mock.onPatch('/mcp/project/p1').reply(200, { ok: true });
+
+      const result = await client.updateMcpProjectConfig('p1', body);
+
+      expect(result).toEqual({ ok: true });
+      expect(mock.history.patch[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getMcpProjectInstalled should GET installed clients', async () => {
+      mock.onGet('/mcp/project/p1/installed').reply(200, { installed: [] });
+
+      const result = await client.getMcpProjectInstalled('p1');
+
+      expect(result).toEqual({ installed: [] });
+    });
+
+    it('installMcpProject should POST install body', async () => {
+      const body = { client: 'cursor', transport: 'stdio' };
+      mock.onPost('/mcp/project/p1/install').reply(200, { installed: true });
+
+      const result = await client.installMcpProject('p1', body);
+
+      expect(result).toEqual({ installed: true });
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
+    it('getMcpProjectComposerUrl should GET composer url', async () => {
+      mock.onGet('/mcp/project/p1/composer-url').reply(200, { url: 'http://composer' });
+
+      const result = await client.getMcpProjectComposerUrl('p1');
+
+      expect(result).toEqual({ url: 'http://composer' });
+    });
+
+    it('installMcpProject should handle errors', async () => {
+      mock.onPost('/mcp/project/p1/install').reply(500);
+      await expect(
+        client.installMcpProject('p1', { client: 'cursor' })
+      ).rejects.toThrow('Failed to install MCP project');
+    });
+  });
 });
