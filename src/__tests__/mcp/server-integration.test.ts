@@ -246,8 +246,8 @@ describe('LangflowMCPServer Integration', () => {
     });
 
     it('should have the expected number of tools', () => {
-      // 90 tools + 4 deprecated tools = 94 total
-      expect(langflowMCPTools.length).toBeGreaterThanOrEqual(90);
+      // 160 active tools + 3 deprecated tools = 163 total
+      expect(langflowMCPTools.length).toBeGreaterThanOrEqual(160);
     });
   });
 });

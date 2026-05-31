@@ -486,6 +486,496 @@ export const GetLogsSchema = z.object({
   stream: z.boolean().optional().default(false)
 }).strict();
 
+// === Langflow 1.9.5 new tools ===
+
+// Flows / versions / events
+export const ReplaceFlowSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  name: z.string().min(1, 'Flow name is required').max(255, 'Flow name too long'),
+  description: z.string().optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
+  folder_id: z.string().uuid('Invalid folder ID format').optional()
+}).strict();
+
+export const ExpandFlowsSchema = z.object({
+  body: z.record(z.string(), z.unknown())
+}).strict();
+
+export const GetFlowEventsSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  since: z.number().int().optional()
+}).strict();
+
+export const CreateFlowEventSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  type: z.string().min(1, 'Event type is required'),
+  summary: z.string().optional()
+}).strict();
+
+export const ListFlowVersionsSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  limit: z.number().int().positive().optional(),
+  offset: z.number().int().nonnegative().optional(),
+  deployment_provider_id: z.string().optional()
+}).strict();
+
+export const CreateFlowVersionSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  body: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const GetFlowVersionSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  version_id: z.string().min(1, 'Version ID is required')
+}).strict();
+
+export const DeleteFlowVersionSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  version_id: z.string().min(1, 'Version ID is required')
+}).strict();
+
+export const ActivateFlowVersionSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  version_id: z.string().min(1, 'Version ID is required'),
+  save_draft: z.boolean().optional()
+}).strict();
+
+// Singletons
+export const DetectVariablesSchema = z.object({
+  flow_version_ids: z.array(z.string().min(1, 'Flow version ID cannot be empty')).min(1, 'At least one flow version ID is required')
+}).strict();
+
+export const SaveStoreApiKeySchema = z.object({
+  api_key: z.string().min(1, 'API key is required')
+}).strict();
+
+export const UpdateCustomComponentSchema = z.object({
+  code: z.string().min(1, 'Component code is required'),
+  field: z.string().min(1, 'Field is required'),
+  template: z.record(z.string(), z.unknown()),
+  field_value: z.unknown().optional(),
+  frontend_node: z.record(z.string(), z.unknown()).optional(),
+  tool_mode: z.boolean().optional()
+}).strict();
+
+export const CreateStoreComponentSchema = z.object({
+  name: z.string().min(1, 'Component name is required'),
+  description: z.string().nullable().optional(),
+  data: z.record(z.string(), z.unknown()),
+  tags: z.array(z.string()).nullable().optional(),
+  is_component: z.boolean().nullable().optional(),
+  parent: z.string().optional(),
+  last_tested_version: z.string().optional(),
+  private: z.boolean().optional()
+}).strict();
+
+export const LikeStoreComponentSchema = z.object({
+  component_id: z.string().min(1, 'Component ID is required')
+}).strict();
+
+export const CreateResponseSchema = z.object({
+  model: z.string().min(1, 'Model is required'),
+  input: z.string().min(1, 'Input is required'),
+  stream: z.boolean().optional(),
+  background: z.boolean().optional(),
+  previous_response_id: z.string().optional(),
+  include: z.array(z.string()).optional(),
+  tools: z.array(z.record(z.string(), z.unknown())).optional()
+}).strict();
+
+export const GetSessionSchema = z.object({}).strict();
+
+export const CreateUserSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+  optins: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const GetWebhookEventsSchema = z.object({
+  flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
+  user_id: z.string().optional()
+}).strict();
+
+export const GetHealthCheckSchema = z.object({}).strict();
+
+// Files V2
+export const ListFilesV2Schema = z.object({}).strict();
+
+export const UploadFileV2Schema = z.object({
+  file_content: z.string().min(1, 'File content is required')
+    .refine(
+      content => Buffer.byteLength(content, 'base64') <= 10 * 1024 * 1024,
+      { message: 'File size exceeds maximum of 10MB (before base64 decode check)' }
+    ),
+  file_name: FileNameSchema,
+  append: z.boolean().optional(),
+  ephemeral: z.boolean().optional()
+}).strict();
+
+export const GetFileV2Schema = z.object({
+  file_id: z.string().min(1, 'File ID is required'),
+  return_content: z.boolean().optional()
+}).strict();
+
+export const RenameFileV2Schema = z.object({
+  file_id: z.string().min(1, 'File ID is required'),
+  name: z.string().min(1, 'New file name is required')
+}).strict();
+
+export const DeleteFileV2Schema = z.object({
+  file_id: z.string().min(1, 'File ID is required')
+}).strict();
+
+export const DeleteAllFilesV2Schema = z.object({}).strict();
+
+export const BatchDownloadFilesV2Schema = z.object({
+  file_ids: z.array(z.string().min(1, 'File ID cannot be empty')).min(1, 'At least one file ID is required')
+}).strict();
+
+export const BatchDeleteFilesV2Schema = z.object({
+  file_ids: z.array(z.string().min(1, 'File ID cannot be empty')).min(1, 'At least one file ID is required')
+}).strict();
+
+// Knowledge base (1.9.5)
+export const ListKnowledgeBasesDetailedSchema = z.object({}).strict();
+
+export const CreateKnowledgeBaseSchema = z.object({
+  name: z.string().min(1, 'Knowledge base name is required'),
+  embedding_provider: z.string().min(1, 'Embedding provider is required'),
+  embedding_model: z.string().min(1, 'Embedding model is required'),
+  column_config: z.array(z.record(z.string(), z.unknown())).optional()
+}).strict();
+
+export const PreviewKnowledgeBaseChunksSchema = z.object({
+  file_content: z.string().min(1, 'File content is required')
+    .refine(
+      content => Buffer.byteLength(content, 'base64') <= 10 * 1024 * 1024,
+      { message: 'File size exceeds maximum of 10MB (before base64 decode check)' }
+    ),
+  file_name: FileNameSchema,
+  params: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const ListKnowledgeBaseChunksSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  page: z.number().int().positive().optional(),
+  limit: z.number().int().positive().optional(),
+  search: z.string().optional()
+}).strict();
+
+export const IngestKnowledgeBaseSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  file_content: z.string().min(1, 'File content is required')
+    .refine(
+      content => Buffer.byteLength(content, 'base64') <= 10 * 1024 * 1024,
+      { message: 'File size exceeds maximum of 10MB (before base64 decode check)' }
+    ),
+  file_name: FileNameSchema,
+  params: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const CancelKnowledgeBaseIngestSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required')
+}).strict();
+
+// Monitor (1.9.5)
+export const UpdateMonitorMessageSchema = z.object({
+  message_id: z.string().min(1, 'Message ID is required'),
+  text: z.string().optional(),
+  sender: z.string().optional(),
+  sender_name: z.string().optional(),
+  session_id: z.string().optional(),
+  files: z.array(z.string()).optional(),
+  properties: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const DeleteMonitorSessionMessagesSchema = z.object({
+  session_id: z.string().min(1, 'Session ID is required')
+}).strict();
+
+export const DeleteMonitorSessionsSchema = z.object({
+  session_ids: z.array(z.string().min(1, 'Session ID cannot be empty')).min(1, 'At least one session ID is required')
+}).strict();
+
+export const GetSharedMessagesSchema = z.object({
+  source_flow_id: z.string().min(1, 'Source flow ID is required'),
+  session_id: z.string().optional(),
+  order_by: z.string().optional()
+}).strict();
+
+export const GetSharedSessionsSchema = z.object({
+  source_flow_id: z.string().min(1, 'Source flow ID is required')
+}).strict();
+
+export const UpdateSharedMessageSchema = z.object({
+  message_id: z.string().min(1, 'Message ID is required'),
+  source_flow_id: z.string().min(1, 'Source flow ID is required'),
+  text: z.string().optional(),
+  sender: z.string().optional(),
+  sender_name: z.string().optional(),
+  session_id: z.string().optional(),
+  files: z.array(z.string()).optional(),
+  properties: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const MigrateSharedSessionSchema = z.object({
+  session_id: z.string().min(1, 'Session ID is required'),
+  new_session_id: z.string().min(1, 'New session ID is required'),
+  source_flow_id: z.string().min(1, 'Source flow ID is required')
+}).strict();
+
+export const DeleteSharedSessionSchema = z.object({
+  session_id: z.string().min(1, 'Session ID is required'),
+  source_flow_id: z.string().min(1, 'Source flow ID is required')
+}).strict();
+
+// Traces
+export const ListTracesSchema = z.object({
+  flow_id: z.string().optional(),
+  session_id: z.string().optional(),
+  status: z.string().optional(),
+  query: z.string().optional(),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+  page: z.number().int().positive().optional(),
+  size: z.number().int().positive().max(100, 'Page size cannot exceed 100').optional()
+}).strict();
+
+export const DeleteTracesSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required')
+}).strict();
+
+export const GetTraceSchema = z.object({
+  trace_id: z.string().min(1, 'Trace ID is required')
+}).strict();
+
+export const DeleteTraceSchema = z.object({
+  trace_id: z.string().min(1, 'Trace ID is required')
+}).strict();
+
+// Models
+export const ListModelsSchema = z.object({
+  provider: z.string().optional(),
+  model_name: z.string().optional(),
+  model_type: z.string().optional(),
+  include_unsupported: z.boolean().optional(),
+  include_deprecated: z.boolean().optional(),
+  tool_calling: z.boolean().optional(),
+  reasoning: z.boolean().optional(),
+  search: z.string().optional()
+}).strict();
+
+export const ListModelProvidersSchema = z.object({}).strict();
+
+export const ListEnabledProvidersSchema = z.object({
+  providers: z.array(z.string()).optional()
+}).strict();
+
+export const ListEnabledModelsSchema = z.object({
+  model_names: z.array(z.string()).optional()
+}).strict();
+
+export const SetEnabledModelsSchema = z.object({
+  models: z.array(z.object({
+    provider: z.string().min(1, 'Provider is required'),
+    model_id: z.string().min(1, 'Model ID is required'),
+    enabled: z.boolean()
+  })).min(1, 'At least one model status is required')
+}).strict();
+
+export const GetDefaultModelSchema = z.object({
+  model_type: z.string().min(1, 'Model type is required')
+}).strict();
+
+export const SetDefaultModelSchema = z.object({
+  provider: z.string().min(1, 'Provider is required'),
+  model_name: z.string().min(1, 'Model name is required'),
+  model_type: z.string().min(1, 'Model type is required')
+}).strict();
+
+export const DeleteDefaultModelSchema = z.object({
+  model_type: z.string().min(1, 'Model type is required')
+}).strict();
+
+export const GetProviderVariableMappingSchema = z.object({}).strict();
+
+export const ValidateModelProviderSchema = z.object({
+  provider: z.string().min(1, 'Provider is required'),
+  variables: z.record(z.string(), z.unknown())
+}).strict();
+
+export const GetLanguageModelOptionsSchema = z.object({}).strict();
+
+export const GetEmbeddingModelOptionsSchema = z.object({}).strict();
+
+// Agentic
+const agenticAssistFields = {
+  flow_id: z.string().min(1, 'Flow ID is required'),
+  input_value: z.string().optional(),
+  session_id: z.string().optional(),
+  component_id: z.string().optional(),
+  field_name: z.string().optional(),
+  model_name: z.string().optional(),
+  provider: z.string().optional(),
+  max_retries: z.number().int().nonnegative().optional()
+};
+
+export const AgenticAssistSchema = z.object({ ...agenticAssistFields }).strict();
+
+export const AgenticCheckConfigSchema = z.object({}).strict();
+
+export const AgenticExecuteSchema = z.object({
+  flow_name: z.string().min(1, 'Flow name is required'),
+  ...agenticAssistFields
+}).strict();
+
+// Workflows V2
+export const GetWorkflowResultSchema = z.object({
+  job_id: z.string().optional()
+}).strict();
+
+export const RunWorkflowSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required'),
+  inputs: z.record(z.string(), z.unknown()).optional(),
+  stream: z.boolean().optional(),
+  background: z.boolean().optional()
+}).strict();
+
+export const StopWorkflowSchema = z.object({
+  job_id: z.string().min(1, 'Job ID is required')
+}).strict();
+
+// MCP servers
+const mcpServerConfigSchema = z.object({
+  command: z.string().optional(),
+  args: z.array(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
+  url: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional()
+});
+
+export const ListMcpServersSchema = z.object({
+  action_count: z.boolean().optional()
+}).strict();
+
+export const GetMcpServerSchema = z.object({
+  server_name: z.string().min(1, 'Server name is required')
+}).strict();
+
+export const CreateMcpServerSchema = z.object({
+  server_name: z.string().min(1, 'Server name is required'),
+  config: mcpServerConfigSchema
+}).strict();
+
+export const UpdateMcpServerSchema = z.object({
+  server_name: z.string().min(1, 'Server name is required'),
+  config: mcpServerConfigSchema
+}).strict();
+
+export const DeleteMcpServerSchema = z.object({
+  server_name: z.string().min(1, 'Server name is required')
+}).strict();
+
+// MCP project
+export const GetMcpProjectConfigSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format'),
+  mcp_enabled: z.boolean().optional()
+}).strict();
+
+export const UpdateMcpProjectConfigSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format'),
+  settings: z.array(z.record(z.string(), z.unknown())),
+  auth_settings: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const GetMcpProjectInstalledSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format')
+}).strict();
+
+export const InstallMcpProjectSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format'),
+  client: z.string().min(1, 'Client is required'),
+  transport: z.string().optional()
+}).strict();
+
+export const GetMcpProjectComposerUrlSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format')
+}).strict();
+
+export type ReplaceFlowInput = z.infer<typeof ReplaceFlowSchema>;
+export type ExpandFlowsInput = z.infer<typeof ExpandFlowsSchema>;
+export type GetFlowEventsInput = z.infer<typeof GetFlowEventsSchema>;
+export type CreateFlowEventInput = z.infer<typeof CreateFlowEventSchema>;
+export type ListFlowVersionsInput = z.infer<typeof ListFlowVersionsSchema>;
+export type CreateFlowVersionInput = z.infer<typeof CreateFlowVersionSchema>;
+export type GetFlowVersionInput = z.infer<typeof GetFlowVersionSchema>;
+export type DeleteFlowVersionInput = z.infer<typeof DeleteFlowVersionSchema>;
+export type ActivateFlowVersionInput = z.infer<typeof ActivateFlowVersionSchema>;
+export type DetectVariablesInput = z.infer<typeof DetectVariablesSchema>;
+export type SaveStoreApiKeyInput = z.infer<typeof SaveStoreApiKeySchema>;
+export type UpdateCustomComponentInput = z.infer<typeof UpdateCustomComponentSchema>;
+export type CreateStoreComponentInput = z.infer<typeof CreateStoreComponentSchema>;
+export type LikeStoreComponentInput = z.infer<typeof LikeStoreComponentSchema>;
+export type CreateResponseInput = z.infer<typeof CreateResponseSchema>;
+export type GetSessionInput = z.infer<typeof GetSessionSchema>;
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export type GetWebhookEventsInput = z.infer<typeof GetWebhookEventsSchema>;
+export type GetHealthCheckInput = z.infer<typeof GetHealthCheckSchema>;
+export type ListFilesV2Input = z.infer<typeof ListFilesV2Schema>;
+export type UploadFileV2Input = z.infer<typeof UploadFileV2Schema>;
+export type GetFileV2Input = z.infer<typeof GetFileV2Schema>;
+export type RenameFileV2Input = z.infer<typeof RenameFileV2Schema>;
+export type DeleteFileV2Input = z.infer<typeof DeleteFileV2Schema>;
+export type DeleteAllFilesV2Input = z.infer<typeof DeleteAllFilesV2Schema>;
+export type BatchDownloadFilesV2Input = z.infer<typeof BatchDownloadFilesV2Schema>;
+export type BatchDeleteFilesV2Input = z.infer<typeof BatchDeleteFilesV2Schema>;
+export type ListKnowledgeBasesDetailedInput = z.infer<typeof ListKnowledgeBasesDetailedSchema>;
+export type CreateKnowledgeBaseInput = z.infer<typeof CreateKnowledgeBaseSchema>;
+export type PreviewKnowledgeBaseChunksInput = z.infer<typeof PreviewKnowledgeBaseChunksSchema>;
+export type ListKnowledgeBaseChunksInput = z.infer<typeof ListKnowledgeBaseChunksSchema>;
+export type IngestKnowledgeBaseInput = z.infer<typeof IngestKnowledgeBaseSchema>;
+export type CancelKnowledgeBaseIngestInput = z.infer<typeof CancelKnowledgeBaseIngestSchema>;
+export type UpdateMonitorMessageInput = z.infer<typeof UpdateMonitorMessageSchema>;
+export type DeleteMonitorSessionMessagesInput = z.infer<typeof DeleteMonitorSessionMessagesSchema>;
+export type DeleteMonitorSessionsInput = z.infer<typeof DeleteMonitorSessionsSchema>;
+export type GetSharedMessagesInput = z.infer<typeof GetSharedMessagesSchema>;
+export type GetSharedSessionsInput = z.infer<typeof GetSharedSessionsSchema>;
+export type UpdateSharedMessageInput = z.infer<typeof UpdateSharedMessageSchema>;
+export type MigrateSharedSessionInput = z.infer<typeof MigrateSharedSessionSchema>;
+export type DeleteSharedSessionInput = z.infer<typeof DeleteSharedSessionSchema>;
+export type ListTracesInput = z.infer<typeof ListTracesSchema>;
+export type DeleteTracesInput = z.infer<typeof DeleteTracesSchema>;
+export type GetTraceInput = z.infer<typeof GetTraceSchema>;
+export type DeleteTraceInput = z.infer<typeof DeleteTraceSchema>;
+export type ListModelsInput = z.infer<typeof ListModelsSchema>;
+export type ListModelProvidersInput = z.infer<typeof ListModelProvidersSchema>;
+export type ListEnabledProvidersInput = z.infer<typeof ListEnabledProvidersSchema>;
+export type ListEnabledModelsInput = z.infer<typeof ListEnabledModelsSchema>;
+export type SetEnabledModelsInput = z.infer<typeof SetEnabledModelsSchema>;
+export type GetDefaultModelInput = z.infer<typeof GetDefaultModelSchema>;
+export type SetDefaultModelInput = z.infer<typeof SetDefaultModelSchema>;
+export type DeleteDefaultModelInput = z.infer<typeof DeleteDefaultModelSchema>;
+export type GetProviderVariableMappingInput = z.infer<typeof GetProviderVariableMappingSchema>;
+export type ValidateModelProviderInput = z.infer<typeof ValidateModelProviderSchema>;
+export type GetLanguageModelOptionsInput = z.infer<typeof GetLanguageModelOptionsSchema>;
+export type GetEmbeddingModelOptionsInput = z.infer<typeof GetEmbeddingModelOptionsSchema>;
+export type AgenticAssistInput = z.infer<typeof AgenticAssistSchema>;
+export type AgenticCheckConfigInput = z.infer<typeof AgenticCheckConfigSchema>;
+export type AgenticExecuteInput = z.infer<typeof AgenticExecuteSchema>;
+export type GetWorkflowResultInput = z.infer<typeof GetWorkflowResultSchema>;
+export type RunWorkflowInput = z.infer<typeof RunWorkflowSchema>;
+export type StopWorkflowInput = z.infer<typeof StopWorkflowSchema>;
+export type ListMcpServersInput = z.infer<typeof ListMcpServersSchema>;
+export type GetMcpServerInput = z.infer<typeof GetMcpServerSchema>;
+export type CreateMcpServerInput = z.infer<typeof CreateMcpServerSchema>;
+export type UpdateMcpServerInput = z.infer<typeof UpdateMcpServerSchema>;
+export type DeleteMcpServerInput = z.infer<typeof DeleteMcpServerSchema>;
+export type GetMcpProjectConfigInput = z.infer<typeof GetMcpProjectConfigSchema>;
+export type UpdateMcpProjectConfigInput = z.infer<typeof UpdateMcpProjectConfigSchema>;
+export type GetMcpProjectInstalledInput = z.infer<typeof GetMcpProjectInstalledSchema>;
+export type InstallMcpProjectInput = z.infer<typeof InstallMcpProjectSchema>;
+export type GetMcpProjectComposerUrlInput = z.infer<typeof GetMcpProjectComposerUrlSchema>;
+
 export type CreateFlowInput = z.infer<typeof CreateFlowSchema>;
 export type ListFlowsInput = z.infer<typeof ListFlowsSchema>;
 export type GetFlowInput = z.infer<typeof GetFlowSchema>;

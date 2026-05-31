@@ -2570,5 +2570,960 @@ Related Tools:
       idempotentHint: true,
       openWorldHint: true
     }
+  },
+  // === Langflow 1.9.5 new tools ===
+  {
+    name: 'replace_flow',
+    description: 'Replace an entire flow (PUT) with new content. Overwrites name, description, data, and folder for the given flow ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID) to replace' },
+        name: { type: 'string', description: 'New flow name' },
+        description: { type: 'string', description: 'Optional flow description' },
+        data: { type: 'object', description: 'Optional flow data/configuration' },
+        folder_id: { type: 'string', description: 'Optional folder ID (UUID)' }
+      },
+      required: ['flow_id', 'name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'expand_flows',
+    description: 'Expand flows by resolving component references into full flow definitions. Pass the expansion request payload as the body object.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        body: { type: 'object', description: 'Flow expansion request payload' }
+      },
+      required: ['body']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_flow_events',
+    description: 'Get the event stream/history for a flow. Optionally filter to events since a given cursor/timestamp.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        since: { type: 'number', description: 'Optional cursor: only events since this value' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_flow_event',
+    description: 'Create a new event for a flow (e.g. deployment or lifecycle event).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        type: { type: 'string', description: 'Event type' },
+        summary: { type: 'string', description: 'Optional event summary' }
+      },
+      required: ['flow_id', 'type']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'list_flow_versions',
+    description: 'List saved versions of a flow with optional pagination and deployment provider filter.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        limit: { type: 'number', description: 'Max number of versions to return' },
+        offset: { type: 'number', description: 'Number of versions to skip' },
+        deployment_provider_id: { type: 'string', description: 'Optional deployment provider filter' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_flow_version',
+    description: 'Create a new saved version (snapshot) of a flow. Optionally provide a body with version metadata.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        body: { type: 'object', description: 'Optional version creation payload' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_flow_version',
+    description: 'Get a specific saved version of a flow by version ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        version_id: { type: 'string', description: 'Version ID' }
+      },
+      required: ['flow_id', 'version_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_flow_version',
+    description: 'Delete a specific saved version of a flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        version_id: { type: 'string', description: 'Version ID to delete' }
+      },
+      required: ['flow_id', 'version_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'activate_flow_version',
+    description: 'Activate a specific saved version of a flow, making it the current version. Optionally save the current state as a draft first.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID (UUID)' },
+        version_id: { type: 'string', description: 'Version ID to activate' },
+        save_draft: { type: 'boolean', description: 'Save current state as draft before activating' }
+      },
+      required: ['flow_id', 'version_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'detect_variables',
+    description: 'Detect global variables referenced by one or more flow versions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_version_ids: { type: 'array', items: { type: 'string' }, description: 'Flow version IDs to scan' }
+      },
+      required: ['flow_version_ids']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'save_store_api_key',
+    description: 'Save the Langflow Store API key for the current user so store operations are authenticated.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        api_key: { type: 'string', description: 'Langflow Store API key' }
+      },
+      required: ['api_key']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_custom_component',
+    description: 'Update a custom component template field, recomputing the frontend node based on the provided code and field changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', description: 'Custom component source code' },
+        field: { type: 'string', description: 'Template field being updated' },
+        template: { type: 'object', description: 'Current component template' },
+        field_value: { type: ['string', 'number', 'boolean', 'object', 'array', 'null'], description: 'New value for the field (any JSON type)' },
+        frontend_node: { type: 'object', description: 'Optional current frontend node definition' },
+        tool_mode: { type: 'boolean', description: 'Optional tool-mode flag' }
+      },
+      required: ['code', 'field', 'template']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'create_store_component',
+    description: 'Publish a new component to the Langflow Store.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Component name' },
+        description: { type: 'string', description: 'Optional component description' },
+        data: { type: 'object', description: 'Component data/definition' },
+        tags: { type: 'array', items: { type: 'string' }, description: 'Optional tags' },
+        is_component: { type: 'boolean', description: 'Whether this is a component (vs a flow)' },
+        parent: { type: 'string', description: 'Optional parent component ID' },
+        last_tested_version: { type: 'string', description: 'Optional last tested Langflow version' },
+        private: { type: 'boolean', description: 'Whether the component is private' }
+      },
+      required: ['name', 'data']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'like_store_component',
+    description: 'Like (or toggle like on) a Langflow Store component.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        component_id: { type: 'string', description: 'Store component ID' }
+      },
+      required: ['component_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'create_response',
+    description: 'Create a response via the OpenAI-compatible /responses endpoint using a model and input.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        model: { type: 'string', description: 'Model identifier' },
+        input: { type: 'string', description: 'Input text' },
+        stream: { type: 'boolean', description: 'Stream the response' },
+        background: { type: 'boolean', description: 'Run in background' },
+        previous_response_id: { type: 'string', description: 'Optional previous response ID for chaining' },
+        include: { type: 'array', items: { type: 'string' }, description: 'Optional include fields' },
+        tools: { type: 'array', items: { type: 'object' }, description: 'Optional tool definitions' }
+      },
+      required: ['model', 'input']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_session',
+    description: 'Get the current authenticated session information.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_user',
+    description: 'Create a new Langflow user account.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', description: 'Username' },
+        password: { type: 'string', description: 'Password' },
+        optins: { type: 'object', description: 'Optional opt-in preferences' }
+      },
+      required: ['username', 'password']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_webhook_events',
+    description: 'Get webhook events for a flow by ID or name. Optionally filter by user ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id_or_name: { type: 'string', description: 'Flow ID (UUID) or name' },
+        user_id: { type: 'string', description: 'Optional user ID filter' }
+      },
+      required: ['flow_id_or_name']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_health_check',
+    description: 'Get the detailed health check report from the Langflow server root /health_check endpoint.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_files_v2',
+    description: 'List user-scoped files via the /api/v2/files endpoint.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'upload_file_v2',
+    description: 'Upload a user-scoped file via /api/v2/files. Provide base64 file content and filename; optionally append or mark ephemeral.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_content: { type: 'string', description: 'Base64 encoded file content' },
+        file_name: { type: 'string', description: 'Name of the file to upload' },
+        append: { type: 'boolean', description: 'Append to an existing file' },
+        ephemeral: { type: 'boolean', description: 'Mark the file as ephemeral' }
+      },
+      required: ['file_content', 'file_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_file_v2',
+    description: 'Get a user-scoped file by ID via /api/v2/files. Optionally return the file content.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_id: { type: 'string', description: 'File ID' },
+        return_content: { type: 'boolean', description: 'Return file content in the response' }
+      },
+      required: ['file_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'rename_file_v2',
+    description: 'Rename a user-scoped file via /api/v2/files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_id: { type: 'string', description: 'File ID' },
+        name: { type: 'string', description: 'New file name' }
+      },
+      required: ['file_id', 'name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_file_v2',
+    description: 'Delete a user-scoped file by ID via /api/v2/files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_id: { type: 'string', description: 'File ID to delete' }
+      },
+      required: ['file_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_all_files_v2',
+    description: 'Delete ALL user-scoped files via /api/v2/files. This is irreversible.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'batch_download_files_v2',
+    description: 'Batch download multiple user-scoped files via /api/v2/files by their IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_ids: { type: 'array', items: { type: 'string' }, description: 'File IDs to download' }
+      },
+      required: ['file_ids']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'batch_delete_files_v2',
+    description: 'Batch delete multiple user-scoped files via /api/v2/files by their IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_ids: { type: 'array', items: { type: 'string' }, description: 'File IDs to delete' }
+      },
+      required: ['file_ids']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_knowledge_bases_detailed',
+    description: 'List knowledge bases with detailed metadata (embedding config, chunk counts, etc.).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_knowledge_base',
+    description: 'Create a new knowledge base with an embedding provider/model and optional column configuration.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Knowledge base name' },
+        embedding_provider: { type: 'string', description: 'Embedding provider' },
+        embedding_model: { type: 'string', description: 'Embedding model' },
+        column_config: { type: 'array', items: { type: 'object' }, description: 'Optional column configuration' }
+      },
+      required: ['name', 'embedding_provider', 'embedding_model']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'preview_knowledge_base_chunks',
+    description: 'Preview how a file would be chunked for knowledge base ingestion. Provide base64 file content, filename, and optional chunking params.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file_content: { type: 'string', description: 'Base64 encoded file content' },
+        file_name: { type: 'string', description: 'Name of the file' },
+        params: { type: 'object', description: 'Optional chunking parameters' }
+      },
+      required: ['file_content', 'file_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'list_knowledge_base_chunks',
+    description: 'List chunks stored in a knowledge base with optional pagination and search.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        page: { type: 'number', description: 'Page number' },
+        limit: { type: 'number', description: 'Chunks per page' },
+        search: { type: 'string', description: 'Optional search query' }
+      },
+      required: ['kb_name']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'ingest_knowledge_base',
+    description: 'Ingest a file into an existing knowledge base. Provide base64 file content, filename, and optional ingestion params.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        file_content: { type: 'string', description: 'Base64 encoded file content' },
+        file_name: { type: 'string', description: 'Name of the file' },
+        params: { type: 'object', description: 'Optional ingestion parameters' }
+      },
+      required: ['kb_name', 'file_content', 'file_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'cancel_knowledge_base_ingest',
+    description: 'Cancel an in-progress knowledge base ingestion job.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' }
+      },
+      required: ['kb_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_monitor_message',
+    description: 'Update a stored monitor message (text, sender, session, files, or properties).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message_id: { type: 'string', description: 'Message ID' },
+        text: { type: 'string', description: 'Updated message text' },
+        sender: { type: 'string', description: 'Updated sender' },
+        sender_name: { type: 'string', description: 'Updated sender name' },
+        session_id: { type: 'string', description: 'Updated session ID' },
+        files: { type: 'array', items: { type: 'string' }, description: 'Updated file references' },
+        properties: { type: 'object', description: 'Updated message properties' }
+      },
+      required: ['message_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'delete_monitor_session_messages',
+    description: 'Delete all monitor messages for a given session.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_id: { type: 'string', description: 'Session ID' }
+      },
+      required: ['session_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_monitor_sessions',
+    description: 'Delete multiple monitor sessions by their IDs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_ids: { type: 'array', items: { type: 'string' }, description: 'Session IDs to delete' }
+      },
+      required: ['session_ids']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_shared_messages',
+    description: 'Get shared (playground) messages for a source flow, optionally filtered by session and ordered.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source_flow_id: { type: 'string', description: 'Source flow ID' },
+        session_id: { type: 'string', description: 'Optional session ID filter' },
+        order_by: { type: 'string', description: 'Optional order-by field' }
+      },
+      required: ['source_flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_shared_sessions',
+    description: 'Get the list of shared session IDs for a source flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source_flow_id: { type: 'string', description: 'Source flow ID' }
+      },
+      required: ['source_flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'update_shared_message',
+    description: 'Update a shared (playground) message for a source flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message_id: { type: 'string', description: 'Message ID' },
+        source_flow_id: { type: 'string', description: 'Source flow ID' },
+        text: { type: 'string', description: 'Updated message text' },
+        sender: { type: 'string', description: 'Updated sender' },
+        sender_name: { type: 'string', description: 'Updated sender name' },
+        session_id: { type: 'string', description: 'Updated session ID' },
+        files: { type: 'array', items: { type: 'string' }, description: 'Updated file references' },
+        properties: { type: 'object', description: 'Updated message properties' }
+      },
+      required: ['message_id', 'source_flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'migrate_shared_session',
+    description: 'Migrate a shared session to a new session ID within a source flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_id: { type: 'string', description: 'Existing session ID' },
+        new_session_id: { type: 'string', description: 'New session ID' },
+        source_flow_id: { type: 'string', description: 'Source flow ID' }
+      },
+      required: ['session_id', 'new_session_id', 'source_flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'delete_shared_session',
+    description: 'Delete a shared session within a source flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_id: { type: 'string', description: 'Session ID to delete' },
+        source_flow_id: { type: 'string', description: 'Source flow ID' }
+      },
+      required: ['session_id', 'source_flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_traces',
+    description: 'List execution traces with optional filters (flow, session, status, query, time range) and pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Optional flow ID filter' },
+        session_id: { type: 'string', description: 'Optional session ID filter' },
+        status: { type: 'string', description: 'Optional status filter' },
+        query: { type: 'string', description: 'Optional search query' },
+        start_time: { type: 'string', description: 'Optional start time (ISO)' },
+        end_time: { type: 'string', description: 'Optional end time (ISO)' },
+        page: { type: 'number', description: 'Page number' },
+        size: { type: 'number', description: 'Page size (max 100)' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_traces',
+    description: 'Delete all traces associated with a flow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_trace',
+    description: 'Get a single execution trace by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        trace_id: { type: 'string', description: 'Trace ID' }
+      },
+      required: ['trace_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_trace',
+    description: 'Delete a single execution trace by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        trace_id: { type: 'string', description: 'Trace ID to delete' }
+      },
+      required: ['trace_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_models',
+    description: 'List available models with optional filters (provider, name, type, capabilities, search).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', description: 'Filter by provider' },
+        model_name: { type: 'string', description: 'Filter by model name' },
+        model_type: { type: 'string', description: 'Filter by model type' },
+        include_unsupported: { type: 'boolean', description: 'Include unsupported models' },
+        include_deprecated: { type: 'boolean', description: 'Include deprecated models' },
+        tool_calling: { type: 'boolean', description: 'Filter to tool-calling models' },
+        reasoning: { type: 'boolean', description: 'Filter to reasoning models' },
+        search: { type: 'string', description: 'Search query' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_model_providers',
+    description: 'List all known model providers.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_enabled_providers',
+    description: 'List enabled model providers, optionally restricted to a given set of provider names.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        providers: { type: 'array', items: { type: 'string' }, description: 'Optional provider names to check' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_enabled_models',
+    description: 'List enabled models, optionally restricted to a given set of model names.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        model_names: { type: 'array', items: { type: 'string' }, description: 'Optional model names to check' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'set_enabled_models',
+    description: 'Enable or disable specific models by provider and model ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        models: {
+          type: 'array',
+          description: 'Array of model status updates',
+          items: {
+            type: 'object',
+            properties: {
+              provider: { type: 'string', description: 'Provider' },
+              model_id: { type: 'string', description: 'Model ID' },
+              enabled: { type: 'boolean', description: 'Enabled flag' }
+            },
+            required: ['provider', 'model_id', 'enabled']
+          }
+        }
+      },
+      required: ['models']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_default_model',
+    description: 'Get the default model for a given model type.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        model_type: { type: 'string', description: 'Model type' }
+      },
+      required: ['model_type']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'set_default_model',
+    description: 'Set the default model (provider + model name) for a given model type.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', description: 'Provider' },
+        model_name: { type: 'string', description: 'Model name' },
+        model_type: { type: 'string', description: 'Model type' }
+      },
+      required: ['provider', 'model_name', 'model_type']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'delete_default_model',
+    description: 'Delete (clear) the default model for a given model type.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        model_type: { type: 'string', description: 'Model type' }
+      },
+      required: ['model_type']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_provider_variable_mapping',
+    description: 'Get the mapping between model providers and their required global variables.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'validate_model_provider',
+    description: 'Validate a model provider configuration with the provided variables (e.g. API keys).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string', description: 'Provider to validate' },
+        variables: { type: 'object', description: 'Provider variables (e.g. API keys)' }
+      },
+      required: ['provider', 'variables']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_language_model_options',
+    description: 'Get available language (LLM) model options.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_embedding_model_options',
+    description: 'Get available embedding model options.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'agentic_assist',
+    description: 'Request agentic assistance for building or editing a flow component.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' },
+        input_value: { type: 'string', description: 'User input/instruction' },
+        session_id: { type: 'string', description: 'Optional session ID' },
+        component_id: { type: 'string', description: 'Optional target component ID' },
+        field_name: { type: 'string', description: 'Optional target field name' },
+        model_name: { type: 'string', description: 'Optional model name' },
+        provider: { type: 'string', description: 'Optional provider' },
+        max_retries: { type: 'number', description: 'Optional max retries' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'agentic_check_config',
+    description: 'Check whether the agentic assistant is configured and available.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'agentic_execute',
+    description: 'Execute an agentic assistant flow by name with the given assist request fields.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_name: { type: 'string', description: 'Agentic flow name to execute' },
+        flow_id: { type: 'string', description: 'Flow ID' },
+        input_value: { type: 'string', description: 'User input/instruction' },
+        session_id: { type: 'string', description: 'Optional session ID' },
+        component_id: { type: 'string', description: 'Optional target component ID' },
+        field_name: { type: 'string', description: 'Optional target field name' },
+        model_name: { type: 'string', description: 'Optional model name' },
+        provider: { type: 'string', description: 'Optional provider' },
+        max_retries: { type: 'number', description: 'Optional max retries' }
+      },
+      required: ['flow_name', 'flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_workflow_result',
+    description: 'Get the result of a workflow run, optionally by job ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Optional workflow job ID' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'run_workflow',
+    description: 'Run a workflow (V2) for a flow with inputs. Supports streaming and background execution.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' },
+        inputs: { type: 'object', description: 'Workflow inputs' },
+        stream: { type: 'boolean', description: 'Stream the run' },
+        background: { type: 'boolean', description: 'Run in background' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'stop_workflow',
+    description: 'Stop a running workflow job by job ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Workflow job ID to stop' }
+      },
+      required: ['job_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'list_mcp_servers',
+    description: 'List configured MCP servers. Optionally include action counts.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action_count: { type: 'boolean', description: 'Include action counts per server' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_mcp_server',
+    description: 'Get the configuration of a specific MCP server by name.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        server_name: { type: 'string', description: 'MCP server name' }
+      },
+      required: ['server_name']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_mcp_server',
+    description: 'Create an MCP server configuration (stdio command or remote URL based).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        server_name: { type: 'string', description: 'MCP server name' },
+        config: {
+          type: 'object',
+          description: 'MCP server config',
+          properties: {
+            command: { type: 'string', description: 'Command for stdio servers' },
+            args: { type: 'array', items: { type: 'string' }, description: 'Command arguments' },
+            env: { type: 'object', description: 'Environment variables' },
+            url: { type: 'string', description: 'URL for remote servers' },
+            headers: { type: 'object', description: 'HTTP headers for remote servers' }
+          }
+        }
+      },
+      required: ['server_name', 'config']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_mcp_server',
+    description: 'Update an existing MCP server configuration by name.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        server_name: { type: 'string', description: 'MCP server name' },
+        config: {
+          type: 'object',
+          description: 'MCP server config',
+          properties: {
+            command: { type: 'string', description: 'Command for stdio servers' },
+            args: { type: 'array', items: { type: 'string' }, description: 'Command arguments' },
+            env: { type: 'object', description: 'Environment variables' },
+            url: { type: 'string', description: 'URL for remote servers' },
+            headers: { type: 'object', description: 'HTTP headers for remote servers' }
+          }
+        }
+      },
+      required: ['server_name', 'config']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_mcp_server',
+    description: 'Delete an MCP server configuration by name.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        server_name: { type: 'string', description: 'MCP server name to delete' }
+      },
+      required: ['server_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_mcp_project_config',
+    description: 'Get the MCP configuration for a project. Optionally filter to only MCP-enabled flows.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project ID (UUID)' },
+        mcp_enabled: { type: 'boolean', description: 'Only return MCP-enabled flows' }
+      },
+      required: ['project_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'update_mcp_project_config',
+    description: 'Update the MCP configuration (settings and auth settings) for a project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project ID (UUID)' },
+        settings: { type: 'array', items: { type: 'object' }, description: 'Per-flow MCP settings' },
+        auth_settings: { type: 'object', description: 'Optional auth settings' }
+      },
+      required: ['project_id', 'settings']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_mcp_project_installed',
+    description: 'Get the installation status of a project as an MCP server across clients.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project ID (UUID)' }
+      },
+      required: ['project_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'install_mcp_project',
+    description: 'Install a project as an MCP server into a target client, optionally specifying transport.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project ID (UUID)' },
+        client: { type: 'string', description: 'Target client (e.g. cursor, claude)' },
+        transport: { type: 'string', description: 'Optional transport' }
+      },
+      required: ['project_id', 'client']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_mcp_project_composer_url',
+    description: 'Get the MCP Composer URL for a project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project ID (UUID)' }
+      },
+      required: ['project_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }
 ];

@@ -104,7 +104,80 @@ import {
   ListStarterProjectsSchema,
   UploadKnowledgeBaseSchema,
   ListElevenLabsVoicesSchema,
-  GetLogsSchema
+  GetLogsSchema,
+  ReplaceFlowSchema,
+  ExpandFlowsSchema,
+  GetFlowEventsSchema,
+  CreateFlowEventSchema,
+  ListFlowVersionsSchema,
+  CreateFlowVersionSchema,
+  GetFlowVersionSchema,
+  DeleteFlowVersionSchema,
+  ActivateFlowVersionSchema,
+  DetectVariablesSchema,
+  SaveStoreApiKeySchema,
+  UpdateCustomComponentSchema,
+  CreateStoreComponentSchema,
+  LikeStoreComponentSchema,
+  CreateResponseSchema,
+  GetSessionSchema,
+  CreateUserSchema,
+  GetWebhookEventsSchema,
+  GetHealthCheckSchema,
+  ListFilesV2Schema,
+  UploadFileV2Schema,
+  GetFileV2Schema,
+  RenameFileV2Schema,
+  DeleteFileV2Schema,
+  DeleteAllFilesV2Schema,
+  BatchDownloadFilesV2Schema,
+  BatchDeleteFilesV2Schema,
+  ListKnowledgeBasesDetailedSchema,
+  CreateKnowledgeBaseSchema,
+  PreviewKnowledgeBaseChunksSchema,
+  ListKnowledgeBaseChunksSchema,
+  IngestKnowledgeBaseSchema,
+  CancelKnowledgeBaseIngestSchema,
+  UpdateMonitorMessageSchema,
+  DeleteMonitorSessionMessagesSchema,
+  DeleteMonitorSessionsSchema,
+  GetSharedMessagesSchema,
+  GetSharedSessionsSchema,
+  UpdateSharedMessageSchema,
+  MigrateSharedSessionSchema,
+  DeleteSharedSessionSchema,
+  ListTracesSchema,
+  DeleteTracesSchema,
+  GetTraceSchema,
+  DeleteTraceSchema,
+  ListModelsSchema,
+  ListModelProvidersSchema,
+  ListEnabledProvidersSchema,
+  ListEnabledModelsSchema,
+  SetEnabledModelsSchema,
+  GetDefaultModelSchema,
+  SetDefaultModelSchema,
+  DeleteDefaultModelSchema,
+  GetProviderVariableMappingSchema,
+  ValidateModelProviderSchema,
+  GetLanguageModelOptionsSchema,
+  GetEmbeddingModelOptionsSchema,
+  AgenticAssistSchema,
+  AgenticCheckConfigSchema,
+  AgenticExecuteSchema,
+  GetWorkflowResultSchema,
+  RunWorkflowSchema,
+  StopWorkflowSchema,
+  ListMcpServersSchema,
+  GetMcpServerSchema,
+  CreateMcpServerSchema,
+  UpdateMcpServerSchema,
+  DeleteMcpServerSchema,
+  GetMcpProjectConfigSchema,
+  UpdateMcpProjectConfigSchema,
+  GetMcpProjectInstalledSchema,
+  InstallMcpProjectSchema,
+  GetMcpProjectComposerUrlSchema
 } from './validation';
 
 export class LangflowMCPServer {
@@ -1047,6 +1120,511 @@ export class LangflowMCPServer {
           case 'get_logs': {
             const validated = GetLogsSchema.parse(args);
             const result = await this.client.getLogs(validated.stream);
+            return this.formatSuccessResponse(result);
+          }
+
+          // === Langflow 1.9.5 new tools ===
+
+          case 'replace_flow': {
+            const validated = ReplaceFlowSchema.parse(args);
+            const { flow_id, ...body } = validated;
+            const result = await this.client.replaceFlow(flow_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'expand_flows': {
+            const validated = ExpandFlowsSchema.parse(args);
+            const result = await this.client.expandFlows(validated.body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_flow_events': {
+            const validated = GetFlowEventsSchema.parse(args);
+            const result = await this.client.getFlowEvents(
+              validated.flow_id,
+              validated.since !== undefined ? { since: validated.since } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_flow_event': {
+            const validated = CreateFlowEventSchema.parse(args);
+            const { flow_id, ...body } = validated;
+            const result = await this.client.createFlowEvent(flow_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_flow_versions': {
+            const validated = ListFlowVersionsSchema.parse(args);
+            const { flow_id, ...params } = validated;
+            const result = await this.client.listFlowVersions(flow_id, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_flow_version': {
+            const validated = CreateFlowVersionSchema.parse(args);
+            const result = await this.client.createFlowVersion(validated.flow_id, validated.body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_flow_version': {
+            const validated = GetFlowVersionSchema.parse(args);
+            const result = await this.client.getFlowVersion(validated.flow_id, validated.version_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_flow_version': {
+            const validated = DeleteFlowVersionSchema.parse(args);
+            await this.client.deleteFlowVersion(validated.flow_id, validated.version_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Flow version deleted successfully'
+            });
+          }
+
+          case 'activate_flow_version': {
+            const validated = ActivateFlowVersionSchema.parse(args);
+            const result = await this.client.activateFlowVersion(
+              validated.flow_id,
+              validated.version_id,
+              validated.save_draft !== undefined ? { save_draft: validated.save_draft } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'detect_variables': {
+            const validated = DetectVariablesSchema.parse(args);
+            const result = await this.client.detectVariables({ flow_version_ids: validated.flow_version_ids });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'save_store_api_key': {
+            const validated = SaveStoreApiKeySchema.parse(args);
+            const result = await this.client.saveStoreApiKey(validated.api_key);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_custom_component': {
+            const validated = UpdateCustomComponentSchema.parse(args);
+            const result = await this.client.updateCustomComponentCode(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_store_component': {
+            const validated = CreateStoreComponentSchema.parse(args);
+            const result = await this.client.createStoreComponent({
+              description: null,
+              tags: null,
+              is_component: null,
+              ...validated
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'like_store_component': {
+            const validated = LikeStoreComponentSchema.parse(args);
+            const result = await this.client.likeStoreComponent(validated.component_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_response': {
+            const validated = CreateResponseSchema.parse(args);
+            const result = await this.client.createResponse(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_session': {
+            GetSessionSchema.parse(args);
+            const result = await this.client.getSession();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_user': {
+            const validated = CreateUserSchema.parse(args);
+            const result = await this.client.createUser(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_webhook_events': {
+            const validated = GetWebhookEventsSchema.parse(args);
+            const result = await this.client.getWebhookEvents(
+              validated.flow_id_or_name,
+              validated.user_id ? { user_id: validated.user_id } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_health_check': {
+            GetHealthCheckSchema.parse(args);
+            const result = await this.client.getHealthCheck();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_files_v2': {
+            ListFilesV2Schema.parse(args);
+            const result = await this.client.listFilesV2();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'upload_file_v2': {
+            const validated = UploadFileV2Schema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const params: { append?: boolean; ephemeral?: boolean } = {};
+            if (validated.append !== undefined) params.append = validated.append;
+            if (validated.ephemeral !== undefined) params.ephemeral = validated.ephemeral;
+            const result = await this.client.uploadFileV2(fileBuffer, validated.file_name, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_file_v2': {
+            const validated = GetFileV2Schema.parse(args);
+            const result = await this.client.getFileV2(
+              validated.file_id,
+              validated.return_content !== undefined ? { return_content: validated.return_content } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'rename_file_v2': {
+            const validated = RenameFileV2Schema.parse(args);
+            const result = await this.client.renameFileV2(validated.file_id, validated.name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_file_v2': {
+            const validated = DeleteFileV2Schema.parse(args);
+            const result = await this.client.deleteFileV2(validated.file_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_all_files_v2': {
+            DeleteAllFilesV2Schema.parse(args);
+            const result = await this.client.deleteAllFilesV2();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'batch_download_files_v2': {
+            const validated = BatchDownloadFilesV2Schema.parse(args);
+            const result = await this.client.batchDownloadFilesV2(validated.file_ids);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'batch_delete_files_v2': {
+            const validated = BatchDeleteFilesV2Schema.parse(args);
+            const result = await this.client.batchDeleteFilesV2(validated.file_ids);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_knowledge_bases_detailed': {
+            ListKnowledgeBasesDetailedSchema.parse(args);
+            const result = await this.client.listKnowledgeBasesDetailed();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_knowledge_base': {
+            const validated = CreateKnowledgeBaseSchema.parse(args);
+            const result = await this.client.createKnowledgeBase(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'preview_knowledge_base_chunks': {
+            const validated = PreviewKnowledgeBaseChunksSchema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const result = await this.client.previewKnowledgeBaseChunks([fileBuffer], validated.params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_knowledge_base_chunks': {
+            const validated = ListKnowledgeBaseChunksSchema.parse(args);
+            const { kb_name, ...params } = validated;
+            const result = await this.client.listKnowledgeBaseChunks(kb_name, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'ingest_knowledge_base': {
+            const validated = IngestKnowledgeBaseSchema.parse(args);
+            const fileBuffer = this.validateFileSize(validated.file_content);
+            const body: Record<string, unknown> = { ...(validated.params ?? {}), file: fileBuffer };
+            const result = await this.client.ingestKnowledgeBase(validated.kb_name, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'cancel_knowledge_base_ingest': {
+            const validated = CancelKnowledgeBaseIngestSchema.parse(args);
+            const result = await this.client.cancelKnowledgeBaseIngest(validated.kb_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_monitor_message': {
+            const validated = UpdateMonitorMessageSchema.parse(args);
+            const { message_id, ...body } = validated;
+            const result = await this.client.updateMonitorMessage(message_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_monitor_session_messages': {
+            const validated = DeleteMonitorSessionMessagesSchema.parse(args);
+            const result = await this.client.deleteMonitorSessionMessages(validated.session_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_monitor_sessions': {
+            const validated = DeleteMonitorSessionsSchema.parse(args);
+            const result = await this.client.deleteMonitorSessions(validated.session_ids);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_shared_messages': {
+            const validated = GetSharedMessagesSchema.parse(args);
+            const result = await this.client.getSharedMessages(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_shared_sessions': {
+            const validated = GetSharedSessionsSchema.parse(args);
+            const result = await this.client.getSharedSessions(validated.source_flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_shared_message': {
+            const validated = UpdateSharedMessageSchema.parse(args);
+            const { message_id, source_flow_id, ...body } = validated;
+            const result = await this.client.updateSharedMessage(message_id, source_flow_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'migrate_shared_session': {
+            const validated = MigrateSharedSessionSchema.parse(args);
+            const result = await this.client.migrateSharedSession(validated.session_id, {
+              new_session_id: validated.new_session_id,
+              source_flow_id: validated.source_flow_id
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_shared_session': {
+            const validated = DeleteSharedSessionSchema.parse(args);
+            const result = await this.client.deleteSharedSession(validated.session_id, validated.source_flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_traces': {
+            const validated = ListTracesSchema.parse(args);
+            const result = await this.client.listTraces(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_traces': {
+            const validated = DeleteTracesSchema.parse(args);
+            const result = await this.client.deleteTraces(validated.flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_trace': {
+            const validated = GetTraceSchema.parse(args);
+            const result = await this.client.getTrace(validated.trace_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_trace': {
+            const validated = DeleteTraceSchema.parse(args);
+            await this.client.deleteTrace(validated.trace_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Trace deleted successfully'
+            });
+          }
+
+          case 'list_models': {
+            const validated = ListModelsSchema.parse(args);
+            const result = await this.client.listModels(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_model_providers': {
+            ListModelProvidersSchema.parse(args);
+            const result = await this.client.listModelProviders();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_enabled_providers': {
+            const validated = ListEnabledProvidersSchema.parse(args);
+            const result = await this.client.listEnabledProviders(
+              validated.providers ? { providers: validated.providers } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_enabled_models': {
+            const validated = ListEnabledModelsSchema.parse(args);
+            const result = await this.client.listEnabledModels(
+              validated.model_names ? { model_names: validated.model_names } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'set_enabled_models': {
+            const validated = SetEnabledModelsSchema.parse(args);
+            const result = await this.client.setEnabledModels(validated.models);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_default_model': {
+            const validated = GetDefaultModelSchema.parse(args);
+            const result = await this.client.getDefaultModel({ model_type: validated.model_type });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'set_default_model': {
+            const validated = SetDefaultModelSchema.parse(args);
+            const result = await this.client.setDefaultModel({
+              provider: validated.provider,
+              model_name: validated.model_name,
+              model_type: validated.model_type
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_default_model': {
+            const validated = DeleteDefaultModelSchema.parse(args);
+            const result = await this.client.deleteDefaultModel({ model_type: validated.model_type });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_provider_variable_mapping': {
+            GetProviderVariableMappingSchema.parse(args);
+            const result = await this.client.getProviderVariableMapping();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'validate_model_provider': {
+            const validated = ValidateModelProviderSchema.parse(args);
+            const result = await this.client.validateModelProvider({
+              provider: validated.provider,
+              variables: validated.variables
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_language_model_options': {
+            GetLanguageModelOptionsSchema.parse(args);
+            const result = await this.client.getLanguageModelOptions();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_embedding_model_options': {
+            GetEmbeddingModelOptionsSchema.parse(args);
+            const result = await this.client.getEmbeddingModelOptions();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'agentic_assist': {
+            const validated = AgenticAssistSchema.parse(args);
+            const result = await this.client.agenticAssist(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'agentic_check_config': {
+            AgenticCheckConfigSchema.parse(args);
+            const result = await this.client.agenticCheckConfig();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'agentic_execute': {
+            const validated = AgenticExecuteSchema.parse(args);
+            const { flow_name, ...body } = validated;
+            const result = await this.client.agenticExecute(flow_name, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_workflow_result': {
+            const validated = GetWorkflowResultSchema.parse(args);
+            const result = await this.client.getWorkflowResult(
+              validated.job_id ? { job_id: validated.job_id } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'run_workflow': {
+            const validated = RunWorkflowSchema.parse(args);
+            const result = await this.client.runWorkflow(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'stop_workflow': {
+            const validated = StopWorkflowSchema.parse(args);
+            const result = await this.client.stopWorkflow(validated.job_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_mcp_servers': {
+            const validated = ListMcpServersSchema.parse(args);
+            const result = await this.client.listMcpServers(
+              validated.action_count !== undefined ? { action_count: validated.action_count } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_mcp_server': {
+            const validated = GetMcpServerSchema.parse(args);
+            const result = await this.client.getMcpServer(validated.server_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_mcp_server': {
+            const validated = CreateMcpServerSchema.parse(args);
+            const result = await this.client.createMcpServer(validated.server_name, validated.config);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_mcp_server': {
+            const validated = UpdateMcpServerSchema.parse(args);
+            const result = await this.client.updateMcpServer(validated.server_name, validated.config);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_mcp_server': {
+            const validated = DeleteMcpServerSchema.parse(args);
+            const result = await this.client.deleteMcpServer(validated.server_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_mcp_project_config': {
+            const validated = GetMcpProjectConfigSchema.parse(args);
+            const result = await this.client.getMcpProjectConfig(
+              validated.project_id,
+              validated.mcp_enabled !== undefined ? { mcp_enabled: validated.mcp_enabled } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_mcp_project_config': {
+            const validated = UpdateMcpProjectConfigSchema.parse(args);
+            const result = await this.client.updateMcpProjectConfig(validated.project_id, {
+              settings: validated.settings,
+              auth_settings: validated.auth_settings
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_mcp_project_installed': {
+            const validated = GetMcpProjectInstalledSchema.parse(args);
+            const result = await this.client.getMcpProjectInstalled(validated.project_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'install_mcp_project': {
+            const validated = InstallMcpProjectSchema.parse(args);
+            const result = await this.client.installMcpProject(validated.project_id, {
+              client: validated.client,
+              transport: validated.transport
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_mcp_project_composer_url': {
+            const validated = GetMcpProjectComposerUrlSchema.parse(args);
+            const result = await this.client.getMcpProjectComposerUrl(validated.project_id);
             return this.formatSuccessResponse(result);
           }
 
