@@ -46,14 +46,14 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `trace` - Execution traces (list, get, delete, delete_by_flow)
 - `model` - Models and providers (list, providers, enabled, default get/set/delete, mapping, validate, options)
 - `user` - User management (list, get_current, update, reset_password, create)
-- `auth` - Authentication (login, auto_login, logout, refresh, api keys)
-- `store` - Component store (list, get, tags, likes, save_api_key, create, like)
+- `auth` - Authentication (login, auto_login, logout, refresh, api keys, save_store_key)
+- `store` - Component store (list, get, tags, likes, save_api_key, create, like, update_custom)
 - `registration` - User registration (get, register)
 - `validation` - Code/prompt validation (code, prompt)
 - `mcp_server` - MCP server management (list, get, create, update, delete)
 - `mcp_project` - MCP project config/install (get/update config, get_installed, install, composer_url)
 - `response` - OpenAI-compatible responses (create)
-- `system` - System info (health, version, logs, pictures, voices)
+- `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
 
 It provides structured access to:
 

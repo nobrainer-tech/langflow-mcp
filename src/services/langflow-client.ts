@@ -28,6 +28,7 @@ import {
   BuildStatusResponse,
   CancelBuildResponse,
   KnowledgeBaseInfo,
+  KnowledgeBaseFile,
   BulkDeleteKnowledgeBasesRequest,
   FileListItem,
   ValidateCodeRequest,
@@ -1434,11 +1435,11 @@ export class LangflowClient {
     }
   }
 
-  async previewKnowledgeBaseChunks(files: Buffer[], body?: Record<string, any>): Promise<any> {
+  async previewKnowledgeBaseChunks(files: KnowledgeBaseFile[], body?: Record<string, any>): Promise<any> {
     try {
       const formData = new FormData();
       files.forEach((file, idx) => {
-        formData.append('files', file, `file-${idx}`);
+        formData.append('files', file.buffer, file.filename || `file-${idx}`);
       });
       if (body) {
         Object.entries(body).forEach(([key, value]) => {
@@ -1469,17 +1470,17 @@ export class LangflowClient {
     }
   }
 
-  async ingestKnowledgeBase(kbName: string, body: Record<string, any>): Promise<any> {
+  async ingestKnowledgeBase(kbName: string, files: KnowledgeBaseFile[], body?: Record<string, any>): Promise<any> {
     try {
       const formData = new FormData();
-      let fileIdx = 0;
-      Object.entries(body).forEach(([key, value]) => {
-        if (Buffer.isBuffer(value)) {
-          formData.append('files', value, `file-${fileIdx++}`);
-        } else {
-          formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
-        }
+      files.forEach((file, idx) => {
+        formData.append('files', file.buffer, file.filename || `file-${idx}`);
       });
+      if (body) {
+        Object.entries(body).forEach(([key, value]) => {
+          formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
+        });
+      }
 
       const response = await this.client.post(
         `/knowledge_bases/${encodeURIComponent(kbName)}/ingest`,

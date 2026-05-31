@@ -281,7 +281,8 @@ export class LangflowMCPServer {
       'access_token', 'refresh_token', 'authorization',
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
-      'private_key', 'secret', 'credentials', 'api-key'
+      'private_key', 'secret', 'credentials', 'api-key',
+      'file_content', 'file', 'content', 'payload', 'data'
     ]);
 
     // Prevent infinite recursion
@@ -1338,7 +1339,10 @@ export class LangflowMCPServer {
           case 'preview_knowledge_base_chunks': {
             const validated = PreviewKnowledgeBaseChunksSchema.parse(args);
             const fileBuffer = this.validateFileSize(validated.file_content);
-            const result = await this.client.previewKnowledgeBaseChunks([fileBuffer], validated.params);
+            const result = await this.client.previewKnowledgeBaseChunks(
+              [{ buffer: fileBuffer, filename: validated.file_name }],
+              validated.params
+            );
             return this.formatSuccessResponse(result);
           }
 
@@ -1352,8 +1356,11 @@ export class LangflowMCPServer {
           case 'ingest_knowledge_base': {
             const validated = IngestKnowledgeBaseSchema.parse(args);
             const fileBuffer = this.validateFileSize(validated.file_content);
-            const body: Record<string, unknown> = { ...(validated.params ?? {}), files: fileBuffer };
-            const result = await this.client.ingestKnowledgeBase(validated.kb_name, body);
+            const result = await this.client.ingestKnowledgeBase(
+              validated.kb_name,
+              [{ buffer: fileBuffer, filename: validated.file_name }],
+              validated.params
+            );
             return this.formatSuccessResponse(result);
           }
 

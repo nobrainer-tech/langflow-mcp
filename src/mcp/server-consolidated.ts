@@ -639,13 +639,19 @@ export class LangflowMCPServerConsolidated {
       }
       case 'ingest': {
         const fileBuffer = this.validateFileSize(validated.file_content);
-        const body: Record<string, unknown> = { ...(validated.params ?? {}), files: fileBuffer };
-        const result = await this.client!.ingestKnowledgeBase(validated.kb_name, body);
+        const result = await this.client!.ingestKnowledgeBase(
+          validated.kb_name,
+          [{ buffer: fileBuffer, filename: validated.file_name }],
+          validated.params
+        );
         return this.formatSuccessResponse(result);
       }
       case 'preview_chunks': {
         const fileBuffer = this.validateFileSize(validated.file_content);
-        const result = await this.client!.previewKnowledgeBaseChunks([fileBuffer], validated.params);
+        const result = await this.client!.previewKnowledgeBaseChunks(
+          [{ buffer: fileBuffer, filename: validated.file_name }],
+          validated.params
+        );
         return this.formatSuccessResponse(result);
       }
       case 'cancel_ingest': {

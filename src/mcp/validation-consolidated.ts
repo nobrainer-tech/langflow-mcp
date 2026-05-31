@@ -441,7 +441,7 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('update_message'),
-    message_id: z.string().min(1),
+    message_id: uuidSchema('message ID'),
     text: z.string().optional(),
     sender: z.string().optional(),
     sender_name: z.string().optional(),
@@ -469,7 +469,7 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('update_shared'),
-    message_id: z.string().min(1),
+    message_id: uuidSchema('message ID'),
     source_flow_id: z.string().min(1),
     text: z.string().optional(),
     sender: z.string().optional(),

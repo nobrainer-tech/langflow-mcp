@@ -418,12 +418,12 @@ describe('Extended Schemas - new actions', () => {
   });
 
   it('Monitor: validates new shared/message actions', () => {
-    expect(MonitorToolSchema.safeParse({ action: 'update_message', message_id: 'm1', text: 'hi' }).success).toBe(true);
+    expect(MonitorToolSchema.safeParse({ action: 'update_message', message_id: VALID_UUID, text: 'hi' }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'delete_session_messages', session_id: 's1' }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'delete_sessions', session_ids: ['s1'] }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'get_shared', source_flow_id: 'f1' }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'get_shared_sessions', source_flow_id: 'f1' }).success).toBe(true);
-    expect(MonitorToolSchema.safeParse({ action: 'update_shared', message_id: 'm1', source_flow_id: 'f1' }).success).toBe(true);
+    expect(MonitorToolSchema.safeParse({ action: 'update_shared', message_id: VALID_UUID, source_flow_id: 'f1' }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'migrate_shared_session', session_id: 's1', new_session_id: 's2', source_flow_id: 'f1' }).success).toBe(true);
     expect(MonitorToolSchema.safeParse({ action: 'delete_shared_session', session_id: 's1', source_flow_id: 'f1' }).success).toBe(true);
   });
@@ -569,11 +569,12 @@ describe('Consolidated handler dispatch', () => {
       action: 'ingest', kb_name: 'kb', file_content: 'dGVzdA==', file_name: 'a.txt', params: { chunk_size: 100 }
     });
     expect(client.ingestKnowledgeBase).toHaveBeenCalledTimes(1);
-    const [kbName, body] = client.ingestKnowledgeBase.mock.calls[0];
+    const [kbName, files, body] = client.ingestKnowledgeBase.mock.calls[0];
     expect(kbName).toBe('kb');
     expect(body.chunk_size).toBe(100);
-    expect(Buffer.isBuffer(body.files)).toBe(true);
-    expect(body.file).toBeUndefined();
+    expect(Array.isArray(files)).toBe(true);
+    expect(Buffer.isBuffer(files[0].buffer)).toBe(true);
+    expect(files[0].filename).toBe('a.txt');
   });
 
   it('knowledge_base.preview_chunks passes buffer array', async () => {
@@ -582,12 +583,13 @@ describe('Consolidated handler dispatch', () => {
     });
     const [files] = client.previewKnowledgeBaseChunks.mock.calls[0];
     expect(Array.isArray(files)).toBe(true);
-    expect(Buffer.isBuffer(files[0])).toBe(true);
+    expect(Buffer.isBuffer(files[0].buffer)).toBe(true);
+    expect(files[0].filename).toBe('a.txt');
   });
 
   it('monitor.update_message dispatches to updateMonitorMessage', async () => {
-    await server.handleMonitorTool({ action: 'update_message', message_id: 'm1', text: 'hi' });
-    expect(client.updateMonitorMessage).toHaveBeenCalledWith('m1', { text: 'hi' });
+    await server.handleMonitorTool({ action: 'update_message', message_id: VALID_UUID, text: 'hi' });
+    expect(client.updateMonitorMessage).toHaveBeenCalledWith(VALID_UUID, { text: 'hi' });
   });
 
   it('monitor.delete_shared_session dispatches with source flow id', async () => {

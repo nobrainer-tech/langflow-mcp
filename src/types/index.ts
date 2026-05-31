@@ -584,6 +584,11 @@ export interface ListKnowledgeBaseChunksParams {
   search?: string;
 }
 
+export interface KnowledgeBaseFile {
+  buffer: Buffer;
+  filename?: string;
+}
+
 export interface MessageUpdate {
   context_id?: string;
   edit?: boolean;

@@ -3458,12 +3458,18 @@ describe('LangflowClient', () => {
       expect(mock.history.post[0].data).toBe(JSON.stringify(body));
     });
 
-    it('previewKnowledgeBaseChunks should post multipart', async () => {
+    it('previewKnowledgeBaseChunks should post multipart and preserve filename', async () => {
       mock.onPost('/knowledge_bases/preview-chunks').reply(200, { chunks: 3 });
 
-      const result = await client.previewKnowledgeBaseChunks([Buffer.from('a')], { size: 100 });
+      const result = await client.previewKnowledgeBaseChunks(
+        [{ buffer: Buffer.from('a'), filename: 'notes.txt' }],
+        { size: 100 }
+      );
 
       expect(result).toEqual({ chunks: 3 });
+
+      const serialized = mock.history.post[0].data.getBuffer().toString();
+      expect(serialized).toContain('filename="notes.txt"');
     });
 
     it('listKnowledgeBaseChunks should pass pagination params', async () => {
@@ -3478,7 +3484,11 @@ describe('LangflowClient', () => {
     it('ingestKnowledgeBase should post multipart body with files field', async () => {
       mock.onPost('/knowledge_bases/kb1/ingest').reply(200, { status: 'started' });
 
-      const result = await client.ingestKnowledgeBase('kb1', { file: Buffer.from('x'), mode: 'append' });
+      const result = await client.ingestKnowledgeBase(
+        'kb1',
+        [{ buffer: Buffer.from('x'), filename: 'doc.pdf' }],
+        { mode: 'append' }
+      );
 
       expect(result).toEqual({ status: 'started' });
 
@@ -3487,6 +3497,7 @@ describe('LangflowClient', () => {
       const serialized = formData.getBuffer().toString();
       expect(serialized).toContain('name="files"');
       expect(serialized).not.toContain('name="file"');
+      expect(serialized).toContain('filename="doc.pdf"');
       expect(serialized).toContain('name="mode"');
     });
 

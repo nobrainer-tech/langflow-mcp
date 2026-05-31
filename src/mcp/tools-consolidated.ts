@@ -673,7 +673,7 @@ Actions:
 Examples:
 - List: { "action": "list", "flow_id": "uuid" }
 - Activate: { "action": "activate", "flow_id": "uuid", "version_id": "v1" }
-- Create event: { "action": "create_event", "flow_id": "uuid", "type": "deploy" }`,
+- Create event: { "action": "create_event", "flow_id": "uuid", "type": "flow_settled" }`,
     inputSchema: {
       type: 'object',
       properties: {

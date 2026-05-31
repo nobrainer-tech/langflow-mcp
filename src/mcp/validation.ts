@@ -634,7 +634,7 @@ export const GetFileV2Schema = z.object({
 
 export const RenameFileV2Schema = z.object({
   file_id: z.string().min(1, 'File ID is required'),
-  name: z.string().min(1, 'New file name is required')
+  name: FileNameSchema
 }).strict();
 
 export const DeleteFileV2Schema = z.object({
