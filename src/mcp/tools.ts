@@ -413,10 +413,13 @@ Parameters:
 - flow_id_or_name (required, string): Flow identifier (UUID) or flow name (case-sensitive)
 - input_request (required, object): Execution configuration containing:
   - input_value (optional, string): Primary input data for the flow (e.g., user message, data to process)
+  - output_component (optional, string): Specific output component to return
   - output_type (optional, string): Expected output format (e.g., "chat", "text", "json")
   - input_type (optional, string): Type of input being provided (e.g., "chat", "text", "json")
+  - session_id (optional, string): Session ID for conversation continuity
   - tweaks (optional, object): Component-specific parameter overrides (key: component_id, value: parameter object)
-- stream (optional, boolean, default: false): Enable streaming mode for real-time token-by-token responses
+- context (optional, object): Request context passed alongside the input request
+- stream (optional, boolean, default: false): Streaming is currently rejected by this MCP client because streamed responses are not JSON serializable
 
 Returns: RunResponse object containing:
 - outputs (array): Flow execution results from output components
@@ -426,13 +429,13 @@ Returns: RunResponse object containing:
 Usage Examples:
 1. Simple execution: { flow_id_or_name: "my-chatbot", input_request: { input_value: "Hello" } }
 2. With output type: { flow_id_or_name: "data-processor", input_request: { input_value: "data", output_type: "json" } }
-3. With streaming: { flow_id_or_name: "llm-chat", input_request: { input_value: "Explain AI" }, stream: true }
+3. With context: { flow_id_or_name: "llm-chat", input_request: { input_value: "Explain AI" }, context: { tenant: "acme" } }
 4. With tweaks: { flow_id_or_name: "flow-uuid", input_request: { input_value: "test", tweaks: { "component-id": { temperature: 0.7 } } } }
 
 Best Practices:
 - Use flow ID (UUID) for production; names may change or conflict
 - Build flow first with build_flow to ensure it's valid before execution
-- Use streaming for LLM-based flows to provide real-time user feedback
+- Leave stream false; this MCP client currently returns JSON tool responses only
 - Cache session_id for multi-turn conversations to maintain context
 - Set appropriate timeout values for long-running flows
 - Test flows with various inputs before production deployment
@@ -467,6 +470,10 @@ Related Tools:
               type: 'string',
               description: 'Input value for the flow'
             },
+            output_component: {
+              type: 'string',
+              description: 'Specific output component to return'
+            },
             output_type: {
               type: 'string',
               description: 'Expected output type'
@@ -475,15 +482,23 @@ Related Tools:
               type: 'string',
               description: 'Type of input being provided'
             },
+            session_id: {
+              type: 'string',
+              description: 'Session ID for conversation continuity'
+            },
             tweaks: {
               type: 'object',
               description: 'Optional parameter tweaks'
             }
           }
         },
+        context: {
+          type: 'object',
+          description: 'Request context passed alongside the input request'
+        },
         stream: {
           type: 'boolean',
-          description: 'Enable streaming mode (default: false)'
+          description: 'Streaming is currently rejected by this MCP client'
         }
       },
       required: ['flow_id_or_name', 'input_request']
@@ -1724,9 +1739,13 @@ Related Tools:
           type: 'string',
           description: 'Session ID for conversation continuity (required)'
         },
+        context: {
+          type: 'object',
+          description: 'Request context passed alongside the input request'
+        },
         stream: {
           type: 'boolean',
-          description: 'Enable streaming mode (default: false)'
+          description: 'Streaming is currently rejected by this MCP client'
         }
       },
       required: ['flow_id_or_name', 'session_id']
@@ -2498,7 +2517,7 @@ Related Tools:
   },
   {
     name: 'upload_knowledge_base',
-    description: 'Upload file to create or update a knowledge base for RAG. Provide knowledge base name, base64-encoded file content, and filename.',
+    description: 'Ingest a file into an existing knowledge base for RAG. Provide knowledge base name, base64-encoded file content, and filename.',
     inputSchema: {
       type: 'object',
       properties: {

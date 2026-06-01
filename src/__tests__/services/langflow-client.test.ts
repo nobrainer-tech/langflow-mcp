@@ -463,17 +463,33 @@ describe('LangflowClient', () => {
       const result = await client.runFlow(flowId, mockRunFlowRequest, false);
 
       expect(result).toEqual(mockRunResponse);
-      expect(mock.history.post[0].data).toContain('"stream":false');
+      expect(JSON.parse(mock.history.post[0].data)).toEqual({
+        input_request: mockRunFlowRequest
+      });
+      expect(mock.history.post[0].params).toEqual({ stream: false });
     });
 
     it('should run a flow with stream enabled', async () => {
       const flowId = 'test-flow';
+
+      await expect(client.runFlow(flowId, mockRunFlowRequest, true)).rejects.toThrow(
+        'Streaming run responses are not supported'
+      );
+      expect(mock.history.post).toHaveLength(0);
+    });
+
+    it('should send request context outside the input request', async () => {
+      const flowId = 'test-flow';
+      const context = { tenant: 'acme' };
       mock.onPost(`/run/${flowId}`).reply(200, mockRunResponse);
 
-      const result = await client.runFlow(flowId, mockRunFlowRequest, true);
+      const result = await client.runFlow(flowId, mockRunFlowRequest, false, context);
 
       expect(result).toEqual(mockRunResponse);
-      expect(mock.history.post[0].data).toContain('"stream":true');
+      expect(JSON.parse(mock.history.post[0].data)).toEqual({
+        input_request: mockRunFlowRequest,
+        context
+      });
     });
 
     it('should handle 404 Not Found', async () => {
@@ -2988,6 +3004,20 @@ describe('LangflowClient', () => {
       const result = await client.runFlowSession(flowName, request);
 
       expect(result).toEqual(mockRunFlowAdvancedResponse);
+      expect(JSON.parse(mock.history.post[0].data)).toEqual({
+        input_request: request
+      });
+      expect(mock.history.post[0].params).toEqual({ stream: false });
+    });
+
+    it('should reject streaming flow sessions before sending the request', async () => {
+      const flowName = 'my-flow';
+      const request = { session_id: 'session-123', input_value: 'hello' };
+
+      await expect(client.runFlowSession(flowName, request, true)).rejects.toThrow(
+        'Streaming run session responses are not supported'
+      );
+      expect(mock.history.post).toHaveLength(0);
     });
 
     it('should handle 404 Not Found for non-existent flow', async () => {
@@ -3499,6 +3529,21 @@ describe('LangflowClient', () => {
       expect(serialized).not.toContain('name="file"');
       expect(serialized).toContain('filename="doc.pdf"');
       expect(serialized).toContain('name="mode"');
+    });
+
+    it('uploadKnowledgeBase should ingest the file into the named knowledge base', async () => {
+      mock.onPost('/knowledge_bases/kb1/ingest').reply(200, { status: 'started' });
+
+      const result = await client.uploadKnowledgeBase('kb1', Buffer.from('x'), 'doc.pdf');
+
+      expect(result).toEqual({ status: 'started' });
+
+      const formData = mock.history.post[0].data;
+      const serialized = formData.getBuffer().toString();
+      expect(mock.history.post[0].url).toBe('/knowledge_bases/kb1/ingest');
+      expect(serialized).toContain('name="files"');
+      expect(serialized).not.toContain('name="file"');
+      expect(serialized).toContain('filename="doc.pdf"');
     });
 
     it('cancelKnowledgeBaseIngest should post cancel', async () => {

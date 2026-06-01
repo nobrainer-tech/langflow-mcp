@@ -89,8 +89,9 @@ Examples:
         output_component: { type: 'string', description: 'Specific output component' },
         tweaks: { type: 'object', description: 'Component parameter overrides' },
         session_id: { type: 'string', description: 'Session ID for conversation continuity' },
+        context: { type: 'object', description: 'Request context for simplified run/session execution' },
         user_id: { type: 'string', description: 'User ID for user-scoped execution' },
-        stream: { type: 'boolean', description: 'Enable streaming mode' },
+        stream: { type: 'boolean', description: 'Streaming is currently rejected by this MCP client for run and run_session' },
         inputs: { type: 'object', description: 'Input values - for process, predict' }
       },
       required: ['action']
@@ -277,7 +278,7 @@ Actions:
 - get: Get knowledge base details
 - delete: Delete a knowledge base
 - bulk_delete: Delete multiple knowledge bases
-- upload: Upload file to knowledge base
+- upload: Ingest a file into an existing knowledge base
 - create: Create a knowledge base
 - list_detailed: List knowledge bases with full detail
 - list_chunks: List chunks within a knowledge base
@@ -287,7 +288,7 @@ Actions:
 
 Examples:
 - List: { "action": "list" }
-- Upload: { "action": "upload", "kb_name": "my-kb", "file_content": "base64...", "file_name": "doc.pdf" }
+- Upload: { "action": "upload", "kb_name": "existing-kb", "file_content": "base64...", "file_name": "doc.pdf" }
 - Create: { "action": "create", "name": "kb", "embedding_provider": "openai", "embedding_model": "text-embedding-3-small" }`,
     inputSchema: {
       type: 'object',

@@ -210,12 +210,21 @@ export class LangflowClient {
     }
   }
 
-  async runFlow(flowIdOrName: string, inputRequest: RunFlowRequest, stream: boolean = false): Promise<RunResponse> {
+  async runFlow(
+    flowIdOrName: string,
+    inputRequest: RunFlowRequest,
+    stream: boolean = false,
+    context?: Record<string, unknown>
+  ): Promise<RunResponse> {
     try {
-      const response = await this.client.post<RunResponse>(`/run/${encodeURIComponent(flowIdOrName)}`, {
-        ...inputRequest,
-        stream
-      });
+      if (stream) {
+        throw new Error('Streaming run responses are not supported by this MCP client');
+      }
+      const response = await this.client.post<RunResponse>(
+        `/run/${encodeURIComponent(flowIdOrName)}`,
+        { input_request: inputRequest, context },
+        { params: { stream } }
+      );
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to run flow ${flowIdOrName}`);
@@ -963,18 +972,9 @@ export class LangflowClient {
     }
   }
 
-  async uploadKnowledgeBase(kbName: string, fileContent: Buffer, fileName: string): Promise<KnowledgeBaseInfo> {
+  async uploadKnowledgeBase(kbName: string, fileContent: Buffer, fileName: string): Promise<any> {
     try {
-      const formData = new FormData();
-      formData.append('file', fileContent, fileName);
-
-      const response = await this.client.post<KnowledgeBaseInfo>('/knowledge_bases/', formData, {
-        params: { kb_name: kbName },
-        headers: {
-          ...formData.getHeaders()
-        }
-      });
-      return response.data;
+      return await this.ingestKnowledgeBase(kbName, [{ buffer: fileContent, filename: fileName }]);
     } catch (error) {
       throw this.handleError(error, `Failed to upload knowledge base ${kbName}`);
     }
@@ -1060,9 +1060,14 @@ export class LangflowClient {
     stream: boolean = false
   ): Promise<RunResponse> {
     try {
+      if (stream) {
+        throw new Error('Streaming run session responses are not supported by this MCP client');
+      }
+      const { context, ...inputRequest } = request;
       const response = await this.client.post<RunResponse>(
         `/run/session/${encodeURIComponent(flowIdOrName)}`,
-        { ...request, stream }
+        { input_request: inputRequest, context },
+        { params: { stream } }
       );
       return response.data;
     } catch (error) {

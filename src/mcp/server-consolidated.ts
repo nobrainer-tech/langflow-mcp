@@ -425,8 +425,8 @@ export class LangflowMCPServerConsolidated {
 
     switch (validated.action) {
       case 'run': {
-        const { action: _, flow_id_or_name, stream, ...inputRequest } = validated;
-        const result = await this.client!.runFlow(flow_id_or_name, inputRequest, stream);
+        const { action: _, flow_id_or_name, stream, context, ...inputRequest } = validated;
+        const result = await this.client!.runFlow(flow_id_or_name, inputRequest, stream, context);
         return this.formatSuccessResponse(result);
       }
       case 'run_advanced': {

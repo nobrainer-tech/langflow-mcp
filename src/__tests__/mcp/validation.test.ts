@@ -284,14 +284,18 @@ describe('Validation Schemas', () => {
         flow_id_or_name: 'test-flow',
         input_request: {
           input_value: 'test input',
+          output_component: 'ChatOutput-1',
           output_type: 'chat',
           input_type: 'text',
+          session_id: 'session-1',
           tweaks: { param1: 'value1' }
         },
+        context: { tenant: 'acme' },
         stream: false
       };
 
-      expect(() => RunFlowSchema.parse(validData)).not.toThrow();
+      expect(RunFlowSchema.parse(validData).input_request).toEqual(validData.input_request);
+      expect(RunFlowSchema.parse(validData).context).toEqual({ tenant: 'acme' });
     });
 
     it('should validate minimal run flow request', () => {
@@ -1448,10 +1452,11 @@ describe('Validation Schemas', () => {
       const validData = {
         flow_id_or_name: 'my-flow',
         session_id: 'session-123',
-        input_value: 'hello'
+        input_value: 'hello',
+        context: { tenant: 'acme' }
       };
 
-      expect(() => RunFlowSessionSchema.parse(validData)).not.toThrow();
+      expect(RunFlowSessionSchema.parse(validData).context).toEqual({ tenant: 'acme' });
     });
 
     it('should reject empty session_id', () => {
