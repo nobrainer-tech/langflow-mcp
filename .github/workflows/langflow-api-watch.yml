@@ -112,10 +112,14 @@ jobs:
             --data-urlencode "Body=${body}"
 
       - name: Notify Paperclip webhook
-        if: ${{ secrets.PAPERCLIP_RA_WEBHOOK_URL != '' }}
         env:
           PAPERCLIP_RA_WEBHOOK_URL: ${{ secrets.PAPERCLIP_RA_WEBHOOK_URL }}
         run: |
+          if [ -z "${PAPERCLIP_RA_WEBHOOK_URL}" ]; then
+            echo "PAPERCLIP_RA_WEBHOOK_URL is not set, skipping Paperclip webhook notification."
+            exit 0
+          fi
+
           payload=$(cat <<EOF
           {"source":"langflow-mcp","event":"langflow_api_update_detected","supported_version":"${SUPPORTED_VERSION}","latest_version":"${LATEST_VERSION}","upgrade_branch":"${UPGRADE_BRANCH}"}
           EOF
