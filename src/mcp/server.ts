@@ -536,10 +536,12 @@ export class LangflowMCPServer {
 
           case 'run_flow': {
             const validated = RunFlowSchema.parse(args);
+            const { context: nestedContext, ...inputRequest } = validated.input_request;
             const result = await this.client.runFlow(
               validated.flow_id_or_name,
-              validated.input_request,
-              validated.stream
+              inputRequest,
+              validated.stream,
+              validated.context ?? nestedContext
             );
             return this.formatSuccessResponse(result);
           }

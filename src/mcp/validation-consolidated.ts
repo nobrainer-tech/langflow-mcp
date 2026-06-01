@@ -137,9 +137,12 @@ export const FlowExecutionToolSchema = z.discriminatedUnion('action', [
     action: z.literal('run'),
     flow_id_or_name: z.string().min(1),
     input_value: z.string().optional(),
+    output_component: z.string().optional(),
     output_type: z.string().optional(),
     input_type: z.string().optional(),
+    session_id: z.string().optional(),
     tweaks: z.record(z.string(), z.unknown()).optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
     stream: z.boolean().optional().default(false)
   }),
   z.object({
@@ -163,6 +166,7 @@ export const FlowExecutionToolSchema = z.discriminatedUnion('action', [
     output_type: z.string().optional(),
     output_component: z.string().optional(),
     tweaks: z.record(z.string(), z.unknown()).optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
     stream: z.boolean().optional().default(false)
   }),
   z.object({

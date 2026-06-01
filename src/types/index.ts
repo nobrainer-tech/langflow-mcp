@@ -79,8 +79,10 @@ export interface DeleteFlowsRequest {
 
 export interface RunFlowRequest {
   input_value?: string;
+  output_component?: string;
   output_type?: string;
   input_type?: string;
+  session_id?: string;
   tweaks?: Record<string, unknown>;
 }
 
@@ -92,6 +94,10 @@ export interface RunResponse {
 
 export interface SimplifiedAPIRequest {
   input_value?: string;
+  input_type?: string;
+  output_component?: string;
+  output_type?: string;
+  session_id?: string;
   tweaks?: Record<string, unknown>;
   context?: Record<string, unknown>;
 }
@@ -289,6 +295,7 @@ export interface RunFlowSessionRequest {
   output_component?: string;
   tweaks?: Record<string, unknown>;
   session_id: string;
+  context?: Record<string, unknown>;
 }
 
 export interface RegistrationResponse {

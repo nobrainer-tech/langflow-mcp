@@ -65,11 +65,14 @@ export const RunFlowSchema = z.object({
   flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
   input_request: z.object({
     input_value: z.string().optional(),
+    output_component: z.string().optional(),
     output_type: z.string().optional(),
     input_type: z.string().optional(),
+    session_id: z.string().optional(),
     tweaks: z.record(z.string(), z.unknown()).optional(),
     context: z.record(z.string(), z.unknown()).optional()
   }),
+  context: z.record(z.string(), z.unknown()).optional(),
   stream: z.boolean().optional().default(false)
 }).strict();
 
@@ -310,6 +313,7 @@ export const RunFlowSessionSchema = z.object({
   output_component: z.string().optional(),
   tweaks: z.record(z.string(), z.unknown()).optional(),
   session_id: z.string().min(1, 'Session ID is required'),
+  context: z.record(z.string(), z.unknown()).optional(),
   stream: z.boolean().optional().default(false)
 }).strict();
 

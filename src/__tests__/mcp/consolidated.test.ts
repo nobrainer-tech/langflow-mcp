@@ -666,12 +666,24 @@ describe('Consolidated handler dispatch', () => {
 
   it('flow_execution.run dispatches to runFlow with input request and stream', async () => {
     await server.handleFlowExecutionTool({
-      action: 'run', flow_id_or_name: 'my-flow', input_value: 'hi', output_type: 'chat'
+      action: 'run',
+      flow_id_or_name: 'my-flow',
+      input_value: 'hi',
+      output_component: 'ChatOutput-1',
+      output_type: 'chat',
+      session_id: 'session-1',
+      context: { tenant: 'acme' }
     });
     expect(client.runFlow).toHaveBeenCalledWith(
       'my-flow',
-      { input_value: 'hi', output_type: 'chat' },
-      false
+      {
+        input_value: 'hi',
+        output_component: 'ChatOutput-1',
+        output_type: 'chat',
+        session_id: 'session-1'
+      },
+      false,
+      { tenant: 'acme' }
     );
   });
 

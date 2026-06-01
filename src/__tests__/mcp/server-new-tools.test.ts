@@ -66,14 +66,44 @@ describe('Langflow 1.9.5 new full-mode tools dispatch', () => {
     const server = new LangflowMCPServer();
     await callTool(server, 'run_flow', {
       flow_id_or_name: 'my-flow',
-      input_request: { input_value: 'hi', output_type: 'chat' }
+      input_request: {
+        input_value: 'hi',
+        output_component: 'ChatOutput-1',
+        output_type: 'chat',
+        session_id: 'session-1'
+      },
+      context: { tenant: 'acme' }
     });
 
     expect(clientMock.runFlow).toHaveBeenCalledTimes(1);
     expect(clientMock.runFlow).toHaveBeenCalledWith(
       'my-flow',
-      { input_value: 'hi', output_type: 'chat' },
-      false
+      {
+        input_value: 'hi',
+        output_component: 'ChatOutput-1',
+        output_type: 'chat',
+        session_id: 'session-1'
+      },
+      false,
+      { tenant: 'acme' }
+    );
+  });
+
+  it('maps legacy nested run_flow context to the top-level client context', async () => {
+    const server = new LangflowMCPServer();
+    await callTool(server, 'run_flow', {
+      flow_id_or_name: 'my-flow',
+      input_request: {
+        input_value: 'hi',
+        context: { tenant: 'nested' }
+      }
+    });
+
+    expect(clientMock.runFlow).toHaveBeenCalledWith(
+      'my-flow',
+      { input_value: 'hi' },
+      false,
+      { tenant: 'nested' }
     );
   });
 
