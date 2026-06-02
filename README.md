@@ -70,7 +70,7 @@ It provides structured access to:
 
 ### Prerequisites
 
-- Node.js installed on your system
+- Node.js 20 or newer installed on your system
 - A running Langflow instance
 - Langflow API key
 
