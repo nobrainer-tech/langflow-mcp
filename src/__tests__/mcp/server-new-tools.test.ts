@@ -28,7 +28,7 @@ async function callTool(server: LangflowMCPServer, name: string, args: Record<st
   return handler({ method: 'tools/call', params: { name, arguments: args } });
 }
 
-describe('Langflow 1.9.5 new full-mode tools dispatch', () => {
+describe('Langflow 1.9.x full-mode tools dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {

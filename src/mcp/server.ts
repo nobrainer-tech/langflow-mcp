@@ -1134,7 +1134,7 @@ export class LangflowMCPServer {
             return this.formatSuccessResponse(result);
           }
 
-          // === Langflow 1.9.5 new tools ===
+          // === Langflow 1.9.x tools ===
 
           case 'replace_flow': {
             const validated = ReplaceFlowSchema.parse(args);

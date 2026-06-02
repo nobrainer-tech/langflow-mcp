@@ -497,7 +497,7 @@ export const GetLogsSchema = z.object({
   stream: z.boolean().optional().default(false)
 }).strict();
 
-// === Langflow 1.9.5 new tools ===
+// === Langflow 1.9.x tools ===
 
 // Flows / versions / events
 export const ReplaceFlowSchema = z.object({
@@ -655,7 +655,7 @@ export const BatchDeleteFilesV2Schema = z.object({
   file_ids: z.array(z.string().min(1, 'File ID cannot be empty')).min(1, 'At least one file ID is required')
 }).strict();
 
-// Knowledge base (1.9.5)
+// Knowledge base (1.9.x)
 export const ListKnowledgeBasesDetailedSchema = z.object({}).strict();
 
 export const CreateKnowledgeBaseSchema = z.object({
@@ -697,7 +697,7 @@ export const CancelKnowledgeBaseIngestSchema = z.object({
   kb_name: z.string().min(1, 'Knowledge base name is required')
 }).strict();
 
-// Monitor (1.9.5)
+// Monitor (1.9.x)
 export const UpdateMonitorMessageSchema = z.object({
   message_id: z.string().min(1, 'Message ID is required'),
   text: z.string().optional(),

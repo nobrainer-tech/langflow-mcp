@@ -22,6 +22,7 @@ jobs:
       has_update: ${{ steps.check.outputs.has_update }}
       upgrade_branch: ${{ steps.check.outputs.upgrade_branch }}
       pr_already_open: ${{ steps.check.outputs.pr_already_open }}
+      base_branch: ${{ steps.check.outputs.base_branch }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -35,10 +36,11 @@ jobs:
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: master
         run: node .github/scripts/check-langflow-release.mjs
 
   notify-and-open-pr:
-    name: Notify and open upgrade PR
+    name: Open upgrade PR and notify
     runs-on: ubuntu-latest
     needs: check
     if: needs.check.outputs.has_update == 'true' && needs.check.outputs.pr_already_open != 'true'
@@ -49,29 +51,10 @@ jobs:
       SUPPORTED_VERSION: ${{ needs.check.outputs.supported_version }}
       LATEST_VERSION: ${{ needs.check.outputs.latest_version }}
       UPGRADE_BRANCH: ${{ needs.check.outputs.upgrade_branch }}
+      BASE_BRANCH: ${{ needs.check.outputs.base_branch }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Validate SMS secrets
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
-          TWILIO_TO_NUMBER: ${{ secrets.TWILIO_TO_NUMBER }}
-        run: |
-          missing=0
-          for secret_name in TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_FROM_NUMBER TWILIO_TO_NUMBER; do
-            if [ -z "${!secret_name}" ]; then
-              echo "Missing required secret: ${secret_name}"
-              missing=1
-            fi
-          done
-
-          if [ "${missing}" -ne 0 ]; then
-            echo "Cannot send SMS alert without Twilio secrets."
-            exit 1
-          fi
 
       - name: Create upgrade kickoff artifact
         run: |
@@ -96,6 +79,30 @@ jobs:
           - [ ] Run typecheck, tests, and build
           EOF
 
+      - name: Create draft upgrade PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ env.UPGRADE_BRANCH }}
+          commit-message: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'
+          title: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'
+          body: |
+            ## RA weekly Langflow API watch
+
+            This draft PR was created automatically because a newer Langflow API version was detected.
+
+            - Supported in repo: `${{ env.SUPPORTED_VERSION }}`
+            - Latest available: `${{ env.LATEST_VERSION }}`
+
+            Start implementation from:
+            - `.github/langflow-upgrades/langflow-api-v${{ env.LATEST_VERSION }}.md`
+          base: ${{ env.BASE_BRANCH }}
+          add-paths: |
+            .github/langflow-upgrades/langflow-api-v${{ env.LATEST_VERSION }}.md
+          draft: true
+          labels: |
+            dependencies
+            langflow
+
       - name: Send SMS alert
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
@@ -103,6 +110,19 @@ jobs:
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
           TWILIO_TO_NUMBER: ${{ secrets.TWILIO_TO_NUMBER }}
         run: |
+          missing=0
+          for secret_name in TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_FROM_NUMBER TWILIO_TO_NUMBER; do
+            if [ -z "${!secret_name}" ]; then
+              echo "Missing required secret: ${secret_name}"
+              missing=1
+            fi
+          done
+
+          if [ "${missing}" -ne 0 ]; then
+            echo "Skipping SMS alert because Twilio secrets are incomplete."
+            exit 0
+          fi
+
           body="langflow-mcp: new Langflow API ${LATEST_VERSION} detected (supported: ${SUPPORTED_VERSION}). Draft PR branch: ${UPGRADE_BRANCH}"
           curl --fail --silent --show-error \
             -u "${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}" \
@@ -110,6 +130,7 @@ jobs:
             --data-urlencode "From=${TWILIO_FROM_NUMBER}" \
             --data-urlencode "To=${TWILIO_TO_NUMBER}" \
             --data-urlencode "Body=${body}"
+        continue-on-error: true
 
       - name: Notify Paperclip webhook
         env:
@@ -128,27 +149,4 @@ jobs:
             -H "Content-Type: application/json" \
             -X POST "${PAPERCLIP_RA_WEBHOOK_URL}" \
             -d "${payload}"
-
-      - name: Create draft upgrade PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: ${{ env.UPGRADE_BRANCH }}
-          commit-message: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'
-          title: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'
-          body: |
-            ## RA weekly Langflow API watch
-
-            This draft PR was created automatically because a newer Langflow API version was detected.
-
-            - Supported in repo: `${{ env.SUPPORTED_VERSION }}`
-            - Latest available: `${{ env.LATEST_VERSION }}`
-
-            Start implementation from:
-            - `.github/langflow-upgrades/langflow-api-v${{ env.LATEST_VERSION }}.md`
-          base: main
-          add-paths: |
-            .github/langflow-upgrades/langflow-api-v${{ env.LATEST_VERSION }}.md
-          draft: true
-          labels: |
-            dependencies
-            langflow
+        continue-on-error: true

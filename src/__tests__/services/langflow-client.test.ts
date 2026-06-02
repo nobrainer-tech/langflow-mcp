@@ -3114,7 +3114,7 @@ describe('LangflowClient', () => {
     });
   });
 
-  // --- Langflow 1.9.5 additional endpoints ---
+  // --- Langflow 1.9.x additional endpoints ---
 
   describe('replaceFlow', () => {
     it('should replace a flow via PUT', async () => {

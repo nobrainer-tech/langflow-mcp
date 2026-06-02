@@ -498,7 +498,7 @@ export interface HealthResponse {
   [key: string]: any;
 }
 
-// --- Langflow 1.9.5 additional endpoints ---
+// --- Langflow 1.9.x additional endpoints ---
 
 export interface FlowEventCreate {
   type:

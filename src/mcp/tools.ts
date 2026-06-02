@@ -2590,7 +2590,7 @@ Related Tools:
       openWorldHint: true
     }
   },
-  // === Langflow 1.9.5 new tools ===
+  // === Langflow 1.9.x tools ===
   {
     name: 'replace_flow',
     description: 'Replace an entire flow (PUT) with new content. Overwrites name, description, data, and folder for the given flow ID.',

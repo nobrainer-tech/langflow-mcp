@@ -62,12 +62,13 @@ async function fetchLatestLangflowRelease() {
   return sanitizeTag(json.tag_name);
 }
 
-async function openPrExists(repoOwner, repoName, branchName, githubToken) {
+async function openPrExists(repoOwner, repoName, branchName, baseBranch, githubToken) {
   if (!githubToken) return false;
 
   const params = new URLSearchParams({
     state: 'open',
-    head: `${repoOwner}:${branchName}`
+    head: `${repoOwner}:${branchName}`,
+    base: baseBranch
   });
 
   const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pulls?${params.toString()}`, {
@@ -94,6 +95,7 @@ async function main() {
 
   const repository = process.env.GITHUB_REPOSITORY || '';
   const [repoOwner, repoName] = repository.split('/');
+  const baseBranch = process.env.GITHUB_BASE_REF || process.env.DEFAULT_BRANCH || 'master';
   const upgradeBranch = `ra/langflow-api-upgrade-v${latestVersion}`;
 
   let prAlreadyOpen = false;
@@ -102,6 +104,7 @@ async function main() {
       repoOwner,
       repoName,
       upgradeBranch,
+      baseBranch,
       process.env.GITHUB_TOKEN || ''
     );
   }
@@ -111,12 +114,14 @@ async function main() {
   setOutput('has_update', String(hasUpdate));
   setOutput('upgrade_branch', upgradeBranch);
   setOutput('pr_already_open', String(prAlreadyOpen));
+  setOutput('base_branch', baseBranch);
 
   console.log(`supported_version=${supportedVersion}`);
   console.log(`latest_version=${latestVersion}`);
   console.log(`has_update=${hasUpdate}`);
   console.log(`upgrade_branch=${upgradeBranch}`);
   console.log(`pr_already_open=${prAlreadyOpen}`);
+  console.log(`base_branch=${baseBranch}`);
 }
 
 main().catch((error) => {

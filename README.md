@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-771%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-780%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -13,7 +13,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.9.5**.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.9.6**. Langflow 1.9.6 does not introduce API route contract changes over the 1.9.5 contract baseline used by this implementation.
 
 ### Consolidated Tools Mode
 
