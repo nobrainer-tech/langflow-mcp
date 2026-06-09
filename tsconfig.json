@@ -27,6 +27,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
     "allowJs": true
   },
   "include": ["src/**/*", "vitest.config.mts"],
