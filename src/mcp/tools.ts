@@ -4007,7 +4007,7 @@ Related Tools:
       },
       required: ['memory_base_id']
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
   },
   {
     name: 'test_knowledge_base_connection',
@@ -4125,11 +4125,11 @@ Related Tools:
   },
   {
     name: 'get_extension_events',
-    description: 'Get extension events, optionally since a given sequence number.',
+    description: 'Get extension events for the current user, optionally since a UTC epoch cursor.',
     inputSchema: {
       type: 'object',
       properties: {
-        since: { type: 'number', description: 'Return events after this sequence number' }
+        since: { type: 'number', description: 'UTC epoch timestamp; return events after this cursor' }
       }
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -4156,7 +4156,7 @@ Related Tools:
         session_id: { type: 'string', description: 'Session ID to reset' }
       }
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
   },
   {
     name: 'get_flow_note_translations',

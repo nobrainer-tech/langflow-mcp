@@ -864,8 +864,8 @@ describe('Consolidated handler dispatch', () => {
     expect(client.removeAuthzTeamMember).toHaveBeenCalledWith(VALID_UUID, userId);
   });
 
-  it('authz.audit maps name filter to action query param', async () => {
-    await server.handleAuthzTool({ action: 'audit', name: 'role.create', result: 'allow' });
+  it('authz.audit maps audit_action filter to action query param', async () => {
+    await server.handleAuthzTool({ action: 'audit', audit_action: 'role.create', result: 'allow' });
     expect(client.getAuthzAudit).toHaveBeenCalledWith({ result: 'allow', action: 'role.create' });
   });
 

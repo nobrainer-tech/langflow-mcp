@@ -858,7 +858,7 @@ export const RunWorkflowSchema = z.object({
   inputs: z.record(z.string(), z.unknown()).optional(),
   stream: z.boolean().optional(),
   background: z.boolean().optional(),
-  globals: z.record(z.string(), z.string()).optional()
+  globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional()
 }).strict();
 
 export const StopWorkflowSchema = z.object({
@@ -1237,7 +1237,7 @@ export const GetMyPermissionsSchema = z.object({
 export const CreateMemoryBaseSchema = z.object({
   name: z.string().min(1, 'Memory base name is required'),
   flow_id: z.string().min(1, 'Flow ID is required'),
-  threshold: z.number().optional(),
+  threshold: z.number().int().optional(),
   auto_capture: z.boolean().optional(),
   embedding_model: z.string().optional(),
   preprocessing: z.boolean().optional(),
@@ -1272,7 +1272,7 @@ export const ListMemoryBaseMessagesSchema = z.object({
 export const UpdateMemoryBaseSchema = z.object({
   memory_base_id: z.string().min(1, 'Memory base ID is required'),
   name: z.string().optional(),
-  threshold: z.number().optional(),
+  threshold: z.number().int().optional(),
   auto_capture: z.boolean().optional()
 }).strict();
 

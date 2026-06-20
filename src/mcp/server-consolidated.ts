@@ -1471,8 +1471,8 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse({ success: true, message: 'Share deleted successfully' });
       }
       case 'audit': {
-        const { action: _, name, ...rest } = validated;
-        const params = { ...rest, ...(name !== undefined ? { action: name } : {}) };
+        const { action: _, audit_action, ...rest } = validated;
+        const params = { ...rest, ...(audit_action !== undefined ? { action: audit_action } : {}) };
         const result = await this.client!.getAuthzAudit(params);
         return this.formatSuccessResponse(result);
       }

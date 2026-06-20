@@ -744,7 +744,7 @@ export const WorkflowToolSchema = z.discriminatedUnion('action', [
     action: z.literal('run'),
     flow_id: z.string().min(1),
     inputs: z.record(z.string(), z.unknown()).optional(),
-    globals: z.record(z.string(), z.string()).optional(),
+    globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
     stream: z.boolean().optional(),
     background: z.boolean().optional()
   }),
@@ -922,7 +922,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('list_shares'),
     resource_type: z.string().optional(),
-    resource_id: uuidSchema('resource ID').optional(),
+    resource_id: z.string().min(1).optional(),
     target_id: uuidSchema('target ID').optional(),
     scope: z.string().optional(),
     limit: z.number().int().positive().optional(),
@@ -932,7 +932,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create_share'),
     resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file']),
-    resource_id: uuidSchema('resource ID'),
+    resource_id: z.string().min(1),
     scope: z.enum(['private', 'team', 'user', 'public']),
     target_id: uuidSchema('target ID').optional(),
     permission_level: z.enum(['read', 'write', 'execute', 'admin']).optional()
@@ -947,8 +947,8 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
     action: z.literal('audit'),
     user_id: uuidSchema('user ID').optional(),
     resource_type: z.string().optional(),
-    resource_id: uuidSchema('resource ID').optional(),
-    name: z.string().optional(),
+    resource_id: z.string().min(1).optional(),
+    audit_action: z.string().optional(),
     result: z.string().optional(),
     since: z.string().optional(),
     until: z.string().optional(),
@@ -958,7 +958,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('my_permissions'),
     resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file', 'component']),
-    resource_ids: z.array(uuidSchema('resource ID')).min(1),
+    resource_ids: z.array(z.string().min(1)).min(1),
     actions: z.array(z.string()).optional(),
     domain: z.string().optional()
   })

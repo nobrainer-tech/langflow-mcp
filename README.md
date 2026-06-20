@@ -480,7 +480,7 @@ Once connected, Claude can use:
 - **`get_knowledge_base_metadata_keys`** - List distinct metadata keys/values
 - **`list_knowledge_base_runs`**, **`get_knowledge_base_run`** - Inspect ingestion runs
 
-### Extensions & Misc (5 tools, Langflow 1.10.0)
+### Extensions & Misc (6 tools, Langflow 1.10.0)
 - **`reload_extension_bundle`** - Reload an extension bundle (requires server-side flag)
 - **`get_extension_events`** - Poll extension events for the current user
 - **`get_agentic_file`** - Read a file from the per-user agentic sandbox

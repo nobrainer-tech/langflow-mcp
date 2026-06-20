@@ -38,7 +38,7 @@ Examples:
           enum: ['list', 'get', 'create', 'update', 'delete', 'delete_many', 'batch_create', 'download', 'upload', 'get_public', 'get_examples', 'get_starters', 'replace', 'expand', 'note_translations'],
           description: 'Action to perform'
         },
-        flow_id: { type: 'string', description: 'Flow ID (UUID) - required for get, update, delete, get_public, replace' },
+        flow_id: { type: 'string', description: 'Flow ID (UUID) - required for get, update, delete, get_public, replace, note_translations' },
         flow_ids: { type: 'array', items: { type: 'string' }, description: 'Array of flow IDs - for delete_many, download' },
         name: { type: 'string', description: 'Flow name - for create, update, replace' },
         description: { type: 'string', description: 'Flow description - for create, update, replace' },
@@ -869,7 +869,7 @@ Examples:
     },
     annotations: {
       readOnlyHint: false,
-      destructiveHint: false,
+      destructiveHint: true,
       idempotentHint: false,
       openWorldHint: true
     }
@@ -1126,6 +1126,7 @@ Examples:
         permission_level: { type: 'string', enum: ['read', 'write', 'execute', 'admin'], description: 'Permission level - for create_share, update_share' },
         actions: { type: 'array', items: { type: 'string' }, description: 'Actions to check - for my_permissions' },
         domain: { type: 'string', description: 'Permission domain - for my_permissions' },
+        audit_action: { type: 'string', description: 'Audited action name filter - for audit' },
         result: { type: 'string', description: 'Audit result filter (allow/deny) - for audit' },
         since: { type: 'string', description: 'Audit lower time bound (ISO) - for audit' },
         until: { type: 'string', description: 'Audit upper time bound (ISO) - for audit' },
