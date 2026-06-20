@@ -13,16 +13,18 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.9.6**. Langflow 1.9.6 does not introduce API route contract changes over the 1.9.5 contract baseline used by this implementation.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.10.0**. Langflow 1.10.0 adds new endpoints (RBAC/authz, Memory Bases, the Knowledge Base ingestion overhaul, extensions, agentic sandbox files) on top of the 1.9.x surface without breaking existing routes; this release covers them.
+
+**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.10.x` ↔ Langflow `1.10.x`, a future `4.11.x` ↔ Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
 
 ### Consolidated Tools Mode
 
-**Consolidated Tools Mode** is an architecture that groups the 163 individual tools into **24 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
+**Consolidated Tools Mode** is an architecture that groups the 209 individual tools into **27 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
 
 | Mode | Tools | Best For |
 |------|-------|----------|
-| Standard | 163 tools | Full granular control |
-| Consolidated | 24 tools | Reduced token usage, better context |
+| Standard | 209 tools | Full granular control |
+| Consolidated | 27 tools | Reduced token usage, better context |
 
 To enable consolidated mode:
 ```bash
@@ -30,21 +32,23 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 ```
 
 **Consolidated tools:**
-- `flow` - All flow operations (list, get, create, update, delete, download, upload, replace, expand, batch, public)
+- `flow` - All flow operations (list, get, create, update, delete, download, upload, replace, expand, batch, public, note_translations)
 - `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
 - `flow_version` - Flow versions and lifecycle events (list, create, get, delete, activate, get_events, create_event)
 - `build` - Build operations (start, status, cancel, vertices)
-- `workflow` - Run and manage v2 workflows (run, get_result, stop)
-- `agentic` - Agentic assistant (assist, check_config, execute)
+- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop)
+- `agentic` - Agentic assistant + sandbox (assist, check_config, execute, get_file, reset_session)
 - `folder` - Folder management (list, get, create, update, delete, download, upload)
 - `project` - Project management (list, get, create, update, delete, download, upload)
 - `variable` - Variable operations (list, create, update, delete, detect)
-- `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload, create, preview/list chunks, ingest, cancel_ingest)
+- `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload, create, preview/list chunks, ingest, cancel_ingest, test_connection, list_connectors, ingest_folder, ingest_connector, metadata_keys, list_runs, get_run)
+- `memory` - Memory bases (create, list, get, list_sessions, list_messages, update, delete, flush, mismatch, regenerate) — experimental Langflow API
 - `file` - Flow-scoped file operations (list, upload, download, delete, get_image)
 - `file_v2` - User-scoped v2 files (list, upload, get, rename, delete, delete_all, batch_download, batch_delete)
-- `monitor` - Monitoring (builds, messages, sessions, transactions)
+- `monitor` - Monitoring (builds, messages, sessions, transactions, job_queue)
 - `trace` - Execution traces (list, get, delete, delete_by_flow)
 - `model` - Models and providers (list, providers, enabled, default get/set/delete, mapping, validate, options)
+- `authz` - RBAC authorization (roles, role assignments, teams, shares, audit, my permissions)
 - `user` - User management (list, get_current, update, reset_password, create)
 - `auth` - Authentication (login, auto_login, logout, refresh, api keys, save_store_key)
 - `store` - Component store (list, get, tags, likes, save_api_key, create, like, update_custom)
@@ -52,6 +56,7 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `validation` - Code/prompt validation (code, prompt)
 - `mcp_server` - MCP server management (list, get, create, update, delete)
 - `mcp_project` - MCP project config/install (get/update config, get_installed, install, composer_url)
+- `extension` - Langflow extensions (reload, events)
 - `response` - OpenAI-compatible responses (create)
 - `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
 
@@ -221,14 +226,14 @@ environment:
 ## Available MCP Tools
 
 Once connected, Claude can use:
-- **Standard mode**: 163 individual tools
-- **Consolidated mode**: 24 action-based tools (recommended for reduced token usage)
+- **Standard mode**: 209 individual tools
+- **Consolidated mode**: 27 action-based tools (recommended for reduced token usage)
 
 > **Note**: Raw MCP transport endpoints (SSE/streamable, `/api/mcp/*`) and doc-rendering
 > endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
 > tools — they are protocol/transport surfaces, not data operations.
 
-### Standard Mode Tools (163 tools)
+### Standard Mode Tools (209 tools)
 
 ### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
@@ -452,6 +457,40 @@ Once connected, Claude can use:
 - **`health_check`** - Check Langflow instance health status
 - **`get_health_check`** - Get a detailed health-check report
 - **`get_logs`** - Retrieve system logs (supports streaming)
+
+### Authorization / RBAC (23 tools, Langflow 1.10.0)
+- **`list_authz_roles`**, **`get_authz_role`**, **`create_authz_role`**, **`update_authz_role`**, **`delete_authz_role`** - Manage roles
+- **`list_authz_role_assignments`**, **`create_authz_role_assignment`**, **`delete_authz_role_assignment`** - Manage role assignments
+- **`list_authz_teams`**, **`get_authz_team`**, **`create_authz_team`**, **`update_authz_team`**, **`delete_authz_team`** - Manage teams
+- **`list_authz_team_members`**, **`add_authz_team_member`**, **`remove_authz_team_member`** - Manage team members
+- **`list_authz_shares`**, **`get_authz_share`**, **`create_authz_share`**, **`update_authz_share`**, **`delete_authz_share`** - Manage resource shares
+- **`get_authz_audit`** - Query the authorization audit log (superuser)
+- **`get_my_permissions`** - Get the caller's effective permissions
+
+### Memory Bases (10 tools, Langflow 1.10.0 — experimental)
+- **`create_memory_base`**, **`list_memory_bases`**, **`get_memory_base`** - Manage memory bases
+- **`list_memory_base_sessions`**, **`list_memory_base_messages`** - Inspect tracked sessions/messages
+- **`update_memory_base`**, **`delete_memory_base`** - Update/delete a memory base
+- **`flush_memory_base`**, **`check_memory_base_mismatch`**, **`regenerate_memory_base`** - Lifecycle operations
+
+### Knowledge Base Overhaul (7 tools, Langflow 1.10.0)
+- **`test_knowledge_base_connection`** - Test a vector backend connection
+- **`list_knowledge_base_connectors`** - List available ingestion connectors
+- **`ingest_knowledge_base_folder`**, **`ingest_knowledge_base_connector`** - Ingest from a server folder or connector
+- **`get_knowledge_base_metadata_keys`** - List distinct metadata keys/values
+- **`list_knowledge_base_runs`**, **`get_knowledge_base_run`** - Inspect ingestion runs
+
+### Extensions & Misc (5 tools, Langflow 1.10.0)
+- **`reload_extension_bundle`** - Reload an extension bundle (requires server-side flag)
+- **`get_extension_events`** - Poll extension events for the current user
+- **`get_agentic_file`** - Read a file from the per-user agentic sandbox
+- **`reset_agentic_session`** - Reset agentic session/sandbox state
+- **`get_flow_note_translations`** - Get localized note-node translations for a flow
+- **`get_job_queue_metrics`** - Job-queue metrics snapshot (superuser)
+
+> The v2 workflow runner (`run_workflow` / `workflow` action `run`) also accepts request-level
+> `globals` (Langflow 1.10.0), the preferred replacement for the deprecated
+> `X-LANGFLOW-GLOBAL-VAR-*` headers.
 
 ## Example Usage
 

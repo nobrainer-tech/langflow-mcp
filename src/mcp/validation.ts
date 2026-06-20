@@ -857,7 +857,8 @@ export const RunWorkflowSchema = z.object({
   flow_id: z.string().min(1, 'Flow ID is required'),
   inputs: z.record(z.string(), z.unknown()).optional(),
   stream: z.boolean().optional(),
-  background: z.boolean().optional()
+  background: z.boolean().optional(),
+  globals: z.record(z.string(), z.string()).optional()
 }).strict();
 
 export const StopWorkflowSchema = z.object({
@@ -1084,3 +1085,331 @@ export type ListStarterProjectsInput = z.infer<typeof ListStarterProjectsSchema>
 export type UploadKnowledgeBaseInput = z.infer<typeof UploadKnowledgeBaseSchema>;
 export type ListElevenLabsVoicesInput = z.infer<typeof ListElevenLabsVoicesSchema>;
 export type GetLogsInput = z.infer<typeof GetLogsSchema>;
+
+// --- Authorization (Langflow 1.10.0) ---
+export const ListAuthzRolesSchema = z.object({
+  is_system: z.boolean().optional(),
+  name: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+}).strict();
+
+export const GetAuthzRoleSchema = z.object({
+  role_id: z.string().min(1, 'Role ID is required')
+}).strict();
+
+export const CreateAuthzRoleSchema = z.object({
+  name: z.string().min(1, 'Role name is required'),
+  description: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+  parent_role_id: z.string().optional()
+}).strict();
+
+export const UpdateAuthzRoleSchema = z.object({
+  role_id: z.string().min(1, 'Role ID is required'),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
+  parent_role_id: z.string().optional()
+}).strict();
+
+export const DeleteAuthzRoleSchema = z.object({
+  role_id: z.string().min(1, 'Role ID is required')
+}).strict();
+
+export const ListAuthzRoleAssignmentsSchema = z.object({
+  user_id: z.string().optional(),
+  role_id: z.string().optional(),
+  domain_type: z.string().optional(),
+  domain_id: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+}).strict();
+
+export const CreateAuthzRoleAssignmentSchema = z.object({
+  user_id: z.string().min(1, 'User ID is required'),
+  role_id: z.string().min(1, 'Role ID is required'),
+  domain_type: z.enum(['global', 'org', 'workspace', 'project']).optional(),
+  domain_id: z.string().optional()
+}).strict();
+
+export const DeleteAuthzRoleAssignmentSchema = z.object({
+  assignment_id: z.string().min(1, 'Assignment ID is required')
+}).strict();
+
+export const ListAuthzTeamsSchema = z.object({
+  search: z.string().optional(),
+  is_active: z.boolean().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+}).strict();
+
+export const GetAuthzTeamSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required')
+}).strict();
+
+export const CreateAuthzTeamSchema = z.object({
+  team_name: z.string().min(1, 'Team name is required'),
+  adom_name: z.string().min(1, 'Administrative domain name is required'),
+  description: z.string().optional(),
+  is_active: z.boolean().optional()
+}).strict();
+
+export const UpdateAuthzTeamSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required'),
+  team_name: z.string().optional(),
+  adom_name: z.string().optional(),
+  description: z.string().optional(),
+  is_active: z.boolean().optional()
+}).strict();
+
+export const DeleteAuthzTeamSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required')
+}).strict();
+
+export const ListAuthzTeamMembersSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required'),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+}).strict();
+
+export const AddAuthzTeamMemberSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required'),
+  user_id: z.string().min(1, 'User ID is required'),
+  source: z.enum(['manual', 'sso']).optional()
+}).strict();
+
+export const RemoveAuthzTeamMemberSchema = z.object({
+  team_id: z.string().min(1, 'Team ID is required'),
+  user_id: z.string().min(1, 'User ID is required')
+}).strict();
+
+export const ListAuthzSharesSchema = z.object({
+  resource_type: z.string().optional(),
+  resource_id: z.string().optional(),
+  target_id: z.string().optional(),
+  scope: z.string().optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+}).strict();
+
+export const GetAuthzShareSchema = z.object({
+  share_id: z.string().min(1, 'Share ID is required')
+}).strict();
+
+export const CreateAuthzShareSchema = z.object({
+  resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file']),
+  resource_id: z.string().min(1, 'Resource ID is required'),
+  scope: z.enum(['private', 'team', 'user', 'public']),
+  target_id: z.string().optional(),
+  permission_level: z.enum(['read', 'write', 'execute', 'admin']).optional()
+}).strict();
+
+export const UpdateAuthzShareSchema = z.object({
+  share_id: z.string().min(1, 'Share ID is required'),
+  permission_level: z.enum(['read', 'write', 'execute', 'admin'])
+}).strict();
+
+export const DeleteAuthzShareSchema = z.object({
+  share_id: z.string().min(1, 'Share ID is required')
+}).strict();
+
+export const GetAuthzAuditSchema = z.object({
+  user_id: z.string().optional(),
+  resource_type: z.string().optional(),
+  resource_id: z.string().optional(),
+  action: z.string().optional(),
+  result: z.string().optional(),
+  since: z.string().optional(),
+  until: z.string().optional(),
+  page: z.number().optional(),
+  size: z.number().optional()
+}).strict();
+
+export const GetMyPermissionsSchema = z.object({
+  resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file', 'component']),
+  resource_ids: z.array(z.string()).min(1, 'At least one resource ID is required'),
+  actions: z.array(z.string()).optional(),
+  domain: z.string().optional()
+}).strict();
+
+// --- Memory bases (Langflow 1.10.0) ---
+export const CreateMemoryBaseSchema = z.object({
+  name: z.string().min(1, 'Memory base name is required'),
+  flow_id: z.string().min(1, 'Flow ID is required'),
+  threshold: z.number().optional(),
+  auto_capture: z.boolean().optional(),
+  embedding_model: z.string().optional(),
+  preprocessing: z.boolean().optional(),
+  preproc_model: z.string().optional(),
+  preproc_instructions: z.string().optional(),
+  preproc_kill_phrase: z.string().optional()
+}).strict();
+
+export const ListMemoryBasesSchema = z.object({
+  flow_id: z.string().optional(),
+  page: z.number().optional(),
+  size: z.number().optional()
+}).strict();
+
+export const GetMemoryBaseSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required')
+}).strict();
+
+export const ListMemoryBaseSessionsSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required'),
+  page: z.number().optional(),
+  size: z.number().optional()
+}).strict();
+
+export const ListMemoryBaseMessagesSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required'),
+  session_id: z.string().optional(),
+  page: z.number().optional(),
+  size: z.number().optional()
+}).strict();
+
+export const UpdateMemoryBaseSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required'),
+  name: z.string().optional(),
+  threshold: z.number().optional(),
+  auto_capture: z.boolean().optional()
+}).strict();
+
+export const DeleteMemoryBaseSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required')
+}).strict();
+
+export const FlushMemoryBaseSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required'),
+  session_id: z.string().min(1, 'Session ID is required')
+}).strict();
+
+export const CheckMemoryBaseMismatchSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required')
+}).strict();
+
+export const RegenerateMemoryBaseSchema = z.object({
+  memory_base_id: z.string().min(1, 'Memory base ID is required')
+}).strict();
+
+// --- Knowledge base (Langflow 1.10.0) ---
+export const TestKnowledgeBaseConnectionSchema = z.object({
+  backend_type: z.string().min(1, 'Backend type is required'),
+  backend_config: z.record(z.string(), z.unknown()).optional()
+}).strict();
+
+export const ListKnowledgeBaseConnectorsSchema = z.object({}).strict();
+
+export const IngestKnowledgeBaseFolderSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  path: z.string().min(1, 'Path is required'),
+  recursive: z.boolean().optional(),
+  extensions: z.array(z.string()).optional(),
+  max_file_size_bytes: z.number().optional(),
+  source_name: z.string().optional(),
+  chunk_size: z.number().optional(),
+  chunk_overlap: z.number().optional(),
+  separator: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  per_file_metadata: z.record(z.string(), z.record(z.string(), z.unknown())).optional()
+}).strict();
+
+export const IngestKnowledgeBaseConnectorSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  source_type: z.string().min(1, 'Source type is required'),
+  source_config: z.record(z.string(), z.unknown()).optional(),
+  source_name: z.string().optional(),
+  chunk_size: z.number().optional(),
+  chunk_overlap: z.number().optional(),
+  separator: z.string().optional()
+}).strict();
+
+export const GetKnowledgeBaseMetadataKeysSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required')
+}).strict();
+
+export const ListKnowledgeBaseRunsSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  page: z.number().optional(),
+  limit: z.number().optional()
+}).strict();
+
+export const GetKnowledgeBaseRunSchema = z.object({
+  kb_name: z.string().min(1, 'Knowledge base name is required'),
+  run_id: z.string().min(1, 'Run ID is required')
+}).strict();
+
+// --- Extensions (Langflow 1.10.0) ---
+export const ReloadExtensionBundleSchema = z.object({
+  extension_id: z.string().min(1, 'Extension ID is required'),
+  bundle_name: z.string().min(1, 'Bundle name is required')
+}).strict();
+
+export const GetExtensionEventsSchema = z.object({
+  since: z.number().optional()
+}).strict();
+
+// --- Agentic (Langflow 1.10.0) ---
+export const GetAgenticFileSchema = z.object({
+  path: z.string().min(1, 'Path is required'),
+  download: z.boolean().optional()
+}).strict();
+
+export const ResetAgenticSessionSchema = z.object({
+  session_id: z.string().optional()
+}).strict();
+
+// --- Misc (Langflow 1.10.0) ---
+export const GetFlowNoteTranslationsSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required')
+}).strict();
+
+export const GetJobQueueMetricsSchema = z.object({}).strict();
+
+export type ListAuthzRolesInput = z.infer<typeof ListAuthzRolesSchema>;
+export type GetAuthzRoleInput = z.infer<typeof GetAuthzRoleSchema>;
+export type CreateAuthzRoleInput = z.infer<typeof CreateAuthzRoleSchema>;
+export type UpdateAuthzRoleInput = z.infer<typeof UpdateAuthzRoleSchema>;
+export type DeleteAuthzRoleInput = z.infer<typeof DeleteAuthzRoleSchema>;
+export type ListAuthzRoleAssignmentsInput = z.infer<typeof ListAuthzRoleAssignmentsSchema>;
+export type CreateAuthzRoleAssignmentInput = z.infer<typeof CreateAuthzRoleAssignmentSchema>;
+export type DeleteAuthzRoleAssignmentInput = z.infer<typeof DeleteAuthzRoleAssignmentSchema>;
+export type ListAuthzTeamsInput = z.infer<typeof ListAuthzTeamsSchema>;
+export type GetAuthzTeamInput = z.infer<typeof GetAuthzTeamSchema>;
+export type CreateAuthzTeamInput = z.infer<typeof CreateAuthzTeamSchema>;
+export type UpdateAuthzTeamInput = z.infer<typeof UpdateAuthzTeamSchema>;
+export type DeleteAuthzTeamInput = z.infer<typeof DeleteAuthzTeamSchema>;
+export type ListAuthzTeamMembersInput = z.infer<typeof ListAuthzTeamMembersSchema>;
+export type AddAuthzTeamMemberInput = z.infer<typeof AddAuthzTeamMemberSchema>;
+export type RemoveAuthzTeamMemberInput = z.infer<typeof RemoveAuthzTeamMemberSchema>;
+export type ListAuthzSharesInput = z.infer<typeof ListAuthzSharesSchema>;
+export type GetAuthzShareInput = z.infer<typeof GetAuthzShareSchema>;
+export type CreateAuthzShareInput = z.infer<typeof CreateAuthzShareSchema>;
+export type UpdateAuthzShareInput = z.infer<typeof UpdateAuthzShareSchema>;
+export type DeleteAuthzShareInput = z.infer<typeof DeleteAuthzShareSchema>;
+export type GetAuthzAuditInput = z.infer<typeof GetAuthzAuditSchema>;
+export type GetMyPermissionsInput = z.infer<typeof GetMyPermissionsSchema>;
+export type CreateMemoryBaseInput = z.infer<typeof CreateMemoryBaseSchema>;
+export type ListMemoryBasesInput = z.infer<typeof ListMemoryBasesSchema>;
+export type GetMemoryBaseInput = z.infer<typeof GetMemoryBaseSchema>;
+export type ListMemoryBaseSessionsInput = z.infer<typeof ListMemoryBaseSessionsSchema>;
+export type ListMemoryBaseMessagesInput = z.infer<typeof ListMemoryBaseMessagesSchema>;
+export type UpdateMemoryBaseInput = z.infer<typeof UpdateMemoryBaseSchema>;
+export type DeleteMemoryBaseInput = z.infer<typeof DeleteMemoryBaseSchema>;
+export type FlushMemoryBaseInput = z.infer<typeof FlushMemoryBaseSchema>;
+export type CheckMemoryBaseMismatchInput = z.infer<typeof CheckMemoryBaseMismatchSchema>;
+export type RegenerateMemoryBaseInput = z.infer<typeof RegenerateMemoryBaseSchema>;
+export type TestKnowledgeBaseConnectionInput = z.infer<typeof TestKnowledgeBaseConnectionSchema>;
+export type ListKnowledgeBaseConnectorsInput = z.infer<typeof ListKnowledgeBaseConnectorsSchema>;
+export type IngestKnowledgeBaseFolderInput = z.infer<typeof IngestKnowledgeBaseFolderSchema>;
+export type IngestKnowledgeBaseConnectorInput = z.infer<typeof IngestKnowledgeBaseConnectorSchema>;
+export type GetKnowledgeBaseMetadataKeysInput = z.infer<typeof GetKnowledgeBaseMetadataKeysSchema>;
+export type ListKnowledgeBaseRunsInput = z.infer<typeof ListKnowledgeBaseRunsSchema>;
+export type GetKnowledgeBaseRunInput = z.infer<typeof GetKnowledgeBaseRunSchema>;
+export type ReloadExtensionBundleInput = z.infer<typeof ReloadExtensionBundleSchema>;
+export type GetExtensionEventsInput = z.infer<typeof GetExtensionEventsSchema>;
+export type GetAgenticFileInput = z.infer<typeof GetAgenticFileSchema>;
+export type ResetAgenticSessionInput = z.infer<typeof ResetAgenticSessionSchema>;
+export type GetFlowNoteTranslationsInput = z.infer<typeof GetFlowNoteTranslationsSchema>;
+export type GetJobQueueMetricsInput = z.infer<typeof GetJobQueueMetricsSchema>;

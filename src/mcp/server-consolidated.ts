@@ -39,7 +39,10 @@ import {
   McpServerToolSchema,
   McpProjectToolSchema,
   TraceToolSchema,
-  ResponseToolSchema
+  ResponseToolSchema,
+  AuthzToolSchema,
+  MemoryToolSchema,
+  ExtensionToolSchema
 } from './validation-consolidated';
 
 export class LangflowMCPServerConsolidated {
@@ -344,6 +347,12 @@ export class LangflowMCPServerConsolidated {
             return await this.handleTraceTool(args);
           case 'response':
             return await this.handleResponseTool(args);
+          case 'authz':
+            return await this.handleAuthzTool(args);
+          case 'memory':
+            return await this.handleMemoryTool(args);
+          case 'extension':
+            return await this.handleExtensionTool(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -415,6 +424,10 @@ export class LangflowMCPServerConsolidated {
       }
       case 'expand': {
         const result = await this.client!.expandFlows(validated.body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'note_translations': {
+        const result = await this.client!.getFlowNoteTranslations(validated.flow_id);
         return this.formatSuccessResponse(result);
       }
     }
@@ -658,6 +671,38 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.cancelKnowledgeBaseIngest(validated.kb_name);
         return this.formatSuccessResponse(result);
       }
+      case 'test_connection': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.testKnowledgeBaseConnection(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_connectors': {
+        const result = await this.client!.listKnowledgeBaseConnectors();
+        return this.formatSuccessResponse(result);
+      }
+      case 'ingest_folder': {
+        const { action: _, kb_name, ...body } = validated;
+        const result = await this.client!.ingestKnowledgeBaseFolder(kb_name, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'ingest_connector': {
+        const { action: _, kb_name, ...body } = validated;
+        const result = await this.client!.ingestKnowledgeBaseConnector(kb_name, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'metadata_keys': {
+        const result = await this.client!.getKnowledgeBaseMetadataKeys(validated.kb_name);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_runs': {
+        const { action: _, kb_name, ...params } = validated;
+        const result = await this.client!.listKnowledgeBaseRuns(kb_name, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_run': {
+        const result = await this.client!.getKnowledgeBaseRun(validated.kb_name, validated.run_id);
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -788,6 +833,10 @@ export class LangflowMCPServerConsolidated {
       }
       case 'delete_shared_session': {
         const result = await this.client!.deleteSharedSession(validated.session_id, validated.source_flow_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'job_queue': {
+        const result = await this.client!.getJobQueueMetrics();
         return this.formatSuccessResponse(result);
       }
     }
@@ -1180,6 +1229,19 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.agenticExecute(flow_name, body);
         return this.formatSuccessResponse(result);
       }
+      case 'get_file': {
+        const result = await this.client!.getAgenticFile({
+          path: validated.path,
+          download: validated.download
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'reset_session': {
+        const result = await this.client!.resetAgenticSession(
+          validated.session_id !== undefined ? { session_id: validated.session_id } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -1301,6 +1363,193 @@ export class LangflowMCPServerConsolidated {
       case 'create': {
         const { action: _, ...body } = validated;
         const result = await this.client!.createResponse(body);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleAuthzTool(args: Record<string, unknown>) {
+    const validated = AuthzToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list_roles': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listAuthzRoles(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_role': {
+        const result = await this.client!.getAuthzRole(validated.role_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create_role': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createAuthzRole(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_role': {
+        const { action: _, role_id, ...body } = validated;
+        const result = await this.client!.updateAuthzRole(role_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_role': {
+        await this.client!.deleteAuthzRole(validated.role_id);
+        return this.formatSuccessResponse({ success: true, message: 'Role deleted successfully' });
+      }
+      case 'list_role_assignments': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listAuthzRoleAssignments(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create_role_assignment': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createAuthzRoleAssignment(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_role_assignment': {
+        await this.client!.deleteAuthzRoleAssignment(validated.assignment_id);
+        return this.formatSuccessResponse({ success: true, message: 'Role assignment deleted successfully' });
+      }
+      case 'list_teams': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listAuthzTeams(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_team': {
+        const result = await this.client!.getAuthzTeam(validated.team_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create_team': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createAuthzTeam(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_team': {
+        const { action: _, team_id, ...body } = validated;
+        const result = await this.client!.updateAuthzTeam(team_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_team': {
+        await this.client!.deleteAuthzTeam(validated.team_id);
+        return this.formatSuccessResponse({ success: true, message: 'Team deleted successfully' });
+      }
+      case 'list_team_members': {
+        const { action: _, team_id, ...params } = validated;
+        const result = await this.client!.listAuthzTeamMembers(team_id, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'add_team_member': {
+        const { action: _, team_id, ...body } = validated;
+        const result = await this.client!.addAuthzTeamMember(team_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'remove_team_member': {
+        await this.client!.removeAuthzTeamMember(validated.team_id, validated.user_id);
+        return this.formatSuccessResponse({ success: true, message: 'Team member removed successfully' });
+      }
+      case 'list_shares': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listAuthzShares(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get_share': {
+        const result = await this.client!.getAuthzShare(validated.share_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'create_share': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createAuthzShare(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update_share': {
+        const result = await this.client!.updateAuthzShare(validated.share_id, {
+          permission_level: validated.permission_level
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete_share': {
+        await this.client!.deleteAuthzShare(validated.share_id);
+        return this.formatSuccessResponse({ success: true, message: 'Share deleted successfully' });
+      }
+      case 'audit': {
+        const { action: _, name, ...rest } = validated;
+        const params = { ...rest, ...(name !== undefined ? { action: name } : {}) };
+        const result = await this.client!.getAuthzAudit(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'my_permissions': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.getMyPermissions(body);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleMemoryTool(args: Record<string, unknown>) {
+    const validated = MemoryToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'create': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.createMemoryBase(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list': {
+        const { action: _, ...params } = validated;
+        const result = await this.client!.listMemoryBases(params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'get': {
+        const result = await this.client!.getMemoryBase(validated.memory_base_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_sessions': {
+        const { action: _, memory_base_id, ...params } = validated;
+        const result = await this.client!.listMemoryBaseSessions(memory_base_id, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'list_messages': {
+        const { action: _, memory_base_id, ...params } = validated;
+        const result = await this.client!.listMemoryBaseMessages(memory_base_id, params);
+        return this.formatSuccessResponse(result);
+      }
+      case 'update': {
+        const { action: _, memory_base_id, ...body } = validated;
+        const result = await this.client!.updateMemoryBase(memory_base_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'delete': {
+        await this.client!.deleteMemoryBase(validated.memory_base_id);
+        return this.formatSuccessResponse({ success: true, message: 'Memory base deleted successfully' });
+      }
+      case 'flush': {
+        const result = await this.client!.flushMemoryBase(validated.memory_base_id, {
+          session_id: validated.session_id
+        });
+        return this.formatSuccessResponse(result);
+      }
+      case 'mismatch': {
+        const result = await this.client!.checkMemoryBaseMismatch(validated.memory_base_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'regenerate': {
+        const result = await this.client!.regenerateMemoryBase(validated.memory_base_id);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleExtensionTool(args: Record<string, unknown>) {
+    const validated = ExtensionToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'reload': {
+        const result = await this.client!.reloadExtensionBundle(validated.extension_id, validated.bundle_name);
+        return this.formatSuccessResponse(result);
+      }
+      case 'events': {
+        const result = await this.client!.getExtensionEvents(
+          validated.since !== undefined ? { since: validated.since } : undefined
+        );
         return this.formatSuccessResponse(result);
       }
     }

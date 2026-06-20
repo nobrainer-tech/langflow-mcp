@@ -177,7 +177,53 @@ import {
   UpdateMcpProjectConfigSchema,
   GetMcpProjectInstalledSchema,
   InstallMcpProjectSchema,
-  GetMcpProjectComposerUrlSchema
+  GetMcpProjectComposerUrlSchema,
+  ListAuthzRolesSchema,
+  GetAuthzRoleSchema,
+  CreateAuthzRoleSchema,
+  UpdateAuthzRoleSchema,
+  DeleteAuthzRoleSchema,
+  ListAuthzRoleAssignmentsSchema,
+  CreateAuthzRoleAssignmentSchema,
+  DeleteAuthzRoleAssignmentSchema,
+  ListAuthzTeamsSchema,
+  GetAuthzTeamSchema,
+  CreateAuthzTeamSchema,
+  UpdateAuthzTeamSchema,
+  DeleteAuthzTeamSchema,
+  ListAuthzTeamMembersSchema,
+  AddAuthzTeamMemberSchema,
+  RemoveAuthzTeamMemberSchema,
+  ListAuthzSharesSchema,
+  GetAuthzShareSchema,
+  CreateAuthzShareSchema,
+  UpdateAuthzShareSchema,
+  DeleteAuthzShareSchema,
+  GetAuthzAuditSchema,
+  GetMyPermissionsSchema,
+  CreateMemoryBaseSchema,
+  ListMemoryBasesSchema,
+  GetMemoryBaseSchema,
+  ListMemoryBaseSessionsSchema,
+  ListMemoryBaseMessagesSchema,
+  UpdateMemoryBaseSchema,
+  DeleteMemoryBaseSchema,
+  FlushMemoryBaseSchema,
+  CheckMemoryBaseMismatchSchema,
+  RegenerateMemoryBaseSchema,
+  TestKnowledgeBaseConnectionSchema,
+  ListKnowledgeBaseConnectorsSchema,
+  IngestKnowledgeBaseFolderSchema,
+  IngestKnowledgeBaseConnectorSchema,
+  GetKnowledgeBaseMetadataKeysSchema,
+  ListKnowledgeBaseRunsSchema,
+  GetKnowledgeBaseRunSchema,
+  ReloadExtensionBundleSchema,
+  GetExtensionEventsSchema,
+  GetAgenticFileSchema,
+  ResetAgenticSessionSchema,
+  GetFlowNoteTranslationsSchema,
+  GetJobQueueMetricsSchema
 } from './validation';
 
 export class LangflowMCPServer {
@@ -1642,6 +1688,317 @@ export class LangflowMCPServer {
           case 'get_mcp_project_composer_url': {
             const validated = GetMcpProjectComposerUrlSchema.parse(args);
             const result = await this.client.getMcpProjectComposerUrl(validated.project_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_authz_roles': {
+            const validated = ListAuthzRolesSchema.parse(args);
+            const result = await this.client.listAuthzRoles(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_authz_role': {
+            const validated = GetAuthzRoleSchema.parse(args);
+            const result = await this.client.getAuthzRole(validated.role_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_authz_role': {
+            const validated = CreateAuthzRoleSchema.parse(args);
+            const result = await this.client.createAuthzRole(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_authz_role': {
+            const validated = UpdateAuthzRoleSchema.parse(args);
+            const { role_id, ...body } = validated;
+            const result = await this.client.updateAuthzRole(role_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_authz_role': {
+            const validated = DeleteAuthzRoleSchema.parse(args);
+            await this.client.deleteAuthzRole(validated.role_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Role deleted successfully'
+            });
+          }
+
+          case 'list_authz_role_assignments': {
+            const validated = ListAuthzRoleAssignmentsSchema.parse(args);
+            const result = await this.client.listAuthzRoleAssignments(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_authz_role_assignment': {
+            const validated = CreateAuthzRoleAssignmentSchema.parse(args);
+            const result = await this.client.createAuthzRoleAssignment(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_authz_role_assignment': {
+            const validated = DeleteAuthzRoleAssignmentSchema.parse(args);
+            await this.client.deleteAuthzRoleAssignment(validated.assignment_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Role assignment deleted successfully'
+            });
+          }
+
+          case 'list_authz_teams': {
+            const validated = ListAuthzTeamsSchema.parse(args);
+            const result = await this.client.listAuthzTeams(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_authz_team': {
+            const validated = GetAuthzTeamSchema.parse(args);
+            const result = await this.client.getAuthzTeam(validated.team_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_authz_team': {
+            const validated = CreateAuthzTeamSchema.parse(args);
+            const result = await this.client.createAuthzTeam(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_authz_team': {
+            const validated = UpdateAuthzTeamSchema.parse(args);
+            const { team_id, ...body } = validated;
+            const result = await this.client.updateAuthzTeam(team_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_authz_team': {
+            const validated = DeleteAuthzTeamSchema.parse(args);
+            await this.client.deleteAuthzTeam(validated.team_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Team deleted successfully'
+            });
+          }
+
+          case 'list_authz_team_members': {
+            const validated = ListAuthzTeamMembersSchema.parse(args);
+            const { team_id, ...params } = validated;
+            const result = await this.client.listAuthzTeamMembers(team_id, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'add_authz_team_member': {
+            const validated = AddAuthzTeamMemberSchema.parse(args);
+            const { team_id, ...body } = validated;
+            const result = await this.client.addAuthzTeamMember(team_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'remove_authz_team_member': {
+            const validated = RemoveAuthzTeamMemberSchema.parse(args);
+            await this.client.removeAuthzTeamMember(validated.team_id, validated.user_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Team member removed successfully'
+            });
+          }
+
+          case 'list_authz_shares': {
+            const validated = ListAuthzSharesSchema.parse(args);
+            const result = await this.client.listAuthzShares(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_authz_share': {
+            const validated = GetAuthzShareSchema.parse(args);
+            const result = await this.client.getAuthzShare(validated.share_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_authz_share': {
+            const validated = CreateAuthzShareSchema.parse(args);
+            const result = await this.client.createAuthzShare(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_authz_share': {
+            const validated = UpdateAuthzShareSchema.parse(args);
+            const result = await this.client.updateAuthzShare(validated.share_id, {
+              permission_level: validated.permission_level
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_authz_share': {
+            const validated = DeleteAuthzShareSchema.parse(args);
+            await this.client.deleteAuthzShare(validated.share_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Share deleted successfully'
+            });
+          }
+
+          case 'get_authz_audit': {
+            const validated = GetAuthzAuditSchema.parse(args);
+            const result = await this.client.getAuthzAudit(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_my_permissions': {
+            const validated = GetMyPermissionsSchema.parse(args);
+            const result = await this.client.getMyPermissions(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'create_memory_base': {
+            const validated = CreateMemoryBaseSchema.parse(args);
+            const result = await this.client.createMemoryBase(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_memory_bases': {
+            const validated = ListMemoryBasesSchema.parse(args);
+            const result = await this.client.listMemoryBases(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_memory_base': {
+            const validated = GetMemoryBaseSchema.parse(args);
+            const result = await this.client.getMemoryBase(validated.memory_base_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_memory_base_sessions': {
+            const validated = ListMemoryBaseSessionsSchema.parse(args);
+            const { memory_base_id, ...params } = validated;
+            const result = await this.client.listMemoryBaseSessions(memory_base_id, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_memory_base_messages': {
+            const validated = ListMemoryBaseMessagesSchema.parse(args);
+            const { memory_base_id, ...params } = validated;
+            const result = await this.client.listMemoryBaseMessages(memory_base_id, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'update_memory_base': {
+            const validated = UpdateMemoryBaseSchema.parse(args);
+            const { memory_base_id, ...body } = validated;
+            const result = await this.client.updateMemoryBase(memory_base_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'delete_memory_base': {
+            const validated = DeleteMemoryBaseSchema.parse(args);
+            await this.client.deleteMemoryBase(validated.memory_base_id);
+            return this.formatSuccessResponse({
+              success: true,
+              message: 'Memory base deleted successfully'
+            });
+          }
+
+          case 'flush_memory_base': {
+            const validated = FlushMemoryBaseSchema.parse(args);
+            const result = await this.client.flushMemoryBase(validated.memory_base_id, {
+              session_id: validated.session_id
+            });
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'check_memory_base_mismatch': {
+            const validated = CheckMemoryBaseMismatchSchema.parse(args);
+            const result = await this.client.checkMemoryBaseMismatch(validated.memory_base_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'regenerate_memory_base': {
+            const validated = RegenerateMemoryBaseSchema.parse(args);
+            const result = await this.client.regenerateMemoryBase(validated.memory_base_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'test_knowledge_base_connection': {
+            const validated = TestKnowledgeBaseConnectionSchema.parse(args);
+            const result = await this.client.testKnowledgeBaseConnection(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_knowledge_base_connectors': {
+            ListKnowledgeBaseConnectorsSchema.parse(args);
+            const result = await this.client.listKnowledgeBaseConnectors();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'ingest_knowledge_base_folder': {
+            const validated = IngestKnowledgeBaseFolderSchema.parse(args);
+            const { kb_name, ...body } = validated;
+            const result = await this.client.ingestKnowledgeBaseFolder(kb_name, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'ingest_knowledge_base_connector': {
+            const validated = IngestKnowledgeBaseConnectorSchema.parse(args);
+            const { kb_name, ...body } = validated;
+            const result = await this.client.ingestKnowledgeBaseConnector(kb_name, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_knowledge_base_metadata_keys': {
+            const validated = GetKnowledgeBaseMetadataKeysSchema.parse(args);
+            const result = await this.client.getKnowledgeBaseMetadataKeys(validated.kb_name);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_knowledge_base_runs': {
+            const validated = ListKnowledgeBaseRunsSchema.parse(args);
+            const { kb_name, ...params } = validated;
+            const result = await this.client.listKnowledgeBaseRuns(kb_name, params);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_knowledge_base_run': {
+            const validated = GetKnowledgeBaseRunSchema.parse(args);
+            const result = await this.client.getKnowledgeBaseRun(validated.kb_name, validated.run_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'reload_extension_bundle': {
+            const validated = ReloadExtensionBundleSchema.parse(args);
+            const result = await this.client.reloadExtensionBundle(
+              validated.extension_id,
+              validated.bundle_name
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_extension_events': {
+            const validated = GetExtensionEventsSchema.parse(args);
+            const result = await this.client.getExtensionEvents(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_agentic_file': {
+            const validated = GetAgenticFileSchema.parse(args);
+            const result = await this.client.getAgenticFile(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'reset_agentic_session': {
+            const validated = ResetAgenticSessionSchema.parse(args);
+            const result = await this.client.resetAgenticSession(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_flow_note_translations': {
+            const validated = GetFlowNoteTranslationsSchema.parse(args);
+            const result = await this.client.getFlowNoteTranslations(validated.flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_job_queue_metrics': {
+            GetJobQueueMetricsSchema.parse(args);
+            const result = await this.client.getJobQueueMetrics();
             return this.formatSuccessResponse(result);
           }
 

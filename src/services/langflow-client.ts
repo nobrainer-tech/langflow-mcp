@@ -105,7 +105,35 @@ import {
   MCPProjectUpdateRequest,
   MCPInstallRequest,
   WebhookEventsParams,
-  MCPServerConfigBody
+  MCPServerConfigBody,
+  ListAuthzRolesParams,
+  AuthzRoleCreate,
+  AuthzRoleUpdate,
+  ListAuthzRoleAssignmentsParams,
+  AuthzRoleAssignmentCreate,
+  ListAuthzTeamsParams,
+  AuthzTeamCreate,
+  AuthzTeamUpdate,
+  ListAuthzTeamMembersParams,
+  AuthzTeamMemberCreate,
+  ListAuthzSharesParams,
+  AuthzShareCreate,
+  AuthzShareUpdate,
+  AuthzAuditParams,
+  EffectivePermissionsRequest,
+  ListMemoryBasesParams,
+  MemoryBaseCreate,
+  MemoryBaseUpdate,
+  ListMemoryBaseSessionsParams,
+  ListMemoryBaseMessagesParams,
+  MemoryBaseFlushRequest,
+  TestKnowledgeBaseConnectionRequest,
+  IngestKnowledgeBaseFolderRequest,
+  IngestKnowledgeBaseConnectorRequest,
+  ListKnowledgeBaseRunsParams,
+  ExtensionEventsParams,
+  AgenticFileParams,
+  ResetAgenticSessionParams
 } from '../types';
 
 export class LangflowClient {
@@ -1938,6 +1966,470 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get MCP project composer URL ${projectId}`);
+    }
+  }
+
+  // --- Authz / RBAC (Langflow 1.10.0) ---
+
+  async listAuthzRoles(params?: ListAuthzRolesParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/authz/roles', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list authz roles');
+    }
+  }
+
+  async getAuthzRole(roleId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/authz/roles/${encodeURIComponent(roleId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get authz role ${roleId}`);
+    }
+  }
+
+  async createAuthzRole(body: AuthzRoleCreate): Promise<any> {
+    try {
+      const response = await this.client.post('/authz/roles', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create authz role');
+    }
+  }
+
+  async updateAuthzRole(roleId: string, body: AuthzRoleUpdate): Promise<any> {
+    try {
+      const response = await this.client.patch(`/authz/roles/${encodeURIComponent(roleId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update authz role ${roleId}`);
+    }
+  }
+
+  async deleteAuthzRole(roleId: string): Promise<void> {
+    try {
+      await this.client.delete(`/authz/roles/${encodeURIComponent(roleId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete authz role ${roleId}`);
+    }
+  }
+
+  async listAuthzRoleAssignments(params?: ListAuthzRoleAssignmentsParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/authz/role-assignments', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list authz role assignments');
+    }
+  }
+
+  async createAuthzRoleAssignment(body: AuthzRoleAssignmentCreate): Promise<any> {
+    try {
+      const response = await this.client.post('/authz/role-assignments', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create authz role assignment');
+    }
+  }
+
+  async deleteAuthzRoleAssignment(assignmentId: string): Promise<void> {
+    try {
+      await this.client.delete(`/authz/role-assignments/${encodeURIComponent(assignmentId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete authz role assignment ${assignmentId}`);
+    }
+  }
+
+  async listAuthzTeams(params?: ListAuthzTeamsParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/authz/teams', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list authz teams');
+    }
+  }
+
+  async getAuthzTeam(teamId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/authz/teams/${encodeURIComponent(teamId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get authz team ${teamId}`);
+    }
+  }
+
+  async createAuthzTeam(body: AuthzTeamCreate): Promise<any> {
+    try {
+      const response = await this.client.post('/authz/teams', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create authz team');
+    }
+  }
+
+  async updateAuthzTeam(teamId: string, body: AuthzTeamUpdate): Promise<any> {
+    try {
+      const response = await this.client.patch(`/authz/teams/${encodeURIComponent(teamId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update authz team ${teamId}`);
+    }
+  }
+
+  async deleteAuthzTeam(teamId: string): Promise<void> {
+    try {
+      await this.client.delete(`/authz/teams/${encodeURIComponent(teamId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete authz team ${teamId}`);
+    }
+  }
+
+  async listAuthzTeamMembers(teamId: string, params?: ListAuthzTeamMembersParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>(
+        `/authz/teams/${encodeURIComponent(teamId)}/members`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list members for authz team ${teamId}`);
+    }
+  }
+
+  async addAuthzTeamMember(teamId: string, body: AuthzTeamMemberCreate): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/authz/teams/${encodeURIComponent(teamId)}/members`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to add member to authz team ${teamId}`);
+    }
+  }
+
+  async removeAuthzTeamMember(teamId: string, userId: string): Promise<void> {
+    try {
+      await this.client.delete(
+        `/authz/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`
+      );
+    } catch (error) {
+      throw this.handleError(error, `Failed to remove member ${userId} from authz team ${teamId}`);
+    }
+  }
+
+  async listAuthzShares(params?: ListAuthzSharesParams): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/authz/shares', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list authz shares');
+    }
+  }
+
+  async getAuthzShare(shareId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/authz/shares/${encodeURIComponent(shareId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get authz share ${shareId}`);
+    }
+  }
+
+  async createAuthzShare(body: AuthzShareCreate): Promise<any> {
+    try {
+      const response = await this.client.post('/authz/shares', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create authz share');
+    }
+  }
+
+  async updateAuthzShare(shareId: string, body: AuthzShareUpdate): Promise<any> {
+    try {
+      const response = await this.client.patch(`/authz/shares/${encodeURIComponent(shareId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update authz share ${shareId}`);
+    }
+  }
+
+  async deleteAuthzShare(shareId: string): Promise<void> {
+    try {
+      await this.client.delete(`/authz/shares/${encodeURIComponent(shareId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete authz share ${shareId}`);
+    }
+  }
+
+  async getAuthzAudit(params?: AuthzAuditParams): Promise<any> {
+    try {
+      const response = await this.client.get('/authz/audit', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get authz audit log');
+    }
+  }
+
+  async getMyPermissions(body: EffectivePermissionsRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/authz/me/permissions', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get effective permissions');
+    }
+  }
+
+  // --- MemoryBases (Langflow 1.10.0; hidden/experimental in OpenAPI) ---
+
+  async createMemoryBase(body: MemoryBaseCreate): Promise<any> {
+    try {
+      const response = await this.client.post('/memories', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create memory base');
+    }
+  }
+
+  async listMemoryBases(params?: ListMemoryBasesParams): Promise<any> {
+    try {
+      const response = await this.client.get('/memories', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list memory bases');
+    }
+  }
+
+  async getMemoryBase(memoryBaseId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/memories/${encodeURIComponent(memoryBaseId)}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get memory base ${memoryBaseId}`);
+    }
+  }
+
+  async listMemoryBaseSessions(memoryBaseId: string, params?: ListMemoryBaseSessionsParams): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/memories/${encodeURIComponent(memoryBaseId)}/sessions`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list sessions for memory base ${memoryBaseId}`);
+    }
+  }
+
+  async listMemoryBaseMessages(memoryBaseId: string, params?: ListMemoryBaseMessagesParams): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/memories/${encodeURIComponent(memoryBaseId)}/messages`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list messages for memory base ${memoryBaseId}`);
+    }
+  }
+
+  async updateMemoryBase(memoryBaseId: string, body: MemoryBaseUpdate): Promise<any> {
+    try {
+      const response = await this.client.patch(`/memories/${encodeURIComponent(memoryBaseId)}`, body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to update memory base ${memoryBaseId}`);
+    }
+  }
+
+  async deleteMemoryBase(memoryBaseId: string): Promise<void> {
+    try {
+      await this.client.delete(`/memories/${encodeURIComponent(memoryBaseId)}`);
+    } catch (error) {
+      throw this.handleError(error, `Failed to delete memory base ${memoryBaseId}`);
+    }
+  }
+
+  async flushMemoryBase(memoryBaseId: string, body: MemoryBaseFlushRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/memories/${encodeURIComponent(memoryBaseId)}/flush`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to flush memory base ${memoryBaseId}`);
+    }
+  }
+
+  async checkMemoryBaseMismatch(memoryBaseId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/memories/${encodeURIComponent(memoryBaseId)}/mismatch`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to check mismatch for memory base ${memoryBaseId}`);
+    }
+  }
+
+  async regenerateMemoryBase(memoryBaseId: string): Promise<any> {
+    try {
+      const response = await this.client.post(`/memories/${encodeURIComponent(memoryBaseId)}/regenerate`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to regenerate memory base ${memoryBaseId}`);
+    }
+  }
+
+  // --- Knowledge base overhaul (Langflow 1.10.0) ---
+
+  async testKnowledgeBaseConnection(body: TestKnowledgeBaseConnectionRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/knowledge_bases/test-connection', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to test knowledge base connection');
+    }
+  }
+
+  async listKnowledgeBaseConnectors(): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/knowledge_bases/connectors');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list knowledge base connectors');
+    }
+  }
+
+  async ingestKnowledgeBaseFolder(kbName: string, body: IngestKnowledgeBaseFolderRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/ingest/folder`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to ingest folder into knowledge base ${kbName}`);
+    }
+  }
+
+  async ingestKnowledgeBaseConnector(kbName: string, body: IngestKnowledgeBaseConnectorRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/ingest/connector`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to ingest connector into knowledge base ${kbName}`);
+    }
+  }
+
+  async getKnowledgeBaseMetadataKeys(kbName: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/metadata/keys`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get metadata keys for knowledge base ${kbName}`);
+    }
+  }
+
+  async listKnowledgeBaseRuns(kbName: string, params?: ListKnowledgeBaseRunsParams): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/runs`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to list ingestion runs for knowledge base ${kbName}`);
+    }
+  }
+
+  async getKnowledgeBaseRun(kbName: string, runId: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/knowledge_bases/${encodeURIComponent(kbName)}/runs/${encodeURIComponent(runId)}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get ingestion run ${runId} for knowledge base ${kbName}`);
+    }
+  }
+
+  // --- Extensions (Langflow 1.10.0) ---
+
+  async reloadExtensionBundle(extensionId: string, bundleName: string): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/extensions/${encodeURIComponent(extensionId)}/bundles/${encodeURIComponent(bundleName)}/reload`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to reload extension bundle ${bundleName}`);
+    }
+  }
+
+  async getExtensionEvents(params?: ExtensionEventsParams): Promise<any> {
+    try {
+      const response = await this.client.get('/extensions/events', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get extension events');
+    }
+  }
+
+  // --- Agentic file system + sessions (Langflow 1.10.0) ---
+
+  async getAgenticFile(params: AgenticFileParams): Promise<any> {
+    try {
+      const response = await this.client.get('/agentic/files', {
+        params,
+        responseType: params.download ? 'arraybuffer' : 'text'
+      });
+      if (params.download) {
+        return {
+          path: params.path,
+          encoding: 'base64',
+          content: Buffer.from(response.data).toString('base64')
+        };
+      }
+      return { path: params.path, content: response.data };
+    } catch (error) {
+      throw this.handleError(error, `Failed to get agentic file ${params.path}`);
+    }
+  }
+
+  async resetAgenticSession(params?: ResetAgenticSessionParams): Promise<any> {
+    try {
+      const response = await this.client.post('/agentic/sessions/reset', undefined, { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to reset agentic session');
+    }
+  }
+
+  // --- Misc (Langflow 1.10.0) ---
+
+  async getFlowNoteTranslations(flowId: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/flows/${encodeURIComponent(flowId)}/note_translations`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get note translations for flow ${flowId}`);
+    }
+  }
+
+  async getJobQueueMetrics(): Promise<any> {
+    try {
+      const response = await this.client.get('/monitor/job_queue');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get job queue metrics');
     }
   }
 

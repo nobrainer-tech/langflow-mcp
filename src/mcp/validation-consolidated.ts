@@ -77,6 +77,10 @@ export const FlowToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('expand'),
     body: z.record(z.string(), z.unknown())
+  }),
+  z.object({
+    action: z.literal('note_translations'),
+    flow_id: uuidSchema('flow ID')
   })
 ]);
 
@@ -346,7 +350,49 @@ export const KnowledgeBaseToolSchema = z.discriminatedUnion('action', [
     file_name: z.string().min(1),
     params: z.record(z.string(), z.unknown()).optional()
   }),
-  z.object({ action: z.literal('cancel_ingest'), kb_name: z.string().min(1) })
+  z.object({ action: z.literal('cancel_ingest'), kb_name: z.string().min(1) }),
+  z.object({
+    action: z.literal('test_connection'),
+    backend_type: z.string().min(1),
+    backend_config: z.record(z.string(), z.unknown()).optional()
+  }),
+  z.object({ action: z.literal('list_connectors') }),
+  z.object({
+    action: z.literal('ingest_folder'),
+    kb_name: z.string().min(1),
+    path: z.string().min(1),
+    recursive: z.boolean().optional(),
+    extensions: z.array(z.string()).optional(),
+    max_file_size_bytes: z.number().int().positive().optional(),
+    source_name: z.string().optional(),
+    chunk_size: z.number().int().positive().optional(),
+    chunk_overlap: z.number().int().nonnegative().optional(),
+    separator: z.string().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    per_file_metadata: z.record(z.string(), z.record(z.string(), z.unknown())).optional()
+  }),
+  z.object({
+    action: z.literal('ingest_connector'),
+    kb_name: z.string().min(1),
+    source_type: z.string().min(1),
+    source_config: z.record(z.string(), z.unknown()).optional(),
+    source_name: z.string().optional(),
+    chunk_size: z.number().int().positive().optional(),
+    chunk_overlap: z.number().int().nonnegative().optional(),
+    separator: z.string().optional()
+  }),
+  z.object({ action: z.literal('metadata_keys'), kb_name: z.string().min(1) }),
+  z.object({
+    action: z.literal('list_runs'),
+    kb_name: z.string().min(1),
+    page: z.number().int().positive().optional(),
+    limit: z.number().int().positive().optional()
+  }),
+  z.object({
+    action: z.literal('get_run'),
+    kb_name: z.string().min(1),
+    run_id: z.string().min(1)
+  })
 ]);
 
 // File tool schema
@@ -492,7 +538,8 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
     action: z.literal('delete_shared_session'),
     session_id: z.string().min(1),
     source_flow_id: z.string().min(1)
-  })
+  }),
+  z.object({ action: z.literal('job_queue') })
 ]);
 
 // User tool schema
@@ -679,6 +726,15 @@ export const AgenticToolSchema = z.discriminatedUnion('action', [
     action: z.literal('execute'),
     flow_name: z.string().min(1),
     ...assistantRequestShape
+  }),
+  z.object({
+    action: z.literal('get_file'),
+    path: z.string().min(1).max(1024),
+    download: z.boolean().optional()
+  }),
+  z.object({
+    action: z.literal('reset_session'),
+    session_id: z.string().max(128).optional()
   })
 ]);
 
@@ -688,6 +744,7 @@ export const WorkflowToolSchema = z.discriminatedUnion('action', [
     action: z.literal('run'),
     flow_id: z.string().min(1),
     inputs: z.record(z.string(), z.unknown()).optional(),
+    globals: z.record(z.string(), z.string()).optional(),
     stream: z.boolean().optional(),
     background: z.boolean().optional()
   }),
@@ -775,6 +832,196 @@ export const ResponseToolSchema = z.discriminatedUnion('action', [
   })
 ]);
 
+// Authz tool schema (Langflow 1.10.0)
+export const AuthzToolSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('list_roles'),
+    is_system: z.boolean().optional(),
+    name: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    offset: z.number().int().nonnegative().optional()
+  }),
+  z.object({ action: z.literal('get_role'), role_id: uuidSchema('role ID') }),
+  z.object({
+    action: z.literal('create_role'),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    permissions: z.array(z.string()).optional(),
+    parent_role_id: uuidSchema('parent role ID').optional()
+  }),
+  z.object({
+    action: z.literal('update_role'),
+    role_id: uuidSchema('role ID'),
+    name: z.string().min(1).max(255).optional(),
+    description: z.string().optional(),
+    permissions: z.array(z.string()).optional(),
+    parent_role_id: uuidSchema('parent role ID').optional()
+  }),
+  z.object({ action: z.literal('delete_role'), role_id: uuidSchema('role ID') }),
+  z.object({
+    action: z.literal('list_role_assignments'),
+    user_id: uuidSchema('user ID').optional(),
+    role_id: uuidSchema('role ID').optional(),
+    domain_type: z.string().optional(),
+    domain_id: uuidSchema('domain ID').optional(),
+    limit: z.number().int().positive().optional(),
+    offset: z.number().int().nonnegative().optional()
+  }),
+  z.object({
+    action: z.literal('create_role_assignment'),
+    user_id: uuidSchema('user ID'),
+    role_id: uuidSchema('role ID'),
+    domain_type: z.enum(['global', 'org', 'workspace', 'project']).optional(),
+    domain_id: uuidSchema('domain ID').optional()
+  }),
+  z.object({
+    action: z.literal('delete_role_assignment'),
+    assignment_id: uuidSchema('assignment ID')
+  }),
+  z.object({
+    action: z.literal('list_teams'),
+    search: z.string().optional(),
+    is_active: z.boolean().optional(),
+    limit: z.number().int().positive().optional(),
+    offset: z.number().int().nonnegative().optional()
+  }),
+  z.object({ action: z.literal('get_team'), team_id: uuidSchema('team ID') }),
+  z.object({
+    action: z.literal('create_team'),
+    team_name: z.string().min(1).max(255),
+    adom_name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    is_active: z.boolean().optional()
+  }),
+  z.object({
+    action: z.literal('update_team'),
+    team_id: uuidSchema('team ID'),
+    team_name: z.string().min(1).max(255).optional(),
+    adom_name: z.string().min(1).max(255).optional(),
+    description: z.string().optional(),
+    is_active: z.boolean().optional()
+  }),
+  z.object({ action: z.literal('delete_team'), team_id: uuidSchema('team ID') }),
+  z.object({
+    action: z.literal('list_team_members'),
+    team_id: uuidSchema('team ID'),
+    limit: z.number().int().positive().optional(),
+    offset: z.number().int().nonnegative().optional()
+  }),
+  z.object({
+    action: z.literal('add_team_member'),
+    team_id: uuidSchema('team ID'),
+    user_id: uuidSchema('user ID'),
+    source: z.enum(['manual', 'sso']).optional()
+  }),
+  z.object({
+    action: z.literal('remove_team_member'),
+    team_id: uuidSchema('team ID'),
+    user_id: uuidSchema('user ID')
+  }),
+  z.object({
+    action: z.literal('list_shares'),
+    resource_type: z.string().optional(),
+    resource_id: uuidSchema('resource ID').optional(),
+    target_id: uuidSchema('target ID').optional(),
+    scope: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    offset: z.number().int().nonnegative().optional()
+  }),
+  z.object({ action: z.literal('get_share'), share_id: uuidSchema('share ID') }),
+  z.object({
+    action: z.literal('create_share'),
+    resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file']),
+    resource_id: uuidSchema('resource ID'),
+    scope: z.enum(['private', 'team', 'user', 'public']),
+    target_id: uuidSchema('target ID').optional(),
+    permission_level: z.enum(['read', 'write', 'execute', 'admin']).optional()
+  }),
+  z.object({
+    action: z.literal('update_share'),
+    share_id: uuidSchema('share ID'),
+    permission_level: z.enum(['read', 'write', 'execute', 'admin'])
+  }),
+  z.object({ action: z.literal('delete_share'), share_id: uuidSchema('share ID') }),
+  z.object({
+    action: z.literal('audit'),
+    user_id: uuidSchema('user ID').optional(),
+    resource_type: z.string().optional(),
+    resource_id: uuidSchema('resource ID').optional(),
+    name: z.string().optional(),
+    result: z.string().optional(),
+    since: z.string().optional(),
+    until: z.string().optional(),
+    page: z.number().int().positive().optional(),
+    size: z.number().int().positive().max(200).optional()
+  }),
+  z.object({
+    action: z.literal('my_permissions'),
+    resource_type: z.enum(['flow', 'deployment', 'project', 'knowledge_base', 'variable', 'file', 'component']),
+    resource_ids: z.array(uuidSchema('resource ID')).min(1),
+    actions: z.array(z.string()).optional(),
+    domain: z.string().optional()
+  })
+]);
+
+// Memory base tool schema (Langflow 1.10.0)
+export const MemoryToolSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('create'),
+    name: z.string().min(1),
+    flow_id: uuidSchema('flow ID'),
+    threshold: z.number().int().optional(),
+    auto_capture: z.boolean().optional(),
+    embedding_model: z.string().optional(),
+    preprocessing: z.boolean().optional(),
+    preproc_model: z.string().optional(),
+    preproc_instructions: z.string().optional(),
+    preproc_kill_phrase: z.string().optional()
+  }),
+  z.object({
+    action: z.literal('list'),
+    flow_id: uuidSchema('flow ID').optional(),
+    ...paginationSchema
+  }),
+  z.object({ action: z.literal('get'), memory_base_id: uuidSchema('memory base ID') }),
+  z.object({
+    action: z.literal('list_sessions'),
+    memory_base_id: uuidSchema('memory base ID'),
+    ...paginationSchema
+  }),
+  z.object({
+    action: z.literal('list_messages'),
+    memory_base_id: uuidSchema('memory base ID'),
+    session_id: z.string().optional(),
+    ...paginationSchema
+  }),
+  z.object({
+    action: z.literal('update'),
+    memory_base_id: uuidSchema('memory base ID'),
+    name: z.string().min(1).optional(),
+    threshold: z.number().int().optional(),
+    auto_capture: z.boolean().optional()
+  }),
+  z.object({ action: z.literal('delete'), memory_base_id: uuidSchema('memory base ID') }),
+  z.object({
+    action: z.literal('flush'),
+    memory_base_id: uuidSchema('memory base ID'),
+    session_id: z.string().min(1)
+  }),
+  z.object({ action: z.literal('mismatch'), memory_base_id: uuidSchema('memory base ID') }),
+  z.object({ action: z.literal('regenerate'), memory_base_id: uuidSchema('memory base ID') })
+]);
+
+// Extension tool schema (Langflow 1.10.0)
+export const ExtensionToolSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('reload'),
+    extension_id: z.string().min(1),
+    bundle_name: z.string().min(1)
+  }),
+  z.object({ action: z.literal('events'), since: z.number().optional() })
+]);
+
 // Export type inferences
 export type FlowToolInput = z.infer<typeof FlowToolSchema>;
 export type FlowExecutionToolInput = z.infer<typeof FlowExecutionToolSchema>;
@@ -800,3 +1047,6 @@ export type McpServerToolInput = z.infer<typeof McpServerToolSchema>;
 export type McpProjectToolInput = z.infer<typeof McpProjectToolSchema>;
 export type TraceToolInput = z.infer<typeof TraceToolSchema>;
 export type ResponseToolInput = z.infer<typeof ResponseToolSchema>;
+export type AuthzToolInput = z.infer<typeof AuthzToolSchema>;
+export type MemoryToolInput = z.infer<typeof MemoryToolSchema>;
+export type ExtensionToolInput = z.infer<typeof ExtensionToolSchema>;
