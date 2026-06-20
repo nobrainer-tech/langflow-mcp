@@ -700,6 +700,9 @@ export interface GetWorkflowResultParams {
 export interface RunWorkflowRequest {
   flow_id: string;
   inputs?: Record<string, any>;
+  // Langflow 1.10.0: request-level global variables (preferred over deprecated
+  // X-LANGFLOW-GLOBAL-VAR-* headers). Keys <= 256 chars, values <= 64 KB.
+  globals?: Record<string, string>;
   stream?: boolean;
   background?: boolean;
   [key: string]: any;
@@ -741,4 +744,208 @@ export interface MCPServerConfigBody {
 
 export interface WebhookEventsParams {
   user_id?: string;
+}
+
+// --- Langflow 1.10.0 additional endpoints ---
+
+// authz: roles
+export interface ListAuthzRolesParams {
+  is_system?: boolean;
+  name?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuthzRoleCreate {
+  name: string;
+  description?: string;
+  permissions?: string[];
+  parent_role_id?: string;
+}
+
+export interface AuthzRoleUpdate {
+  name?: string;
+  description?: string;
+  permissions?: string[];
+  parent_role_id?: string;
+}
+
+// authz: role assignments
+export interface ListAuthzRoleAssignmentsParams {
+  user_id?: string;
+  role_id?: string;
+  domain_type?: string;
+  domain_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuthzRoleAssignmentCreate {
+  user_id: string;
+  role_id: string;
+  domain_type?: 'global' | 'org' | 'workspace' | 'project';
+  domain_id?: string;
+}
+
+// authz: teams
+export interface ListAuthzTeamsParams {
+  search?: string;
+  is_active?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuthzTeamCreate {
+  team_name: string;
+  adom_name: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface AuthzTeamUpdate {
+  team_name?: string;
+  adom_name?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface ListAuthzTeamMembersParams {
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuthzTeamMemberCreate {
+  user_id: string;
+  source?: 'manual' | 'sso';
+}
+
+// authz: shares
+export interface ListAuthzSharesParams {
+  resource_type?: string;
+  resource_id?: string;
+  target_id?: string;
+  scope?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuthzShareCreate {
+  resource_type: 'flow' | 'deployment' | 'project' | 'knowledge_base' | 'variable' | 'file';
+  resource_id: string;
+  scope: 'private' | 'team' | 'user' | 'public';
+  target_id?: string;
+  permission_level?: 'read' | 'write' | 'execute' | 'admin';
+}
+
+export interface AuthzShareUpdate {
+  permission_level: 'read' | 'write' | 'execute' | 'admin';
+}
+
+// authz: audit
+export interface AuthzAuditParams {
+  user_id?: string;
+  resource_type?: string;
+  resource_id?: string;
+  action?: string;
+  result?: string;
+  since?: string;
+  until?: string;
+  page?: number;
+  size?: number;
+}
+
+// authz: effective permissions (me)
+export interface EffectivePermissionsRequest {
+  resource_type: 'flow' | 'deployment' | 'project' | 'knowledge_base' | 'variable' | 'file' | 'component';
+  resource_ids: string[];
+  actions?: string[];
+  domain?: string;
+}
+
+// MemoryBases (hidden/experimental router in Langflow OpenAPI)
+export interface ListMemoryBasesParams {
+  flow_id?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface MemoryBaseCreate {
+  name: string;
+  flow_id: string;
+  threshold?: number;
+  auto_capture?: boolean;
+  embedding_model?: string;
+  preprocessing?: boolean;
+  preproc_model?: string;
+  preproc_instructions?: string;
+  preproc_kill_phrase?: string;
+}
+
+export interface MemoryBaseUpdate {
+  name?: string;
+  threshold?: number;
+  auto_capture?: boolean;
+}
+
+export interface ListMemoryBaseSessionsParams {
+  page?: number;
+  size?: number;
+}
+
+export interface ListMemoryBaseMessagesParams {
+  session_id?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface MemoryBaseFlushRequest {
+  session_id: string;
+}
+
+// Knowledge base overhaul (new in 1.10.0)
+export interface TestKnowledgeBaseConnectionRequest {
+  backend_type: string;
+  backend_config?: Record<string, any>;
+}
+
+export interface IngestKnowledgeBaseFolderRequest {
+  path: string;
+  recursive?: boolean;
+  extensions?: string[];
+  max_file_size_bytes?: number;
+  source_name?: string;
+  chunk_size?: number;
+  chunk_overlap?: number;
+  separator?: string;
+  metadata?: Record<string, any>;
+  per_file_metadata?: Record<string, Record<string, any>>;
+}
+
+export interface IngestKnowledgeBaseConnectorRequest {
+  source_type: string;
+  source_config?: Record<string, any>;
+  source_name?: string;
+  chunk_size?: number;
+  chunk_overlap?: number;
+  separator?: string;
+}
+
+export interface ListKnowledgeBaseRunsParams {
+  page?: number;
+  limit?: number;
+}
+
+// Extensions
+export interface ExtensionEventsParams {
+  since?: number;
+}
+
+// Agentic file system + sessions (new in 1.10.0)
+export interface AgenticFileParams {
+  path: string;
+  download?: boolean;
+}
+
+export interface ResetAgenticSessionParams {
+  session_id?: string;
 }

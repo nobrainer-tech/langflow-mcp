@@ -3381,7 +3381,8 @@ Related Tools:
         flow_id: { type: 'string', description: 'Flow ID' },
         inputs: { type: 'object', description: 'Workflow inputs' },
         stream: { type: 'boolean', description: 'Stream the run' },
-        background: { type: 'boolean', description: 'Run in background' }
+        background: { type: 'boolean', description: 'Run in background' },
+        globals: { type: 'object', description: 'Request-level global variables (Langflow 1.10.0)' }
       },
       required: ['flow_id']
     },
@@ -3542,6 +3543,639 @@ Related Tools:
         project_id: { type: 'string', description: 'Project ID (UUID)' }
       },
       required: ['project_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_authz_roles',
+    description: 'List authorization roles. Optionally filter by system flag or name with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        is_system: { type: 'boolean', description: 'Filter by system roles' },
+        name: { type: 'string', description: 'Filter by role name' },
+        limit: { type: 'number', description: 'Maximum number of results' },
+        offset: { type: 'number', description: 'Result offset for pagination' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_authz_role',
+    description: 'Get a single authorization role by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        role_id: { type: 'string', description: 'Role ID' }
+      },
+      required: ['role_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_authz_role',
+    description: 'Create an authorization role with optional permissions and a parent role.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Role name' },
+        description: { type: 'string', description: 'Role description' },
+        permissions: { type: 'array', items: { type: 'string' }, description: 'Permission identifiers' },
+        parent_role_id: { type: 'string', description: 'Parent role ID for inheritance' }
+      },
+      required: ['name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_authz_role',
+    description: 'Update an existing authorization role by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        role_id: { type: 'string', description: 'Role ID' },
+        name: { type: 'string', description: 'Role name' },
+        description: { type: 'string', description: 'Role description' },
+        permissions: { type: 'array', items: { type: 'string' }, description: 'Permission identifiers' },
+        parent_role_id: { type: 'string', description: 'Parent role ID for inheritance' }
+      },
+      required: ['role_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_authz_role',
+    description: 'Delete an authorization role by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        role_id: { type: 'string', description: 'Role ID to delete' }
+      },
+      required: ['role_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_authz_role_assignments',
+    description: 'List role assignments, optionally filtered by user, role, or domain.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: { type: 'string', description: 'Filter by user ID' },
+        role_id: { type: 'string', description: 'Filter by role ID' },
+        domain_type: { type: 'string', description: 'Filter by domain type' },
+        domain_id: { type: 'string', description: 'Filter by domain ID' },
+        limit: { type: 'number', description: 'Maximum number of results' },
+        offset: { type: 'number', description: 'Result offset for pagination' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_authz_role_assignment',
+    description: 'Assign a role to a user, optionally scoped to a domain.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: { type: 'string', description: 'User ID' },
+        role_id: { type: 'string', description: 'Role ID' },
+        domain_type: { type: 'string', description: 'Domain type: global, org, workspace, or project' },
+        domain_id: { type: 'string', description: 'Domain ID for the scope' }
+      },
+      required: ['user_id', 'role_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'delete_authz_role_assignment',
+    description: 'Delete a role assignment from a user by its assignment ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        assignment_id: { type: 'string', description: 'Role assignment ID to delete' }
+      },
+      required: ['assignment_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_authz_teams',
+    description: 'List authorization teams, optionally filtered by search term or active flag.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Search term for team names' },
+        is_active: { type: 'boolean', description: 'Filter by active teams' },
+        limit: { type: 'number', description: 'Maximum number of results' },
+        offset: { type: 'number', description: 'Result offset for pagination' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_authz_team',
+    description: 'Get a single authorization team by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID' }
+      },
+      required: ['team_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_authz_team',
+    description: 'Create an authorization team within an administrative domain.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_name: { type: 'string', description: 'Team name' },
+        adom_name: { type: 'string', description: 'Administrative domain name' },
+        description: { type: 'string', description: 'Team description' },
+        is_active: { type: 'boolean', description: 'Whether the team is active' }
+      },
+      required: ['team_name', 'adom_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_authz_team',
+    description: 'Update an existing authorization team by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID' },
+        team_name: { type: 'string', description: 'Team name' },
+        adom_name: { type: 'string', description: 'Administrative domain name' },
+        description: { type: 'string', description: 'Team description' },
+        is_active: { type: 'boolean', description: 'Whether the team is active' }
+      },
+      required: ['team_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_authz_team',
+    description: 'Delete an authorization team by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID to delete' }
+      },
+      required: ['team_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_authz_team_members',
+    description: 'List members of an authorization team with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID' },
+        limit: { type: 'number', description: 'Maximum number of results' },
+        offset: { type: 'number', description: 'Result offset for pagination' }
+      },
+      required: ['team_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'add_authz_team_member',
+    description: 'Add a user to an authorization team.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID' },
+        user_id: { type: 'string', description: 'User ID to add' },
+        source: { type: 'string', description: 'Membership source: manual or sso' }
+      },
+      required: ['team_id', 'user_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'remove_authz_team_member',
+    description: 'Remove a user from an authorization team.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: 'Team ID' },
+        user_id: { type: 'string', description: 'User ID to remove' }
+      },
+      required: ['team_id', 'user_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_authz_shares',
+    description: 'List resource shares, optionally filtered by resource, target, or scope.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        resource_type: { type: 'string', description: 'Filter by resource type' },
+        resource_id: { type: 'string', description: 'Filter by resource ID' },
+        target_id: { type: 'string', description: 'Filter by target ID' },
+        scope: { type: 'string', description: 'Filter by share scope' },
+        limit: { type: 'number', description: 'Maximum number of results' },
+        offset: { type: 'number', description: 'Result offset for pagination' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_authz_share',
+    description: 'Get a single resource share by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        share_id: { type: 'string', description: 'Share ID' }
+      },
+      required: ['share_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_authz_share',
+    description: 'Share a resource with a scope and optional target and permission level.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        resource_type: { type: 'string', description: 'Resource type: flow, deployment, project, knowledge_base, variable, or file' },
+        resource_id: { type: 'string', description: 'Resource ID to share' },
+        scope: { type: 'string', description: 'Share scope: private, team, user, or public' },
+        target_id: { type: 'string', description: 'Target ID for the share' },
+        permission_level: { type: 'string', description: 'Permission level: read, write, execute, or admin' }
+      },
+      required: ['resource_type', 'resource_id', 'scope']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'update_authz_share',
+    description: 'Update the permission level of a resource share.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        share_id: { type: 'string', description: 'Share ID' },
+        permission_level: { type: 'string', description: 'Permission level: read, write, execute, or admin' }
+      },
+      required: ['share_id', 'permission_level']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_authz_share',
+    description: 'Delete a resource share by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        share_id: { type: 'string', description: 'Share ID to delete' }
+      },
+      required: ['share_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_authz_audit',
+    description: 'Query the authorization audit log with filters and pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: { type: 'string', description: 'Filter by user ID' },
+        resource_type: { type: 'string', description: 'Filter by resource type' },
+        resource_id: { type: 'string', description: 'Filter by resource ID' },
+        action: { type: 'string', description: 'Filter by audit action' },
+        result: { type: 'string', description: 'Filter by result outcome' },
+        since: { type: 'string', description: 'Start timestamp (ISO 8601)' },
+        until: { type: 'string', description: 'End timestamp (ISO 8601)' },
+        page: { type: 'number', description: 'Page number' },
+        size: { type: 'number', description: 'Page size' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_my_permissions',
+    description: 'Get the calling user effective permissions for a set of resources.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        resource_type: { type: 'string', description: 'Resource type: flow, deployment, project, knowledge_base, variable, file, or component' },
+        resource_ids: { type: 'array', items: { type: 'string' }, description: 'Resource IDs to check' },
+        actions: { type: 'array', items: { type: 'string' }, description: 'Specific actions to evaluate' },
+        domain: { type: 'string', description: 'Domain scope for the check' }
+      },
+      required: ['resource_type', 'resource_ids']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'create_memory_base',
+    description: 'Create a memory base for a flow (experimental, hidden in Langflow OpenAPI).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Memory base name' },
+        flow_id: { type: 'string', description: 'Associated flow ID' },
+        threshold: { type: 'number', description: 'Capture threshold' },
+        auto_capture: { type: 'boolean', description: 'Automatically capture memories' },
+        embedding_model: { type: 'string', description: 'Embedding model name' },
+        preprocessing: { type: 'boolean', description: 'Enable preprocessing' },
+        preproc_model: { type: 'string', description: 'Preprocessing model name' },
+        preproc_instructions: { type: 'string', description: 'Preprocessing instructions' },
+        preproc_kill_phrase: { type: 'string', description: 'Preprocessing kill phrase' }
+      },
+      required: ['name', 'flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'list_memory_bases',
+    description: 'List memory bases, optionally filtered by flow with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Filter by flow ID' },
+        page: { type: 'number', description: 'Page number' },
+        size: { type: 'number', description: 'Page size' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_memory_base',
+    description: 'Get a single memory base by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_memory_base_sessions',
+    description: 'List sessions stored in a memory base with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' },
+        page: { type: 'number', description: 'Page number' },
+        size: { type: 'number', description: 'Page size' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_memory_base_messages',
+    description: 'List messages stored in a memory base, optionally filtered by session.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' },
+        session_id: { type: 'string', description: 'Filter by session ID' },
+        page: { type: 'number', description: 'Page number' },
+        size: { type: 'number', description: 'Page size' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'update_memory_base',
+    description: 'Update an existing memory base by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' },
+        name: { type: 'string', description: 'Memory base name' },
+        threshold: { type: 'number', description: 'Capture threshold' },
+        auto_capture: { type: 'boolean', description: 'Automatically capture memories' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'delete_memory_base',
+    description: 'Delete a memory base and its stored memories by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID to delete' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'flush_memory_base',
+    description: 'Flush a memory base session, persisting captured memories.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' },
+        session_id: { type: 'string', description: 'Session ID to flush' }
+      },
+      required: ['memory_base_id', 'session_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'check_memory_base_mismatch',
+    description: 'Check a memory base for configuration or embedding mismatches.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'regenerate_memory_base',
+    description: 'Regenerate a memory base, rebuilding its stored memories.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_base_id: { type: 'string', description: 'Memory base ID' }
+      },
+      required: ['memory_base_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'test_knowledge_base_connection',
+    description: 'Test a connection to a knowledge base backend.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        backend_type: { type: 'string', description: 'Backend type to test' },
+        backend_config: { type: 'object', description: 'Backend connection configuration' }
+      },
+      required: ['backend_type']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_knowledge_base_connectors',
+    description: 'List available knowledge base ingestion connectors.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'ingest_knowledge_base_folder',
+    description: 'Ingest a local folder into a knowledge base with chunking options.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        path: { type: 'string', description: 'Folder path to ingest' },
+        recursive: { type: 'boolean', description: 'Recurse into subfolders' },
+        extensions: { type: 'array', items: { type: 'string' }, description: 'File extensions to include' },
+        max_file_size_bytes: { type: 'number', description: 'Maximum file size in bytes' },
+        source_name: { type: 'string', description: 'Source name label' },
+        chunk_size: { type: 'number', description: 'Chunk size' },
+        chunk_overlap: { type: 'number', description: 'Chunk overlap' },
+        separator: { type: 'string', description: 'Chunk separator' },
+        metadata: { type: 'object', description: 'Metadata applied to all files' },
+        per_file_metadata: { type: 'object', description: 'Per-file metadata overrides' }
+      },
+      required: ['kb_name', 'path']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'ingest_knowledge_base_connector',
+    description: 'Ingest content into a knowledge base from a configured connector source.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        source_type: { type: 'string', description: 'Connector source type' },
+        source_config: { type: 'object', description: 'Connector source configuration' },
+        source_name: { type: 'string', description: 'Source name label' },
+        chunk_size: { type: 'number', description: 'Chunk size' },
+        chunk_overlap: { type: 'number', description: 'Chunk overlap' },
+        separator: { type: 'string', description: 'Chunk separator' }
+      },
+      required: ['kb_name', 'source_type']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_knowledge_base_metadata_keys',
+    description: 'Get the available metadata keys for a knowledge base.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' }
+      },
+      required: ['kb_name']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_knowledge_base_runs',
+    description: 'List ingestion runs for a knowledge base with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        page: { type: 'number', description: 'Page number' },
+        limit: { type: 'number', description: 'Maximum number of results' }
+      },
+      required: ['kb_name']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_knowledge_base_run',
+    description: 'Get a single knowledge base ingestion run by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kb_name: { type: 'string', description: 'Knowledge base name' },
+        run_id: { type: 'string', description: 'Ingestion run ID' }
+      },
+      required: ['kb_name', 'run_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'reload_extension_bundle',
+    description: 'Reload an extension bundle (requires LANGFLOW_ENABLE_EXTENSION_RELOAD on the server).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        extension_id: { type: 'string', description: 'Extension ID' },
+        bundle_name: { type: 'string', description: 'Bundle name to reload' }
+      },
+      required: ['extension_id', 'bundle_name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_extension_events',
+    description: 'Get extension events for the current user, optionally since a UTC epoch cursor.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        since: { type: 'number', description: 'UTC epoch timestamp; return events after this cursor' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_agentic_file',
+    description: 'Get an agentic workspace file, optionally as a downloadable payload.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path' },
+        download: { type: 'boolean', description: 'Return the file content for download' }
+      },
+      required: ['path']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'reset_agentic_session',
+    description: 'Reset an agentic session, optionally targeting a specific session ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        session_id: { type: 'string', description: 'Session ID to reset' }
+      }
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'get_flow_note_translations',
+    description: 'Get localized note translations for a flow by ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_job_queue_metrics',
+    description: 'Get job queue metrics (superuser-only).',
+    inputSchema: {
+      type: 'object',
+      properties: {}
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }

@@ -25,15 +25,18 @@ import {
   McpServerToolSchema,
   McpProjectToolSchema,
   TraceToolSchema,
-  ResponseToolSchema
+  ResponseToolSchema,
+  AuthzToolSchema,
+  MemoryToolSchema,
+  ExtensionToolSchema
 } from '../../mcp/validation-consolidated';
 
 // Valid UUIDs for testing (v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx)
 const VALID_UUID = '12345678-1234-4234-a234-123456789012';
 
 describe('Consolidated Tools', () => {
-  it('should have exactly 24 tools', () => {
-    expect(consolidatedTools).toHaveLength(24);
+  it('should have exactly 27 tools', () => {
+    expect(consolidatedTools).toHaveLength(27);
   });
 
   it('should have all expected tool names', () => {
@@ -62,6 +65,9 @@ describe('Consolidated Tools', () => {
     expect(toolNames).toContain('mcp_project');
     expect(toolNames).toContain('trace');
     expect(toolNames).toContain('response');
+    expect(toolNames).toContain('authz');
+    expect(toolNames).toContain('memory');
+    expect(toolNames).toContain('extension');
   });
 
   it('each tool should have required properties', () => {
@@ -514,6 +520,71 @@ describe('New Tool Schemas', () => {
   });
 });
 
+describe('Langflow 1.10.0 Tool Schemas', () => {
+  it('Flow: validates note_translations', () => {
+    expect(FlowToolSchema.safeParse({ action: 'note_translations', flow_id: VALID_UUID }).success).toBe(true);
+    expect(FlowToolSchema.safeParse({ action: 'note_translations' }).success).toBe(false);
+  });
+
+  it('KnowledgeBase: validates new ingestion/run actions', () => {
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'test_connection', backend_type: 'chroma' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'list_connectors' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'ingest_folder', kb_name: 'kb', path: '/data' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'ingest_connector', kb_name: 'kb', source_type: 'gdrive' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'metadata_keys', kb_name: 'kb' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'list_runs', kb_name: 'kb' }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'get_run', kb_name: 'kb', run_id: VALID_UUID }).success).toBe(true);
+    expect(KnowledgeBaseToolSchema.safeParse({ action: 'ingest_folder', kb_name: 'kb' }).success).toBe(false);
+  });
+
+  it('Monitor: validates job_queue', () => {
+    expect(MonitorToolSchema.safeParse({ action: 'job_queue' }).success).toBe(true);
+  });
+
+  it('Agentic: validates get_file and reset_session', () => {
+    expect(AgenticToolSchema.safeParse({ action: 'get_file', path: 'out.txt' }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'get_file', path: 'out.txt', download: true }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'reset_session' }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'reset_session', session_id: 's1' }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'get_file' }).success).toBe(false);
+  });
+
+  it('Workflow: accepts globals on run', () => {
+    expect(WorkflowToolSchema.safeParse({ action: 'run', flow_id: 'f1', globals: { API_KEY: 'x' } }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'run', flow_id: 'f1', globals: { bad: 1 } }).success).toBe(false);
+  });
+
+  it('Authz: validates role/team/share/audit/my_permissions actions', () => {
+    expect(AuthzToolSchema.safeParse({ action: 'list_roles' }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'create_role', name: 'editor', permissions: ['flow:read'] }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'get_role', role_id: VALID_UUID }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'create_role_assignment', user_id: VALID_UUID, role_id: VALID_UUID }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'create_team', team_name: 'T', adom_name: 't' }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'add_team_member', team_id: VALID_UUID, user_id: VALID_UUID }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'create_share', resource_type: 'flow', resource_id: VALID_UUID, scope: 'public' }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'update_share', share_id: VALID_UUID, permission_level: 'write' }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'audit' }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'my_permissions', resource_type: 'flow', resource_ids: [VALID_UUID] }).success).toBe(true);
+    expect(AuthzToolSchema.safeParse({ action: 'create_role' }).success).toBe(false);
+    expect(AuthzToolSchema.safeParse({ action: 'create_share', resource_type: 'flow', resource_id: VALID_UUID }).success).toBe(false);
+  });
+
+  it('Memory: validates create/list/flush actions', () => {
+    expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb', flow_id: VALID_UUID }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'list' }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'get', memory_base_id: VALID_UUID }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'flush', memory_base_id: VALID_UUID, session_id: 's1' }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb' }).success).toBe(false);
+    expect(MemoryToolSchema.safeParse({ action: 'flush', memory_base_id: VALID_UUID }).success).toBe(false);
+  });
+
+  it('Extension: validates reload and events', () => {
+    expect(ExtensionToolSchema.safeParse({ action: 'reload', extension_id: 'ext', bundle_name: 'b' }).success).toBe(true);
+    expect(ExtensionToolSchema.safeParse({ action: 'events', since: 0 }).success).toBe(true);
+    expect(ExtensionToolSchema.safeParse({ action: 'reload', extension_id: 'ext' }).success).toBe(false);
+  });
+});
+
 describe('Consolidated handler dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let server: any;
@@ -740,5 +811,86 @@ describe('Consolidated handler dispatch', () => {
 
   it('rejects invalid args (workflow.stop missing job_id)', async () => {
     await expect(server.handleWorkflowTool({ action: 'stop' })).rejects.toThrow();
+  });
+
+  it('flow.note_translations dispatches to getFlowNoteTranslations', async () => {
+    await server.handleFlowTool({ action: 'note_translations', flow_id: VALID_UUID });
+    expect(client.getFlowNoteTranslations).toHaveBeenCalledWith(VALID_UUID);
+  });
+
+  it('knowledge_base.ingest_folder dispatches to ingestKnowledgeBaseFolder', async () => {
+    await server.handleKnowledgeBaseTool({ action: 'ingest_folder', kb_name: 'kb', path: '/data', recursive: false });
+    expect(client.ingestKnowledgeBaseFolder).toHaveBeenCalledWith('kb', { path: '/data', recursive: false });
+  });
+
+  it('knowledge_base.get_run dispatches to getKnowledgeBaseRun', async () => {
+    await server.handleKnowledgeBaseTool({ action: 'get_run', kb_name: 'kb', run_id: 'r1' });
+    expect(client.getKnowledgeBaseRun).toHaveBeenCalledWith('kb', 'r1');
+  });
+
+  it('monitor.job_queue dispatches to getJobQueueMetrics', async () => {
+    await server.handleMonitorTool({ action: 'job_queue' });
+    expect(client.getJobQueueMetrics).toHaveBeenCalled();
+  });
+
+  it('agentic.get_file dispatches to getAgenticFile', async () => {
+    await server.handleAgenticTool({ action: 'get_file', path: 'out.txt', download: true });
+    expect(client.getAgenticFile).toHaveBeenCalledWith({ path: 'out.txt', download: true });
+  });
+
+  it('agentic.reset_session dispatches to resetAgenticSession', async () => {
+    await server.handleAgenticTool({ action: 'reset_session', session_id: 's1' });
+    expect(client.resetAgenticSession).toHaveBeenCalledWith({ session_id: 's1' });
+  });
+
+  it('workflow.run forwards globals to runWorkflow', async () => {
+    await server.handleWorkflowTool({ action: 'run', flow_id: 'f1', globals: { API_KEY: 'x' } });
+    expect(client.runWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', globals: { API_KEY: 'x' } });
+  });
+
+  it('authz.create_role dispatches to createAuthzRole', async () => {
+    await server.handleAuthzTool({ action: 'create_role', name: 'editor', permissions: ['flow:read'] });
+    expect(client.createAuthzRole).toHaveBeenCalledWith({ name: 'editor', permissions: ['flow:read'] });
+  });
+
+  it('authz.update_role dispatches with role_id extracted', async () => {
+    await server.handleAuthzTool({ action: 'update_role', role_id: VALID_UUID, name: 'x' });
+    expect(client.updateAuthzRole).toHaveBeenCalledWith(VALID_UUID, { name: 'x' });
+  });
+
+  it('authz.remove_team_member dispatches to removeAuthzTeamMember', async () => {
+    const userId = '22345678-1234-4234-a234-123456789012';
+    await server.handleAuthzTool({ action: 'remove_team_member', team_id: VALID_UUID, user_id: userId });
+    expect(client.removeAuthzTeamMember).toHaveBeenCalledWith(VALID_UUID, userId);
+  });
+
+  it('authz.audit maps audit_action filter to action query param', async () => {
+    await server.handleAuthzTool({ action: 'audit', audit_action: 'role.create', result: 'allow' });
+    expect(client.getAuthzAudit).toHaveBeenCalledWith({ result: 'allow', action: 'role.create' });
+  });
+
+  it('authz.my_permissions dispatches to getMyPermissions', async () => {
+    await server.handleAuthzTool({ action: 'my_permissions', resource_type: 'flow', resource_ids: [VALID_UUID] });
+    expect(client.getMyPermissions).toHaveBeenCalledWith({ resource_type: 'flow', resource_ids: [VALID_UUID] });
+  });
+
+  it('memory.create dispatches to createMemoryBase', async () => {
+    await server.handleMemoryTool({ action: 'create', name: 'mb', flow_id: VALID_UUID });
+    expect(client.createMemoryBase).toHaveBeenCalledWith({ name: 'mb', flow_id: VALID_UUID });
+  });
+
+  it('memory.flush dispatches to flushMemoryBase', async () => {
+    await server.handleMemoryTool({ action: 'flush', memory_base_id: VALID_UUID, session_id: 's1' });
+    expect(client.flushMemoryBase).toHaveBeenCalledWith(VALID_UUID, { session_id: 's1' });
+  });
+
+  it('extension.reload dispatches to reloadExtensionBundle', async () => {
+    await server.handleExtensionTool({ action: 'reload', extension_id: 'ext', bundle_name: 'b' });
+    expect(client.reloadExtensionBundle).toHaveBeenCalledWith('ext', 'b');
+  });
+
+  it('extension.events dispatches to getExtensionEvents', async () => {
+    await server.handleExtensionTool({ action: 'events', since: 5 });
+    expect(client.getExtensionEvents).toHaveBeenCalledWith({ since: 5 });
   });
 });
