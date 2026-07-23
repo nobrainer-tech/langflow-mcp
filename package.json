@@ -71,7 +71,7 @@
     "axios-mock-adapter": "^2.1.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.7"
   },
   "dependencies": {
