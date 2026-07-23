@@ -949,3 +949,32 @@ export interface AgenticFileParams {
 export interface ResetAgenticSessionParams {
   session_id?: string;
 }
+
+// --- Langflow 1.11.0 additional endpoints ---
+
+// A2A (Agent-to-Agent) protocol
+export interface A2aJsonRpcRequest {
+  jsonrpc?: string;
+  method: string;
+  params?: Record<string, any>;
+  id?: string | number;
+  [key: string]: any;
+}
+
+// Workflows V2 — human-in-the-loop & public execution
+export interface ListPendingWorkflowsParams {
+  flow_id?: string;
+}
+
+export interface ResumeWorkflowRequest {
+  decision: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface PublicWorkflowRunRequest {
+  flow_id: string;
+  inputs?: Record<string, any>;
+  globals?: Record<string, string>;
+  stream?: boolean;
+  [key: string]: any;
+}

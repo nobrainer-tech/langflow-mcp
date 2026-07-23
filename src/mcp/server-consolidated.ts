@@ -42,7 +42,8 @@ import {
   ResponseToolSchema,
   AuthzToolSchema,
   MemoryToolSchema,
-  ExtensionToolSchema
+  ExtensionToolSchema,
+  A2aToolSchema
 } from './validation-consolidated';
 
 export class LangflowMCPServerConsolidated {
@@ -339,6 +340,8 @@ export class LangflowMCPServerConsolidated {
             return await this.handleAgenticTool(args);
           case 'workflow':
             return await this.handleWorkflowTool(args);
+          case 'a2a':
+            return await this.handleA2aTool(args);
           case 'mcp_server':
             return await this.handleMcpServerTool(args);
           case 'mcp_project':
@@ -1262,6 +1265,46 @@ export class LangflowMCPServerConsolidated {
       }
       case 'stop': {
         const result = await this.client!.stopWorkflow(validated.job_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'pending': {
+        const result = await this.client!.listPendingWorkflows(
+          validated.flow_id ? { flow_id: validated.flow_id } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'events': {
+        const result = await this.client!.getWorkflowEvents(validated.job_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'resume': {
+        const { action: _, job_id, ...body } = validated;
+        const result = await this.client!.resumeWorkflow(job_id, body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'run_public': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.runPublicWorkflow(body);
+        return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleA2aTool(args: Record<string, unknown>) {
+    const validated = A2aToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'list_agents': {
+        const result = await this.client!.listA2aAgents();
+        return this.formatSuccessResponse(result);
+      }
+      case 'agent_card': {
+        const result = await this.client!.getA2aAgentCard(validated.flow_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'jsonrpc': {
+        const { action: _, flow_id, ...body } = validated;
+        const result = await this.client!.invokeA2aJsonrpc(flow_id, body);
         return this.formatSuccessResponse(result);
       }
     }

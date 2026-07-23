@@ -4178,5 +4178,95 @@ Related Tools:
       properties: {}
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  // --- A2A Protocol (Langflow 1.11.0) ---
+  {
+    name: 'list_a2a_agents',
+    description: 'List available A2A (Agent-to-Agent) agents (Langflow 1.11.0). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_a2a_agent_card',
+    description: 'Get the A2A agent card (.well-known/agent-card.json) for a flow (Langflow 1.11.0). Requires server-side A2A enablement.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'invoke_a2a_jsonrpc',
+    description: 'Invoke a flow via the A2A JSON-RPC endpoint (Langflow 1.11.0). The JSON-RPC envelope is a passthrough; validation lives server-side.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' },
+        jsonrpc: { type: 'string', description: 'JSON-RPC version (e.g. "2.0")' },
+        method: { type: 'string', description: 'JSON-RPC method name' },
+        params: { type: 'object', description: 'JSON-RPC params' },
+        id: { type: 'string', description: 'JSON-RPC request ID' }
+      },
+      required: ['flow_id', 'method']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  // --- Workflows V2 HITL & Public (Langflow 1.11.0) ---
+  {
+    name: 'list_pending_workflows',
+    description: 'List pending human-in-the-loop workflows awaiting a decision (Langflow 1.11.0). Optionally filter by flow_id.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Optional flow ID filter' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_workflow_events',
+    description: 'Re-attach to a workflow job event stream by job ID (Langflow 1.11.0). Streaming is not incrementally surfaced; the initial payload is returned.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Workflow job ID' }
+      },
+      required: ['job_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'resume_workflow',
+    description: 'Resume a paused human-in-the-loop workflow with a decision payload (Langflow 1.11.0). The decision payload is a passthrough; validation lives server-side.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Workflow job ID' },
+        decision: { type: 'object', description: 'HITL decision payload' }
+      },
+      required: ['job_id', 'decision']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'run_public_workflow',
+    description: 'Run a public (unauthenticated-eligible) workflow (Langflow 1.11.0). Stream-only execution; streaming is not incrementally surfaced.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' },
+        inputs: { type: 'object', description: 'Workflow inputs' },
+        globals: { type: 'object', description: 'Request-level global variables' },
+        stream: { type: 'boolean', description: 'Stream the run' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
   }
 ];

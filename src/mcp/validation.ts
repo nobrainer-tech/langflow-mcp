@@ -1413,3 +1413,49 @@ export type GetAgenticFileInput = z.infer<typeof GetAgenticFileSchema>;
 export type ResetAgenticSessionInput = z.infer<typeof ResetAgenticSessionSchema>;
 export type GetFlowNoteTranslationsInput = z.infer<typeof GetFlowNoteTranslationsSchema>;
 export type GetJobQueueMetricsInput = z.infer<typeof GetJobQueueMetricsSchema>;
+
+// --- Langflow 1.11.0 ---
+
+// A2A (Agent-to-Agent) protocol
+export const ListA2aAgentsSchema = z.object({}).strict();
+
+export const GetA2aAgentCardSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required')
+}).strict();
+
+export const InvokeA2aJsonrpcSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required'),
+  jsonrpc: z.string().optional(),
+  method: z.string().min(1, 'Method is required'),
+  params: z.record(z.string(), z.unknown()).optional(),
+  id: z.union([z.string(), z.number()]).optional()
+}).strict();
+
+// Workflows V2 — human-in-the-loop & public execution
+export const ListPendingWorkflowsSchema = z.object({
+  flow_id: z.string().optional()
+}).strict();
+
+export const GetWorkflowEventsSchema = z.object({
+  job_id: z.string().min(1, 'Job ID is required')
+}).strict();
+
+export const ResumeWorkflowSchema = z.object({
+  job_id: z.string().min(1, 'Job ID is required'),
+  decision: z.record(z.string(), z.unknown())
+}).strict();
+
+export const RunPublicWorkflowSchema = z.object({
+  flow_id: z.string().min(1, 'Flow ID is required'),
+  inputs: z.record(z.string(), z.unknown()).optional(),
+  globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
+  stream: z.boolean().optional()
+}).strict();
+
+export type ListA2aAgentsInput = z.infer<typeof ListA2aAgentsSchema>;
+export type GetA2aAgentCardInput = z.infer<typeof GetA2aAgentCardSchema>;
+export type InvokeA2aJsonrpcInput = z.infer<typeof InvokeA2aJsonrpcSchema>;
+export type ListPendingWorkflowsInput = z.infer<typeof ListPendingWorkflowsSchema>;
+export type GetWorkflowEventsInput = z.infer<typeof GetWorkflowEventsSchema>;
+export type ResumeWorkflowInput = z.infer<typeof ResumeWorkflowSchema>;
+export type RunPublicWorkflowInput = z.infer<typeof RunPublicWorkflowSchema>;
