@@ -882,26 +882,71 @@ Actions:
 - run: Run a workflow
 - get_result: Get a workflow result (optionally by job_id)
 - stop: Stop a running workflow
+- pending: List pending human-in-the-loop workflows (Langflow 1.11.0)
+- events: Re-attach to a workflow job event stream by job_id (Langflow 1.11.0)
+- resume: Resume a paused HITL workflow with a decision payload (Langflow 1.11.0)
+- run_public: Run a public workflow (Langflow 1.11.0)
 
 Examples:
 - Run: { "action": "run", "flow_id": "uuid" }
 - Run with globals: { "action": "run", "flow_id": "uuid", "globals": { "API_KEY": "x" } }
 - Get result: { "action": "get_result", "job_id": "job-1" }
-- Stop: { "action": "stop", "job_id": "job-1" }`,
+- Stop: { "action": "stop", "job_id": "job-1" }
+- Pending: { "action": "pending" } (Langflow 1.11.0)
+- Events: { "action": "events", "job_id": "job-1" } (Langflow 1.11.0)
+- Resume: { "action": "resume", "job_id": "job-1", "decision": { "approved": true } } (Langflow 1.11.0)
+- Run public: { "action": "run_public", "flow_id": "uuid" } (Langflow 1.11.0)`,
     inputSchema: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['run', 'get_result', 'stop'],
+          enum: ['run', 'get_result', 'stop', 'pending', 'events', 'resume', 'run_public'],
           description: 'Workflow action'
         },
-        flow_id: { type: 'string', description: 'Flow ID - for run' },
-        inputs: { type: 'object', description: 'Workflow inputs - for run' },
-        globals: { type: 'object', description: 'Request-level global variables (Langflow 1.10.0) - for run' },
-        stream: { type: 'boolean', description: 'Stream results - for run' },
+        flow_id: { type: 'string', description: 'Flow ID - for run, run_public; filter for pending' },
+        inputs: { type: 'object', description: 'Workflow inputs - for run, run_public' },
+        globals: { type: 'object', description: 'Request-level global variables (Langflow 1.10.0) - for run, run_public' },
+        stream: { type: 'boolean', description: 'Stream results - for run, run_public' },
         background: { type: 'boolean', description: 'Run in background - for run' },
-        job_id: { type: 'string', description: 'Job ID - for get_result, stop' }
+        decision: { type: 'object', description: 'HITL decision payload - for resume (Langflow 1.11.0)' },
+        job_id: { type: 'string', description: 'Job ID - for get_result, stop, events, resume' }
+      },
+      required: ['action']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'a2a',
+    description: `A2A (Agent-to-Agent) protocol (Langflow 1.11.0). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).
+
+Actions:
+- list_agents: List available A2A agents
+- agent_card: Get a flow's A2A agent card (.well-known/agent-card.json)
+- jsonrpc: Invoke a flow via the A2A JSON-RPC endpoint (write; passthrough envelope)
+
+Examples:
+- List agents: { "action": "list_agents" }
+- Agent card: { "action": "agent_card", "flow_id": "uuid" }
+- JSON-RPC: { "action": "jsonrpc", "flow_id": "uuid", "method": "message/send", "params": {} }`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['list_agents', 'agent_card', 'jsonrpc'],
+          description: 'A2A action'
+        },
+        flow_id: { type: 'string', description: 'Flow ID - for agent_card, jsonrpc' },
+        jsonrpc: { type: 'string', description: 'JSON-RPC version (e.g. "2.0") - for jsonrpc' },
+        method: { type: 'string', description: 'JSON-RPC method name - for jsonrpc' },
+        params: { type: ['object', 'array'], description: 'JSON-RPC params (object or positional array) - for jsonrpc' },
+        id: { type: ['string', 'number'], description: 'JSON-RPC request ID - for jsonrpc' }
       },
       required: ['action']
     },

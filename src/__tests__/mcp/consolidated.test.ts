@@ -28,15 +28,16 @@ import {
   ResponseToolSchema,
   AuthzToolSchema,
   MemoryToolSchema,
-  ExtensionToolSchema
+  ExtensionToolSchema,
+  A2aToolSchema
 } from '../../mcp/validation-consolidated';
 
 // Valid UUIDs for testing (v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx)
 const VALID_UUID = '12345678-1234-4234-a234-123456789012';
 
 describe('Consolidated Tools', () => {
-  it('should have exactly 27 tools', () => {
-    expect(consolidatedTools).toHaveLength(27);
+  it('should have exactly 28 tools', () => {
+    expect(consolidatedTools).toHaveLength(28);
   });
 
   it('should have all expected tool names', () => {
@@ -68,6 +69,7 @@ describe('Consolidated Tools', () => {
     expect(toolNames).toContain('authz');
     expect(toolNames).toContain('memory');
     expect(toolNames).toContain('extension');
+    expect(toolNames).toContain('a2a');
   });
 
   it('each tool should have required properties', () => {
@@ -585,6 +587,30 @@ describe('Langflow 1.10.0 Tool Schemas', () => {
   });
 });
 
+describe('Langflow 1.11.0 Tool Schemas', () => {
+  it('A2A: validates list_agents/agent_card/jsonrpc actions', () => {
+    expect(A2aToolSchema.safeParse({ action: 'list_agents' }).success).toBe(true);
+    expect(A2aToolSchema.safeParse({ action: 'agent_card', flow_id: 'f1' }).success).toBe(true);
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'message/send' }).success).toBe(true);
+    // JSON-RPC params may be an object or a positional array (JSON-RPC 2.0)
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'm', params: { a: 1 } }).success).toBe(true);
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'm', params: ['a', 1] }).success).toBe(true);
+    expect(A2aToolSchema.safeParse({ action: 'agent_card' }).success).toBe(false);
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1' }).success).toBe(false);
+  });
+
+  it('Workflow: validates HITL & public actions', () => {
+    expect(WorkflowToolSchema.safeParse({ action: 'pending' }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'pending', flow_id: 'f1' }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'events', job_id: 'j1' }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'events' }).success).toBe(false);
+    expect(WorkflowToolSchema.safeParse({ action: 'resume', job_id: 'j1', decision: { approved: true } }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'resume', job_id: 'j1' }).success).toBe(false);
+    expect(WorkflowToolSchema.safeParse({ action: 'run_public', flow_id: 'f1' }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'run_public' }).success).toBe(false);
+  });
+});
+
 describe('Consolidated handler dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let server: any;
@@ -778,6 +804,41 @@ describe('Consolidated handler dispatch', () => {
   it('workflow.stop dispatches to stopWorkflow', async () => {
     await server.handleWorkflowTool({ action: 'stop', job_id: 'j1' });
     expect(client.stopWorkflow).toHaveBeenCalledWith('j1');
+  });
+
+  it('workflow.pending dispatches to listPendingWorkflows with flow_id filter', async () => {
+    await server.handleWorkflowTool({ action: 'pending', flow_id: 'f1' });
+    expect(client.listPendingWorkflows).toHaveBeenCalledWith({ flow_id: 'f1' });
+  });
+
+  it('workflow.events dispatches to getWorkflowEvents', async () => {
+    await server.handleWorkflowTool({ action: 'events', job_id: 'j1' });
+    expect(client.getWorkflowEvents).toHaveBeenCalledWith('j1');
+  });
+
+  it('workflow.resume dispatches with job_id extracted', async () => {
+    await server.handleWorkflowTool({ action: 'resume', job_id: 'j1', decision: { approved: true } });
+    expect(client.resumeWorkflow).toHaveBeenCalledWith('j1', { decision: { approved: true } });
+  });
+
+  it('workflow.run_public dispatches to runPublicWorkflow', async () => {
+    await server.handleWorkflowTool({ action: 'run_public', flow_id: 'f1', inputs: { a: 1 } });
+    expect(client.runPublicWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', inputs: { a: 1 } });
+  });
+
+  it('a2a.list_agents dispatches to listA2aAgents', async () => {
+    await server.handleA2aTool({ action: 'list_agents' });
+    expect(client.listA2aAgents).toHaveBeenCalled();
+  });
+
+  it('a2a.agent_card dispatches to getA2aAgentCard', async () => {
+    await server.handleA2aTool({ action: 'agent_card', flow_id: 'f1' });
+    expect(client.getA2aAgentCard).toHaveBeenCalledWith('f1');
+  });
+
+  it('a2a.jsonrpc dispatches with flow_id extracted', async () => {
+    await server.handleA2aTool({ action: 'jsonrpc', flow_id: 'f1', method: 'message/send', params: { x: 1 } });
+    expect(client.invokeA2aJsonrpc).toHaveBeenCalledWith('f1', { method: 'message/send', params: { x: 1 } });
   });
 
   it('mcp_server.create dispatches to createMcpServer', async () => {

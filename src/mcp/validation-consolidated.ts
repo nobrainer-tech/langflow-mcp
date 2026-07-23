@@ -749,7 +749,36 @@ export const WorkflowToolSchema = z.discriminatedUnion('action', [
     background: z.boolean().optional()
   }),
   z.object({ action: z.literal('get_result'), job_id: z.string().optional() }),
-  z.object({ action: z.literal('stop'), job_id: z.string().min(1) })
+  z.object({ action: z.literal('stop'), job_id: z.string().min(1) }),
+  // Langflow 1.11.0: HITL & public execution
+  z.object({ action: z.literal('pending'), flow_id: z.string().optional() }),
+  z.object({ action: z.literal('events'), job_id: z.string().min(1) }),
+  z.object({
+    action: z.literal('resume'),
+    job_id: z.string().min(1),
+    decision: z.record(z.string(), z.unknown())
+  }),
+  z.object({
+    action: z.literal('run_public'),
+    flow_id: z.string().min(1),
+    inputs: z.record(z.string(), z.unknown()).optional(),
+    globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
+    stream: z.boolean().optional()
+  })
+]);
+
+// A2A (Agent-to-Agent) protocol tool schema (Langflow 1.11.0)
+export const A2aToolSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('list_agents') }),
+  z.object({ action: z.literal('agent_card'), flow_id: z.string().min(1) }),
+  z.object({
+    action: z.literal('jsonrpc'),
+    flow_id: z.string().min(1),
+    jsonrpc: z.string().optional(),
+    method: z.string().min(1),
+    params: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
+    id: z.union([z.string(), z.number()]).optional()
+  })
 ]);
 
 // MCP server config (shared)
@@ -1043,6 +1072,7 @@ export type FileV2ToolInput = z.infer<typeof FileV2ToolSchema>;
 export type ModelToolInput = z.infer<typeof ModelToolSchema>;
 export type AgenticToolInput = z.infer<typeof AgenticToolSchema>;
 export type WorkflowToolInput = z.infer<typeof WorkflowToolSchema>;
+export type A2aToolInput = z.infer<typeof A2aToolSchema>;
 export type McpServerToolInput = z.infer<typeof McpServerToolSchema>;
 export type McpProjectToolInput = z.infer<typeof McpProjectToolSchema>;
 export type TraceToolInput = z.infer<typeof TraceToolSchema>;

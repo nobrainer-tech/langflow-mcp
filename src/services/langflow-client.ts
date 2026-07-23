@@ -133,7 +133,11 @@ import {
   ListKnowledgeBaseRunsParams,
   ExtensionEventsParams,
   AgenticFileParams,
-  ResetAgenticSessionParams
+  ResetAgenticSessionParams,
+  A2aJsonRpcRequest,
+  ListPendingWorkflowsParams,
+  ResumeWorkflowRequest,
+  PublicWorkflowRunRequest
 } from '../types';
 
 export class LangflowClient {
@@ -2430,6 +2434,91 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get job queue metrics');
+    }
+  }
+
+  // --- A2A Protocol (Langflow 1.11.0) ---
+
+  async listA2aAgents(): Promise<any[]> {
+    try {
+      const response = await this.client.get<any[]>('/a2a/agents');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list A2A agents');
+    }
+  }
+
+  async getA2aAgentCard(flowId: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/a2a/${encodeURIComponent(flowId)}/.well-known/agent-card.json`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get A2A agent card for flow ${flowId}`);
+    }
+  }
+
+  async invokeA2aJsonrpc(flowId: string, body: A2aJsonRpcRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/a2a/${encodeURIComponent(flowId)}/jsonrpc`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to invoke A2A JSON-RPC for flow ${flowId}`);
+    }
+  }
+
+  // --- Workflows V2 HITL & Public (Langflow 1.11.0) ---
+
+  async listPendingWorkflows(params?: ListPendingWorkflowsParams): Promise<any> {
+    try {
+      const response = await this.client.get('/api/v2/workflows/pending', {
+        baseURL: this.config.baseUrl,
+        params
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list pending workflows');
+    }
+  }
+
+  async getWorkflowEvents(jobId: string): Promise<any> {
+    try {
+      const response = await this.client.get(
+        `/api/v2/workflows/${encodeURIComponent(jobId)}/events`,
+        { baseURL: this.config.baseUrl, responseType: 'text' }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to get events for workflow ${jobId}`);
+    }
+  }
+
+  async resumeWorkflow(jobId: string, body: ResumeWorkflowRequest): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/api/v2/workflows/${encodeURIComponent(jobId)}/resume`,
+        body,
+        { baseURL: this.config.baseUrl }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to resume workflow ${jobId}`);
+    }
+  }
+
+  async runPublicWorkflow(body: PublicWorkflowRunRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/api/v2/workflows/public', body, {
+        baseURL: this.config.baseUrl,
+        responseType: 'text'
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to run public workflow');
     }
   }
 

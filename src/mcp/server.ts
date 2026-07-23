@@ -223,7 +223,14 @@ import {
   GetAgenticFileSchema,
   ResetAgenticSessionSchema,
   GetFlowNoteTranslationsSchema,
-  GetJobQueueMetricsSchema
+  GetJobQueueMetricsSchema,
+  ListA2aAgentsSchema,
+  GetA2aAgentCardSchema,
+  InvokeA2aJsonrpcSchema,
+  ListPendingWorkflowsSchema,
+  GetWorkflowEventsSchema,
+  ResumeWorkflowSchema,
+  RunPublicWorkflowSchema
 } from './validation';
 
 export class LangflowMCPServer {
@@ -1999,6 +2006,52 @@ export class LangflowMCPServer {
           case 'get_job_queue_metrics': {
             GetJobQueueMetricsSchema.parse(args);
             const result = await this.client.getJobQueueMetrics();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_a2a_agents': {
+            ListA2aAgentsSchema.parse(args);
+            const result = await this.client.listA2aAgents();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_a2a_agent_card': {
+            const validated = GetA2aAgentCardSchema.parse(args);
+            const result = await this.client.getA2aAgentCard(validated.flow_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'invoke_a2a_jsonrpc': {
+            const validated = InvokeA2aJsonrpcSchema.parse(args);
+            const { flow_id, ...body } = validated;
+            const result = await this.client.invokeA2aJsonrpc(flow_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_pending_workflows': {
+            const validated = ListPendingWorkflowsSchema.parse(args);
+            const result = await this.client.listPendingWorkflows(
+              validated.flow_id ? { flow_id: validated.flow_id } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_workflow_events': {
+            const validated = GetWorkflowEventsSchema.parse(args);
+            const result = await this.client.getWorkflowEvents(validated.job_id);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'resume_workflow': {
+            const validated = ResumeWorkflowSchema.parse(args);
+            const { job_id, ...body } = validated;
+            const result = await this.client.resumeWorkflow(job_id, body);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'run_public_workflow': {
+            const validated = RunPublicWorkflowSchema.parse(args);
+            const result = await this.client.runPublicWorkflow(validated);
             return this.formatSuccessResponse(result);
           }
 

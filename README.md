@@ -13,18 +13,18 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.10.0**. Langflow 1.10.0 adds new endpoints (RBAC/authz, Memory Bases, the Knowledge Base ingestion overhaul, extensions, agentic sandbox files) on top of the 1.9.x surface without breaking existing routes; this release covers them.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.11.0**. Langflow 1.11.0 adds A2A (Agent-to-Agent) protocol endpoints, v2 workflow human-in-the-loop lifecycle (pending/resume/events) plus public execution, and external trusted-JWT / JIT-provisioning auth (config-only, no new tools), all on top of the 1.10.0 surface (RBAC/authz, Memory Bases, the Knowledge Base ingestion overhaul, extensions, agentic sandbox files) without breaking existing routes; this release covers them.
 
-**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.10.x` ↔ Langflow `1.10.x`, a future `4.11.x` ↔ Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
+**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.11.x` ↔ Langflow `1.11.x`, `4.10.x` ↔ Langflow `1.10.x`). The patch component is used for fixes within the same Langflow minor.
 
 ### Consolidated Tools Mode
 
-**Consolidated Tools Mode** is an architecture that groups the 209 individual tools into **27 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
+**Consolidated Tools Mode** is an architecture that groups the 216 individual tools into **28 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
 
 | Mode | Tools | Best For |
 |------|-------|----------|
-| Standard | 209 tools | Full granular control |
-| Consolidated | 27 tools | Reduced token usage, better context |
+| Standard | 216 tools | Full granular control |
+| Consolidated | 28 tools | Reduced token usage, better context |
 
 To enable consolidated mode:
 ```bash
@@ -36,7 +36,7 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
 - `flow_version` - Flow versions and lifecycle events (list, create, get, delete, activate, get_events, create_event)
 - `build` - Build operations (start, status, cancel, vertices)
-- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop)
+- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop, plus Langflow 1.11.0 HITL/public: pending, events, resume, run_public)
 - `agentic` - Agentic assistant + sandbox (assist, check_config, execute, get_file, reset_session)
 - `folder` - Folder management (list, get, create, update, delete, download, upload)
 - `project` - Project management (list, get, create, update, delete, download, upload)
@@ -59,6 +59,7 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `extension` - Langflow extensions (reload, events)
 - `response` - OpenAI-compatible responses (create)
 - `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
+- `a2a` - A2A (Agent-to-Agent) protocol (list_agents, agent_card, jsonrpc) — Langflow 1.11.0
 
 It provides structured access to:
 
@@ -226,14 +227,14 @@ environment:
 ## Available MCP Tools
 
 Once connected, Claude can use:
-- **Standard mode**: 209 individual tools
-- **Consolidated mode**: 27 action-based tools (recommended for reduced token usage)
+- **Standard mode**: 216 individual tools
+- **Consolidated mode**: 28 action-based tools (recommended for reduced token usage)
 
 > **Note**: Raw MCP transport endpoints (SSE/streamable, `/api/mcp/*`) and doc-rendering
 > endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
 > tools — they are protocol/transport surfaces, not data operations.
 
-### Standard Mode Tools (209 tools)
+### Standard Mode Tools (216 tools)
 
 ### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
@@ -491,6 +492,32 @@ Once connected, Claude can use:
 > The v2 workflow runner (`run_workflow` / `workflow` action `run`) also accepts request-level
 > `globals` (Langflow 1.10.0), the preferred replacement for the deprecated
 > `X-LANGFLOW-GLOBAL-VAR-*` headers.
+
+### A2A Protocol (3 tools, Langflow 1.11.0)
+- **`list_a2a_agents`** - List available A2A (Agent-to-Agent) agents
+- **`get_a2a_agent_card`** - Get a flow's A2A agent card (`.well-known/agent-card.json`)
+- **`invoke_a2a_jsonrpc`** - Invoke a flow via the A2A JSON-RPC endpoint (passthrough envelope)
+
+> A2A endpoints require server-side enablement (`LANGFLOW_A2A_ENABLED`); otherwise
+> requests surface as a thrown `Failed to ...` error.
+
+### v2 Workflow HITL & Public Execution (4 tools, Langflow 1.11.0)
+- **`list_pending_workflows`** - List pending human-in-the-loop workflows (optional `flow_id` filter)
+- **`get_workflow_events`** - Re-attach to a workflow job event stream by job ID
+- **`resume_workflow`** - Resume a paused HITL workflow with a decision payload
+- **`run_public_workflow`** - Run a public (unauthenticated-eligible) workflow
+
+> The `get_workflow_events` and `run_public_workflow` endpoints return server-sent-event
+> streams; the initial payload is captured but streaming is not incrementally surfaced.
+
+### External / Trusted-JWT Authentication (Langflow 1.11.0)
+
+Langflow 1.11.0 adds external trusted-JWT / JIT-provisioning authentication. This is
+controlled entirely by the Langflow **server** environment and adds **no MCP tools**:
+`EXTERNAL_AUTH_ENABLED`, `EXTERNAL_AUTH_TOKEN_HEADER`/`EXTERNAL_AUTH_TOKEN_COOKIE`,
+`EXTERNAL_AUTH_JWKS_URL`, `EXTERNAL_AUTH_ISSUER`/`EXTERNAL_AUTH_AUDIENCE`/`EXTERNAL_AUTH_ALGORITHMS`,
+`EXTERNAL_AUTH_*_CLAIM`, and `EXTERNAL_AUTH_ACCESS_CEILING_*`. The MCP client keeps using its
+API key / Bearer token as before.
 
 ## Example Usage
 
