@@ -15,7 +15,7 @@ langflow-mcp-server serves as a bridge between Langflow's workflow automation pl
 
 **API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.11.0**. Langflow 1.11.0 adds A2A (Agent-to-Agent) protocol endpoints, v2 workflow human-in-the-loop lifecycle (pending/resume/events) plus public execution, and external trusted-JWT / JIT-provisioning auth (config-only, no new tools), all on top of the 1.10.0 surface (RBAC/authz, Memory Bases, the Knowledge Base ingestion overhaul, extensions, agentic sandbox files) without breaking existing routes; this release covers them.
 
-**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.10.x` ↔ Langflow `1.10.x`, a future `4.11.x` ↔ Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
+**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.11.x` ↔ Langflow `1.11.x`, `4.10.x` ↔ Langflow `1.10.x`). The patch component is used for fixes within the same Langflow minor.
 
 ### Consolidated Tools Mode
 

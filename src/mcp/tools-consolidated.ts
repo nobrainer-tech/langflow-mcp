@@ -945,8 +945,8 @@ Examples:
         flow_id: { type: 'string', description: 'Flow ID - for agent_card, jsonrpc' },
         jsonrpc: { type: 'string', description: 'JSON-RPC version (e.g. "2.0") - for jsonrpc' },
         method: { type: 'string', description: 'JSON-RPC method name - for jsonrpc' },
-        params: { type: 'object', description: 'JSON-RPC params - for jsonrpc' },
-        id: { type: 'string', description: 'JSON-RPC request ID - for jsonrpc' }
+        params: { type: ['object', 'array'], description: 'JSON-RPC params (object or positional array) - for jsonrpc' },
+        id: { type: ['string', 'number'], description: 'JSON-RPC request ID - for jsonrpc' }
       },
       required: ['action']
     },

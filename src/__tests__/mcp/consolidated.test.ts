@@ -592,6 +592,9 @@ describe('Langflow 1.11.0 Tool Schemas', () => {
     expect(A2aToolSchema.safeParse({ action: 'list_agents' }).success).toBe(true);
     expect(A2aToolSchema.safeParse({ action: 'agent_card', flow_id: 'f1' }).success).toBe(true);
     expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'message/send' }).success).toBe(true);
+    // JSON-RPC params may be an object or a positional array (JSON-RPC 2.0)
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'm', params: { a: 1 } }).success).toBe(true);
+    expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1', method: 'm', params: ['a', 1] }).success).toBe(true);
     expect(A2aToolSchema.safeParse({ action: 'agent_card' }).success).toBe(false);
     expect(A2aToolSchema.safeParse({ action: 'jsonrpc', flow_id: 'f1' }).success).toBe(false);
   });

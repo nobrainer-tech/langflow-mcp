@@ -2489,7 +2489,7 @@ export class LangflowClient {
     try {
       const response = await this.client.get(
         `/api/v2/workflows/${encodeURIComponent(jobId)}/events`,
-        { baseURL: this.config.baseUrl }
+        { baseURL: this.config.baseUrl, responseType: 'text' }
       );
       return response.data;
     } catch (error) {
@@ -2513,7 +2513,8 @@ export class LangflowClient {
   async runPublicWorkflow(body: PublicWorkflowRunRequest): Promise<any> {
     try {
       const response = await this.client.post('/api/v2/workflows/public', body, {
-        baseURL: this.config.baseUrl
+        baseURL: this.config.baseUrl,
+        responseType: 'text'
       });
       return response.data;
     } catch (error) {

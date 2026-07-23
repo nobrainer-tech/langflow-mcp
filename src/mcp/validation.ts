@@ -1427,7 +1427,7 @@ export const InvokeA2aJsonrpcSchema = z.object({
   flow_id: z.string().min(1, 'Flow ID is required'),
   jsonrpc: z.string().optional(),
   method: z.string().min(1, 'Method is required'),
-  params: z.record(z.string(), z.unknown()).optional(),
+  params: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
   id: z.union([z.string(), z.number()]).optional()
 }).strict();
 

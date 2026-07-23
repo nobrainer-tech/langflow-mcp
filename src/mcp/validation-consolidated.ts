@@ -776,7 +776,7 @@ export const A2aToolSchema = z.discriminatedUnion('action', [
     flow_id: z.string().min(1),
     jsonrpc: z.string().optional(),
     method: z.string().min(1),
-    params: z.record(z.string(), z.unknown()).optional(),
+    params: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
     id: z.union([z.string(), z.number()]).optional()
   })
 ]);

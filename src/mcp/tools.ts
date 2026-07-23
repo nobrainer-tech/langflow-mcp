@@ -4210,8 +4210,8 @@ Related Tools:
         flow_id: { type: 'string', description: 'Flow ID' },
         jsonrpc: { type: 'string', description: 'JSON-RPC version (e.g. "2.0")' },
         method: { type: 'string', description: 'JSON-RPC method name' },
-        params: { type: 'object', description: 'JSON-RPC params' },
-        id: { type: 'string', description: 'JSON-RPC request ID' }
+        params: { type: ['object', 'array'], description: 'JSON-RPC params (object or positional array)' },
+        id: { type: ['string', 'number'], description: 'JSON-RPC request ID' }
       },
       required: ['flow_id', 'method']
     },
