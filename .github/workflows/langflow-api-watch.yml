@@ -25,7 +25,7 @@ jobs:
       base_branch: ${{ steps.check.outputs.base_branch }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -54,7 +54,7 @@ jobs:
       BASE_BRANCH: ${{ needs.check.outputs.base_branch }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create upgrade kickoff artifact
         run: |
