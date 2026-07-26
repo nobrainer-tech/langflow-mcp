@@ -28,3 +28,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 .cache/
+
+# Browser automation artifacts
+.playwright-mcp/
+.playwright-cli/
