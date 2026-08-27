@@ -152,12 +152,16 @@ export const FlowExecutionToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('run_advanced'),
     flow_id_or_name: z.string().min(1),
-    input_value: z.string().optional(),
-    input_type: z.string().optional(),
-    output_type: z.string().optional(),
-    output_component: z.string().optional(),
-    tweaks: z.record(z.string(), z.unknown()).optional(),
-    session_id: z.string().optional(),
+    inputs: z.array(z.object({
+      components: z.array(z.string()).nullable().optional(),
+      input_value: z.string().nullable().optional(),
+      session: z.string().nullable().optional(),
+      type: z.enum(['chat', 'text', 'any']).nullable().optional(),
+      client_request_time: z.number().int().nullable().optional()
+    }).strict()).nullable().optional(),
+    outputs: z.array(z.string()).nullable().optional(),
+    tweaks: z.record(z.string(), z.unknown()).nullable().optional(),
+    session_id: z.string().nullable().optional(),
     user_id: uuidSchema('user ID').optional(),
     stream: z.boolean().optional().default(false)
   }),
@@ -231,6 +235,32 @@ export const BuildToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('task_status'),
     task_id: z.string().min(1)
+  }),
+  z.object({
+    action: z.literal('public_start'),
+    flow_id: uuidSchema('flow ID'),
+    inputs: z.object({
+      components: z.array(z.string()).nullable().optional(),
+      input_value: z.string().nullable().optional(),
+      session: z.string().nullable().optional(),
+      type: z.enum(['chat', 'text', 'any']).nullable().optional(),
+      client_request_time: z.number().int().nullable().optional()
+    }).nullable().optional(),
+    files: z.array(z.string()).nullable().optional(),
+    stop_component_id: z.string().nullable().optional(),
+    start_component_id: z.string().nullable().optional(),
+    log_builds: z.boolean().nullable().optional().default(true),
+    flow_name: z.string().nullable().optional(),
+    event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('polling')
+  }),
+  z.object({
+    action: z.literal('public_events'),
+    job_id: z.string().min(1),
+    event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('streaming')
+  }),
+  z.object({
+    action: z.literal('public_cancel'),
+    job_id: z.string().min(1)
   })
 ]);
 
@@ -710,17 +740,19 @@ export const ModelToolSchema = z.discriminatedUnion('action', [
 // Agentic tool schema
 const assistantRequestShape = {
   flow_id: z.string().min(1),
-  input_value: z.string().optional(),
-  session_id: z.string().optional(),
-  component_id: z.string().optional(),
-  field_name: z.string().optional(),
-  model_name: z.string().optional(),
-  provider: z.string().optional(),
-  max_retries: z.number().int().nonnegative().optional()
+  input_value: z.string().max(2000).nullable().optional(),
+  iterations_limit: z.number().int().min(1).max(200).nullable().optional(),
+  max_retries: z.number().int().min(1).max(5).nullable().optional(),
+  session_id: z.string().nullable().optional(),
+  component_id: z.string().nullable().optional(),
+  field_name: z.string().nullable().optional(),
+  model_name: z.string().nullable().optional(),
+  provider: z.string().nullable().optional()
 };
 
 export const AgenticToolSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('assist'), ...assistantRequestShape }),
+  z.object({ action: z.literal('assist_stream'), ...assistantRequestShape }),
   z.object({ action: z.literal('check_config') }),
   z.object({
     action: z.literal('execute'),
@@ -743,31 +775,44 @@ export const WorkflowToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('run'),
     flow_id: z.string().min(1),
-    inputs: z.record(z.string(), z.unknown()).optional(),
+    input_value: z.string().optional(),
+    mode: z.enum(['sync', 'stream', 'background']).optional(),
+    stream_protocol: z.string().optional(),
+    data: z.record(z.string(), z.unknown()).nullable().optional(),
+    files: z.array(z.string()).nullable().optional(),
     globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
-    stream: z.boolean().optional(),
-    background: z.boolean().optional()
+    idempotency_key: z.string().max(255).nullable().optional(),
+    output_ids: z.array(z.string()).nullable().optional(),
+    session_id: z.string().nullable().optional(),
+    start_component_id: z.string().nullable().optional(),
+    stop_component_id: z.string().nullable().optional(),
+    tweaks: z.record(z.string(), z.unknown()).optional()
   }),
   z.object({ action: z.literal('get_result'), job_id: z.string().optional() }),
   z.object({ action: z.literal('stop'), job_id: z.string().min(1) }),
-  // Langflow 1.11.0: HITL & public execution
-  z.object({ action: z.literal('pending'), flow_id: z.string().optional() }),
+  // Langflow 1.11.x: HITL & public execution
+  z.object({ action: z.literal('pending'), flow_id: z.string().min(1) }),
   z.object({ action: z.literal('events'), job_id: z.string().min(1) }),
   z.object({
     action: z.literal('resume'),
     job_id: z.string().min(1),
-    decision: z.record(z.string(), z.unknown())
+    request_id: z.string().min(1),
+    decision: z.record(z.string(), z.unknown()).nullable().optional()
   }),
   z.object({
     action: z.literal('run_public'),
     flow_id: z.string().min(1),
-    inputs: z.record(z.string(), z.unknown()).optional(),
-    globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
-    stream: z.boolean().optional()
+    input_value: z.string().max(65536).optional(),
+    mode: z.literal('stream').optional(),
+    stream_protocol: z.string().optional(),
+    files: z.array(z.string()).nullable().optional(),
+    session_id: z.string().max(256).nullable().optional(),
+    start_component_id: z.string().nullable().optional(),
+    stop_component_id: z.string().nullable().optional()
   })
 ]);
 
-// A2A (Agent-to-Agent) protocol tool schema (Langflow 1.11.0)
+// A2A (Agent-to-Agent) protocol tool schema (Langflow 1.11.x)
 export const A2aToolSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('list_agents') }),
   z.object({ action: z.literal('agent_card'), flow_id: z.string().min(1) }),

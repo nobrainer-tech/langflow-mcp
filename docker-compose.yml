@@ -22,9 +22,19 @@ services:
       - ENABLE_DEPRECATED_TOOLS=${ENABLE_DEPRECATED_TOOLS:-true}
 
       # HTTP Mode Configuration (only used when MCP_MODE=http)
+      # Docker must listen on all container interfaces for port publishing;
+      # set AUTH_TOKEN before enabling HTTP mode.
       - PORT=${PORT:-3000}
       - HOST=${HOST:-0.0.0.0}
       - AUTH_TOKEN=${AUTH_TOKEN}
+      - MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS}
+      - MCP_HTTP_JSON_RESPONSES=${MCP_HTTP_JSON_RESPONSES:-false}
+      - MCP_MAX_SESSIONS=${MCP_MAX_SESSIONS:-100}
+      - MCP_SESSION_IDLE_TIMEOUT_MS=${MCP_SESSION_IDLE_TIMEOUT_MS:-1800000}
+      - MCP_MAX_CONCURRENT_REQUESTS=${MCP_MAX_CONCURRENT_REQUESTS:-100}
+      - MCP_MAX_CONCURRENT_BODY_BYTES=${MCP_MAX_CONCURRENT_BODY_BYTES:-67108864}
+      - MCP_REQUEST_BODY_TIMEOUT_MS=${MCP_REQUEST_BODY_TIMEOUT_MS:-30000}
+      - MCP_SHUTDOWN_TIMEOUT_MS=${MCP_SHUTDOWN_TIMEOUT_MS:-5000}
 
     # Ports (only needed in HTTP mode)
     ports:

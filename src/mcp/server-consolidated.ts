@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -482,12 +483,25 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.buildFlow(flow_id, { inputs, data, files }, params);
         return this.formatSuccessResponse(result);
       }
+      case 'public_start': {
+        const { action: _, flow_id, inputs, files, ...params } = validated;
+        const result = await this.client!.buildPublicFlow(flow_id, { inputs, files }, params);
+        return this.formatSuccessResponse(result);
+      }
       case 'status': {
         const result = await this.client!.getBuildStatus(validated.job_id, validated.event_delivery);
         return this.formatSuccessResponse(result);
       }
+      case 'public_events': {
+        const result = await this.client!.getPublicBuildEvents(validated.job_id, validated.event_delivery);
+        return this.formatSuccessResponse(result);
+      }
       case 'cancel': {
         const result = await this.client!.cancelBuild(validated.job_id);
+        return this.formatSuccessResponse(result);
+      }
+      case 'public_cancel': {
+        const result = await this.client!.cancelPublicBuild(validated.job_id);
         return this.formatSuccessResponse(result);
       }
       case 'vertices': {
@@ -1223,6 +1237,11 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.agenticAssist(body);
         return this.formatSuccessResponse(result);
       }
+      case 'assist_stream': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.agenticAssistStream(body);
+        return this.formatSuccessResponse(result);
+      }
       case 'check_config': {
         const result = await this.client!.agenticCheckConfig();
         return this.formatSuccessResponse(result);
@@ -1268,9 +1287,7 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'pending': {
-        const result = await this.client!.listPendingWorkflows(
-          validated.flow_id ? { flow_id: validated.flow_id } : undefined
-        );
+        const result = await this.client!.listPendingWorkflows({ flow_id: validated.flow_id });
         return this.formatSuccessResponse(result);
       }
       case 'events': {
@@ -1602,6 +1619,10 @@ export class LangflowMCPServerConsolidated {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     logger.info('Langflow MCP server (consolidated) running on stdio');
+  }
+
+  async connectTransport(transport: Transport): Promise<void> {
+    await this.server.connect(transport);
   }
 
   async shutdown(): Promise<void> {

@@ -79,9 +79,19 @@ jobs:
           - [ ] Run typecheck, tests, and build
           EOF
 
+      - name: Check PR automation credential
+        env:
+          LANGFLOW_WATCH_TOKEN: ${{ secrets.LANGFLOW_WATCH_TOKEN }}
+        run: |
+          if [ -z "${LANGFLOW_WATCH_TOKEN}" ]; then
+            echo "::error title=Missing LANGFLOW_WATCH_TOKEN::Configure a fine-grained token or GitHub App token with contents:write and pull-requests:write. This repository's GITHUB_TOKEN is not allowed to create pull requests."
+            exit 1
+          fi
+
       - name: Create draft upgrade PR
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.LANGFLOW_WATCH_TOKEN }}
           branch: ${{ env.UPGRADE_BRANCH }}
           commit-message: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'
           title: 'chore: start Langflow API v${{ env.LATEST_VERSION }} upgrade'

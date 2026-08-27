@@ -279,13 +279,19 @@ export interface UserLike {
   liked_at?: string;
 }
 
+export interface InputValueRequest {
+  components?: string[] | null;
+  input_value?: string | null;
+  session?: string | null;
+  type?: 'chat' | 'text' | 'any' | null;
+  client_request_time?: number | null;
+}
+
 export interface RunFlowAdvancedRequest {
-  input_value?: string;
-  input_type?: string;
-  output_type?: string;
-  output_component?: string;
-  tweaks?: Record<string, unknown>;
-  session_id?: string;
+  inputs?: InputValueRequest[] | null;
+  outputs?: string[] | null;
+  tweaks?: Record<string, unknown> | null;
+  session_id?: string | null;
 }
 
 export interface RunFlowSessionRequest {
@@ -684,13 +690,14 @@ export interface ValidateProviderResponse {
 
 export interface AssistantRequest {
   flow_id: string;
-  input_value?: string;
-  session_id?: string;
-  component_id?: string;
-  field_name?: string;
-  model_name?: string;
-  provider?: string;
-  max_retries?: number;
+  input_value?: string | null;
+  iterations_limit?: number | null;
+  max_retries?: number | null;
+  session_id?: string | null;
+  component_id?: string | null;
+  field_name?: string | null;
+  model_name?: string | null;
+  provider?: string | null;
 }
 
 export interface GetWorkflowResultParams {
@@ -699,13 +706,18 @@ export interface GetWorkflowResultParams {
 
 export interface RunWorkflowRequest {
   flow_id: string;
-  inputs?: Record<string, any>;
-  // Langflow 1.10.0: request-level global variables (preferred over deprecated
-  // X-LANGFLOW-GLOBAL-VAR-* headers). Keys <= 256 chars, values <= 64 KB.
+  input_value?: string;
+  mode?: 'sync' | 'stream' | 'background';
+  stream_protocol?: string;
+  data?: Record<string, unknown> | null;
+  files?: string[] | null;
   globals?: Record<string, string>;
-  stream?: boolean;
-  background?: boolean;
-  [key: string]: any;
+  idempotency_key?: string | null;
+  output_ids?: string[] | null;
+  session_id?: string | null;
+  start_component_id?: string | null;
+  stop_component_id?: string | null;
+  tweaks?: Record<string, unknown>;
 }
 
 export interface StopWorkflowResponse {
@@ -950,31 +962,47 @@ export interface ResetAgenticSessionParams {
   session_id?: string;
 }
 
-// --- Langflow 1.11.0 additional endpoints ---
+// --- Langflow 1.11.x additional endpoints ---
 
 // A2A (Agent-to-Agent) protocol
 export interface A2aJsonRpcRequest {
   jsonrpc?: string;
   method: string;
-  params?: Record<string, any>;
+  params?: Record<string, unknown> | unknown[];
   id?: string | number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Workflows V2 — human-in-the-loop & public execution
 export interface ListPendingWorkflowsParams {
-  flow_id?: string;
+  flow_id: string;
 }
 
 export interface ResumeWorkflowRequest {
-  decision: Record<string, any>;
-  [key: string]: any;
+  request_id: string;
+  decision?: Record<string, unknown> | null;
 }
 
 export interface PublicWorkflowRunRequest {
   flow_id: string;
-  inputs?: Record<string, any>;
-  globals?: Record<string, string>;
-  stream?: boolean;
-  [key: string]: any;
+  input_value?: string;
+  mode?: 'stream';
+  stream_protocol?: string;
+  files?: string[] | null;
+  session_id?: string | null;
+  start_component_id?: string | null;
+  stop_component_id?: string | null;
+}
+
+export interface BuildPublicFlowRequest {
+  inputs?: InputValueRequest | null;
+  files?: string[] | null;
+}
+
+export interface BuildPublicFlowParams {
+  stop_component_id?: string | null;
+  start_component_id?: string | null;
+  log_builds?: boolean | null;
+  flow_name?: string | null;
+  event_delivery?: 'polling' | 'streaming' | 'direct';
 }

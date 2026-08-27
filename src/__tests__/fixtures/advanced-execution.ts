@@ -8,10 +8,13 @@ import {
 } from '../../types';
 
 export const mockRunFlowAdvancedRequest: RunFlowAdvancedRequest = {
-  input_value: 'advanced test input',
-  input_type: 'text',
-  output_type: 'chat',
-  output_component: 'ChatOutput-123',
+  inputs: [{
+    input_value: 'advanced test input',
+    type: 'text',
+    components: ['ChatOutput-123'],
+    session: 'session-adv-123'
+  }],
+  outputs: ['ChatOutput-123'],
   tweaks: {
     'llm-component': {
       temperature: 0.7,

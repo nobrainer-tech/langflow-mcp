@@ -97,6 +97,8 @@ import {
   ValidateProviderRequest,
   ValidateProviderResponse,
   AssistantRequest,
+  BuildPublicFlowRequest,
+  BuildPublicFlowParams,
   GetWorkflowResultParams,
   RunWorkflowRequest,
   StopWorkflowResponse,
@@ -471,6 +473,52 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to cancel build job ${jobId}`);
+    }
+  }
+
+  async buildPublicFlow(
+    flowId: string,
+    request: BuildPublicFlowRequest,
+    params: BuildPublicFlowParams
+  ): Promise<BuildFlowResponse> {
+    try {
+      const response = await this.client.post<BuildFlowResponse>(
+        '/build_public_tmp/' + encodeURIComponent(flowId) + '/flow',
+        request,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to build public flow ' + flowId);
+    }
+  }
+
+  async getPublicBuildEvents(
+    jobId: string,
+    eventDelivery: 'polling' | 'streaming' | 'direct' = 'streaming'
+  ): Promise<any> {
+    try {
+      const response = await this.client.get(
+        '/build_public_tmp/' + encodeURIComponent(jobId) + '/events',
+        {
+          params: { event_delivery: eventDelivery },
+          responseType: eventDelivery === 'streaming' ? 'text' : 'json'
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get public build events for job ' + jobId);
+    }
+  }
+
+  async cancelPublicBuild(jobId: string): Promise<CancelBuildResponse> {
+    try {
+      const response = await this.client.post<CancelBuildResponse>(
+        '/build_public_tmp/' + encodeURIComponent(jobId) + '/cancel'
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to cancel public build job ' + jobId);
     }
   }
 
@@ -1034,6 +1082,7 @@ export class LangflowClient {
     try {
       const endpoint = stream ? '/logs-stream' : '/logs';
       const response = await this.client.get(endpoint, {
+        baseURL: this.config.baseUrl,
         responseType: stream ? 'stream' : 'json'
       });
       return response.data;
@@ -1801,6 +1850,17 @@ export class LangflowClient {
     }
   }
 
+  async agenticAssistStream(body: AssistantRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/agentic/assist/stream', body, {
+        responseType: 'text'
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to run streaming agentic assist');
+    }
+  }
+
   async agenticCheckConfig(): Promise<any> {
     try {
       const response = await this.client.get('/agentic/check-config');
@@ -2437,7 +2497,7 @@ export class LangflowClient {
     }
   }
 
-  // --- A2A Protocol (Langflow 1.11.0) ---
+  // --- A2A Protocol (Langflow 1.11.x) ---
 
   async listA2aAgents(): Promise<any[]> {
     try {
@@ -2471,9 +2531,9 @@ export class LangflowClient {
     }
   }
 
-  // --- Workflows V2 HITL & Public (Langflow 1.11.0) ---
+  // --- Workflows V2 HITL & Public (Langflow 1.11.x) ---
 
-  async listPendingWorkflows(params?: ListPendingWorkflowsParams): Promise<any> {
+  async listPendingWorkflows(params: ListPendingWorkflowsParams): Promise<any> {
     try {
       const response = await this.client.get('/api/v2/workflows/pending', {
         baseURL: this.config.baseUrl,

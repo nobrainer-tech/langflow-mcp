@@ -65,7 +65,7 @@ export function setLogLevel(level: string): void {
 export const logger = {
   info: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.INFO)) {
-      console.log(formatMessage('INFO', message, args));
+      console.error(formatMessage('INFO', message, args));
     }
   },
   error: (message: string, ...args: unknown[]) => {
@@ -80,8 +80,7 @@ export const logger = {
   },
   debug: (message: string, ...args: unknown[]) => {
     if (shouldLog(LogLevel.DEBUG)) {
-      console.debug ? console.debug(formatMessage('DEBUG', message, args))
-                    : console.log(formatMessage('DEBUG', message, args));
+      console.error(formatMessage('DEBUG', message, args));
     }
   }
 };
