@@ -30,9 +30,10 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it('should log info with additional arguments', () => {
@@ -40,12 +41,13 @@ describe('logger', () => {
 
       logger.info('test message', { foo: 'bar' }, 123);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('"foo":"bar"')
       );
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it('should not log info when LOG_LEVEL is error', () => {
@@ -53,6 +55,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
       expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
@@ -61,6 +64,7 @@ describe('logger', () => {
 
       logger.info('test message');
 
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
       expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
@@ -69,9 +73,10 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('[INFO] test message')
       );
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it('should include timestamp in log', () => {
@@ -79,9 +84,10 @@ describe('logger', () => {
 
       logger.info('test message');
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/)
       );
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -155,10 +161,11 @@ describe('logger', () => {
 
       logger.debug('debug message');
 
-      expect(consoleDebugSpy).toHaveBeenCalled();
-      expect(consoleDebugSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('[DEBUG] debug message')
       );
+      expect(consoleLogSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
     });
 
     it('should not log debug when LOG_LEVEL is info', () => {
@@ -192,15 +199,15 @@ describe('logger', () => {
           expect(consoleErrorSpy).not.toHaveBeenCalled();
           expect(consoleDebugSpy).not.toHaveBeenCalled();
         } else if (level === 'debug') {
-          expect(consoleDebugSpy).toHaveBeenCalledTimes(1);
-          expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+          expect(consoleDebugSpy).not.toHaveBeenCalled();
+          expect(consoleLogSpy).not.toHaveBeenCalled();
           expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
-          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
         } else if (level === 'info') {
           expect(consoleDebugSpy).not.toHaveBeenCalled();
-          expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+          expect(consoleLogSpy).not.toHaveBeenCalled();
           expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
-          expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+          expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
         } else if (level === 'warn') {
           expect(consoleDebugSpy).not.toHaveBeenCalled();
           expect(consoleLogSpy).not.toHaveBeenCalled();

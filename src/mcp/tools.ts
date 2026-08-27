@@ -1236,6 +1236,53 @@ Related Tools:
     }
   },
   {
+    name: 'build_public_flow',
+    description: 'Build a public flow without authentication using Langflow 1.11.x public-build semantics.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Public flow ID (UUID)' },
+        inputs: {
+          type: ['object', 'null'],
+          description: 'Optional single input request with components, input_value, session, and type'
+        },
+        files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Optional flow-scoped file paths' },
+        stop_component_id: { type: ['string', 'null'], description: 'Optional component to stop at' },
+        start_component_id: { type: ['string', 'null'], description: 'Optional component to start from' },
+        log_builds: { type: ['boolean', 'null'], description: 'Whether to log the public build' },
+        flow_name: { type: ['string', 'null'], description: 'Optional flow name override' },
+        event_delivery: { type: 'string', enum: ['polling', 'streaming', 'direct'], description: 'Build event delivery mode' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_public_build_events',
+    description: 'Get events for a public flow build job, including streaming event payloads.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Public build job ID' },
+        event_delivery: { type: 'string', enum: ['polling', 'streaming', 'direct'], description: 'Event delivery mode' }
+      },
+      required: ['job_id']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'cancel_public_build',
+    description: 'Cancel a public flow build job.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'string', description: 'Public build job ID' }
+      },
+      required: ['job_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
     name: 'list_knowledge_bases',
     description: `List all knowledge bases for Retrieval-Augmented Generation (RAG) workflows.
 
@@ -1655,7 +1702,7 @@ Related Tools:
   },
   {
     name: 'run_flow_advanced',
-    description: 'Advanced flow execution with full parameter control including tweaks, input/output types, session management, and streaming. Supports both flow UUID and flow name.',
+    description: 'Advanced flow execution using Langflow 1.11.x input/output request arrays, tweaks, sessions, and streaming.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1663,28 +1710,21 @@ Related Tools:
           type: 'string',
           description: 'Flow ID (UUID) or flow name to execute'
         },
-        input_value: {
-          type: 'string',
-          description: 'Input value for the flow'
+        inputs: {
+          type: ['array', 'null'],
+          description: 'InputValueRequest array with optional components, input_value, session, and type'
         },
-        input_type: {
-          type: 'string',
-          description: 'Type of input (e.g., "chat", "text")'
-        },
-        output_type: {
-          type: 'string',
-          description: 'Expected output type (e.g., "chat", "text", "json")'
-        },
-        output_component: {
-          type: 'string',
-          description: 'Specific output component to retrieve results from'
+        outputs: {
+          type: ['array', 'null'],
+          items: { type: 'string' },
+          description: 'Optional output component names or IDs'
         },
         tweaks: {
-          type: 'object',
+          type: ['object', 'null'],
           description: 'Component-specific parameter overrides'
         },
         session_id: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Session ID for conversation continuity'
         },
         user_id: {
@@ -3323,13 +3363,34 @@ Related Tools:
       type: 'object',
       properties: {
         flow_id: { type: 'string', description: 'Flow ID' },
-        input_value: { type: 'string', description: 'User input/instruction' },
-        session_id: { type: 'string', description: 'Optional session ID' },
-        component_id: { type: 'string', description: 'Optional target component ID' },
-        field_name: { type: 'string', description: 'Optional target field name' },
-        model_name: { type: 'string', description: 'Optional model name' },
-        provider: { type: 'string', description: 'Optional provider' },
-        max_retries: { type: 'number', description: 'Optional max retries' }
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
+        session_id: { type: ['string', 'null'], description: 'Optional session ID' },
+        component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
+        field_name: { type: ['string', 'null'], description: 'Optional target field name' },
+        model_name: { type: ['string', 'null'], description: 'Optional model name' },
+        provider: { type: ['string', 'null'], description: 'Optional provider' },
+        max_retries: { type: ['number', 'null'], description: 'Optional max retries (1-5)' }
+      },
+      required: ['flow_id']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'agentic_assist_stream',
+    description: 'Request streaming agentic assistance for building or editing a flow component.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        flow_id: { type: 'string', description: 'Flow ID' },
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
+        max_retries: { type: ['number', 'null'], description: 'Maximum retries (1-5)' },
+        session_id: { type: ['string', 'null'], description: 'Optional session ID' },
+        component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
+        field_name: { type: ['string', 'null'], description: 'Optional target field name' },
+        model_name: { type: ['string', 'null'], description: 'Optional model name' },
+        provider: { type: ['string', 'null'], description: 'Optional provider' }
       },
       required: ['flow_id']
     },
@@ -3349,13 +3410,14 @@ Related Tools:
       properties: {
         flow_name: { type: 'string', description: 'Agentic flow name to execute' },
         flow_id: { type: 'string', description: 'Flow ID' },
-        input_value: { type: 'string', description: 'User input/instruction' },
-        session_id: { type: 'string', description: 'Optional session ID' },
-        component_id: { type: 'string', description: 'Optional target component ID' },
-        field_name: { type: 'string', description: 'Optional target field name' },
-        model_name: { type: 'string', description: 'Optional model name' },
-        provider: { type: 'string', description: 'Optional provider' },
-        max_retries: { type: 'number', description: 'Optional max retries' }
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
+        session_id: { type: ['string', 'null'], description: 'Optional session ID' },
+        component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
+        field_name: { type: ['string', 'null'], description: 'Optional target field name' },
+        model_name: { type: ['string', 'null'], description: 'Optional model name' },
+        provider: { type: ['string', 'null'], description: 'Optional provider' },
+        max_retries: { type: ['number', 'null'], description: 'Optional max retries (1-5)' }
       },
       required: ['flow_name', 'flow_id']
     },
@@ -3374,15 +3436,23 @@ Related Tools:
   },
   {
     name: 'run_workflow',
-    description: 'Run a workflow (V2) for a flow with inputs. Supports streaming and background execution.',
+    description: 'Run a Langflow 1.11.x v2 workflow with sync, stream, or background mode.',
     inputSchema: {
       type: 'object',
       properties: {
         flow_id: { type: 'string', description: 'Flow ID' },
-        inputs: { type: 'object', description: 'Workflow inputs' },
-        stream: { type: 'boolean', description: 'Stream the run' },
-        background: { type: 'boolean', description: 'Run in background' },
-        globals: { type: 'object', description: 'Request-level global variables (Langflow 1.10.0)' }
+        input_value: { type: 'string', description: 'Chat-style input value' },
+        mode: { type: 'string', enum: ['sync', 'stream', 'background'], description: 'Execution mode' },
+        stream_protocol: { type: 'string', description: 'Streaming protocol, for example langflow or agui' },
+        data: { type: ['object', 'null'], description: 'Optional live-canvas flow data override' },
+        files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Pre-uploaded file paths' },
+        globals: { type: 'object', description: 'Request-level global variables' },
+        idempotency_key: { type: ['string', 'null'], description: 'Deduplication key for background submits' },
+        output_ids: { type: ['array', 'null'], items: { type: 'string' }, description: 'Output component IDs for sync mode' },
+        session_id: { type: ['string', 'null'], description: 'Optional session ID' },
+        start_component_id: { type: ['string', 'null'], description: 'Optional partial-run start component' },
+        stop_component_id: { type: ['string', 'null'], description: 'Optional partial-run stop component' },
+        tweaks: { type: 'object', description: 'Per-component parameter overrides' }
       },
       required: ['flow_id']
     },
@@ -4179,10 +4249,10 @@ Related Tools:
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
-  // --- A2A Protocol (Langflow 1.11.0) ---
+  // --- A2A Protocol (Langflow 1.11.x) ---
   {
     name: 'list_a2a_agents',
-    description: 'List available A2A (Agent-to-Agent) agents (Langflow 1.11.0). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).',
+    description: 'List available A2A (Agent-to-Agent) agents (Langflow 1.11.x). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).',
     inputSchema: {
       type: 'object',
       properties: {}
@@ -4191,7 +4261,7 @@ Related Tools:
   },
   {
     name: 'get_a2a_agent_card',
-    description: 'Get the A2A agent card (.well-known/agent-card.json) for a flow (Langflow 1.11.0). Requires server-side A2A enablement.',
+    description: 'Get the A2A agent card (.well-known/agent-card.json) for a flow (Langflow 1.11.x). Requires server-side A2A enablement.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4203,7 +4273,7 @@ Related Tools:
   },
   {
     name: 'invoke_a2a_jsonrpc',
-    description: 'Invoke a flow via the A2A JSON-RPC endpoint (Langflow 1.11.0). The JSON-RPC envelope is a passthrough; validation lives server-side.',
+    description: 'Invoke a flow via the A2A JSON-RPC endpoint (Langflow 1.11.x). The JSON-RPC envelope is a passthrough; validation lives server-side.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4217,21 +4287,22 @@ Related Tools:
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
   },
-  // --- Workflows V2 HITL & Public (Langflow 1.11.0) ---
+  // --- Workflows V2 HITL & Public (Langflow 1.11.x) ---
   {
     name: 'list_pending_workflows',
-    description: 'List pending human-in-the-loop workflows awaiting a decision (Langflow 1.11.0). Optionally filter by flow_id.',
+    description: 'List pending human-in-the-loop requests for a required flow ID (Langflow 1.11.x).',
     inputSchema: {
       type: 'object',
       properties: {
-        flow_id: { type: 'string', description: 'Optional flow ID filter' }
-      }
+        flow_id: { type: 'string', description: 'Flow ID to list pending HITL requests for' }
+      },
+      required: ['flow_id']
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
   {
     name: 'get_workflow_events',
-    description: 'Re-attach to a workflow job event stream by job ID (Langflow 1.11.0). Streaming is not incrementally surfaced; the initial payload is returned.',
+    description: 'Re-attach to a workflow job event stream by job ID (Langflow 1.11.x). Streaming is not incrementally surfaced; the initial payload is returned.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4243,27 +4314,32 @@ Related Tools:
   },
   {
     name: 'resume_workflow',
-    description: 'Resume a paused human-in-the-loop workflow with a decision payload (Langflow 1.11.0). The decision payload is a passthrough; validation lives server-side.',
+    description: 'Resume a paused human-in-the-loop workflow with the pending request ID and optional decision (Langflow 1.11.x).',
     inputSchema: {
       type: 'object',
       properties: {
         job_id: { type: 'string', description: 'Workflow job ID' },
-        decision: { type: 'object', description: 'HITL decision payload' }
+        request_id: { type: 'string', description: 'Pending HITL request ID' },
+        decision: { type: ['object', 'null'], description: 'Optional HITL decision payload' }
       },
-      required: ['job_id', 'decision']
+      required: ['job_id', 'request_id']
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
   },
   {
     name: 'run_public_workflow',
-    description: 'Run a public (unauthenticated-eligible) workflow (Langflow 1.11.0). Stream-only execution; streaming is not incrementally surfaced.',
+    description: 'Run a public (unauthenticated-eligible) workflow (Langflow 1.11.x). Stream-only execution; streaming is not incrementally surfaced.',
     inputSchema: {
       type: 'object',
       properties: {
         flow_id: { type: 'string', description: 'Flow ID' },
-        inputs: { type: 'object', description: 'Workflow inputs' },
-        globals: { type: 'object', description: 'Request-level global variables' },
-        stream: { type: 'boolean', description: 'Stream the run' }
+        input_value: { type: 'string', description: 'Chat-style input value (max 65536 characters)' },
+        mode: { type: 'string', enum: ['stream'], description: 'Always stream for public execution' },
+        stream_protocol: { type: 'string', description: 'Streaming protocol, for example langflow or agui' },
+        files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Flow-scoped pre-uploaded file paths' },
+        session_id: { type: ['string', 'null'], description: 'Optional caller session (max 256 characters)' },
+        start_component_id: { type: ['string', 'null'], description: 'Optional partial-run start component' },
+        stop_component_id: { type: ['string', 'null'], description: 'Optional partial-run stop component' }
       },
       required: ['flow_id']
     },

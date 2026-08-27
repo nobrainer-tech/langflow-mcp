@@ -2887,6 +2887,7 @@ describe('LangflowClient', () => {
       const result = await client.getLogs(false);
 
       expect(result).toEqual(mockLogsResponse);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should retrieve logs without stream parameter', async () => {
@@ -2895,6 +2896,7 @@ describe('LangflowClient', () => {
       const result = await client.getLogs();
 
       expect(result).toEqual(mockLogsResponse);
+      expect(mock.history.get[0].baseURL).toBe('http://localhost:7860');
     });
 
     it('should handle 401 Unauthorized', async () => {
@@ -2959,7 +2961,7 @@ describe('LangflowClient', () => {
   describe('runFlowAdvanced', () => {
     it('should run flow with name instead of UUID', async () => {
       const flowName = 'my-flow-name';
-      const request = { input_value: 'test' };
+      const request = { inputs: [{ input_value: 'test' }] };
       mock.onPost(`/run/advanced/${flowName}`).reply(200, mockRunFlowAdvancedResponse);
 
       const result = await client.runFlowAdvanced(flowName, request);
@@ -2970,7 +2972,7 @@ describe('LangflowClient', () => {
     it('should run flow with user_id parameter', async () => {
       const flowId = 'test-flow-uuid';
       const userId = '123e4567-e89b-12d3-a456-426614174000';
-      const request = { input_value: 'test' };
+      const request = { inputs: [{ input_value: 'test' }] };
       mock.onPost(`/run/advanced/${flowId}`).reply(200, mockRunFlowAdvancedResponse);
 
       const result = await client.runFlowAdvanced(flowId, request, false, userId);
@@ -2980,7 +2982,7 @@ describe('LangflowClient', () => {
 
     it('should handle 404 Not Found', async () => {
       const flowName = 'non-existent';
-      const request = { input_value: 'test' };
+      const request = { inputs: [{ input_value: 'test' }] };
       mock.onPost(`/run/advanced/${flowName}`).reply(404, { detail: 'Flow not found' });
 
       await expect(client.runFlowAdvanced(flowName, request)).rejects.toThrow('Failed to run flow');
@@ -2988,7 +2990,7 @@ describe('LangflowClient', () => {
 
     it('should handle network timeout', async () => {
       const flowName = 'test-flow';
-      const request = { input_value: 'test' };
+      const request = { inputs: [{ input_value: 'test' }] };
       mock.onPost(`/run/advanced/${flowName}`).timeout();
 
       await expect(client.runFlowAdvanced(flowName, request)).rejects.toThrow();
@@ -3833,7 +3835,7 @@ describe('LangflowClient', () => {
     });
 
     it('runWorkflow should POST the body', async () => {
-      const body = { flow_id: 'flow-1', inputs: { x: 1 } };
+      const body = { flow_id: 'flow-1', input_value: 'hello', mode: 'sync' as const };
       mock.onPost('/api/v2/workflows').reply(200, { job_id: 'job-1' });
 
       const result = await client.runWorkflow(body);

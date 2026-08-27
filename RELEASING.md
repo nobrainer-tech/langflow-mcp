@@ -4,7 +4,7 @@
 
 The npm package version tracks the supported Langflow API version:
 npm `4.<langflow_minor>.<patch>` targets Langflow API `1.<langflow_minor>.x`.
-Langflow API 1.11.0 is therefore covered by `langflow-mcp-server@4.11.x`.
+Langflow API 1.11.5 is therefore covered by `langflow-mcp-server@4.11.x`.
 
 ## Cutting a release
 
@@ -12,13 +12,20 @@ Langflow API 1.11.0 is therefore covered by `langflow-mcp-server@4.11.x`.
 2. Push the matching tag:
 
    ```bash
-   git tag v4.11.0
-   git push origin v4.11.0
+   git tag v4.11.1
+   git push origin v4.11.1
    ```
 
 `.github/workflows/publish.yml` runs on every `v*` tag: install, test, build,
 publish to npm, then create the GitHub Release. No manual npm step, no
 credentials to enter.
+
+The weekly API watcher needs a repository secret named `LANGFLOW_WATCH_TOKEN`
+with `contents: write` and `pull-requests: write` for the target repository.
+The default `GITHUB_TOKEN` is intentionally not used for PR creation here
+because this repository's organization setting blocks Actions from creating
+pull requests with it. If the secret is missing, the watcher fails with an
+explicit setup error instead of silently losing an upgrade notification.
 
 ## npm authentication: trusted publishing (OIDC)
 

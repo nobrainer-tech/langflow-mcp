@@ -214,6 +214,34 @@ export const CancelBuildSchema = z.object({
   job_id: z.string().min(1, 'Job ID is required')
 }).strict();
 
+const publicBuildInputSchema = z.object({
+  components: z.array(z.string()).nullable().optional(),
+  input_value: z.string().nullable().optional(),
+  session: z.string().nullable().optional(),
+  type: z.enum(['chat', 'text', 'any']).nullable().optional(),
+  client_request_time: z.number().int().nullable().optional()
+}).strict();
+
+export const BuildPublicFlowSchema = z.object({
+  flow_id: z.string().uuid('Invalid flow ID format'),
+  inputs: publicBuildInputSchema.nullable().optional(),
+  files: z.array(z.string()).nullable().optional(),
+  stop_component_id: z.string().nullable().optional(),
+  start_component_id: z.string().nullable().optional(),
+  log_builds: z.boolean().nullable().optional().default(true),
+  flow_name: z.string().nullable().optional(),
+  event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('polling')
+}).strict();
+
+export const GetPublicBuildEventsSchema = z.object({
+  job_id: z.string().min(1, 'Job ID is required'),
+  event_delivery: z.enum(['polling', 'streaming', 'direct']).optional().default('streaming')
+}).strict();
+
+export const CancelPublicBuildSchema = z.object({
+  job_id: z.string().min(1, 'Job ID is required')
+}).strict();
+
 export const ListKnowledgeBasesSchema = z.object({}).strict();
 
 export const GetKnowledgeBaseSchema = z.object({
@@ -295,12 +323,16 @@ export const GetUserLikesSchema = z.object({}).strict();
 
 export const RunFlowAdvancedSchema = z.object({
   flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
-  input_value: z.string().optional(),
-  input_type: z.string().optional(),
-  output_type: z.string().optional(),
-  output_component: z.string().optional(),
-  tweaks: z.record(z.string(), z.unknown()).optional(),
-  session_id: z.string().optional(),
+  inputs: z.array(z.object({
+    components: z.array(z.string()).nullable().optional(),
+    input_value: z.string().nullable().optional(),
+    session: z.string().nullable().optional(),
+    type: z.enum(['chat', 'text', 'any']).nullable().optional(),
+    client_request_time: z.number().int().nullable().optional()
+  }).strict()).nullable().optional(),
+  outputs: z.array(z.string()).nullable().optional(),
+  tweaks: z.record(z.string(), z.unknown()).nullable().optional(),
+  session_id: z.string().nullable().optional(),
   user_id: z.string().uuid('Invalid user ID format').optional(),
   stream: z.boolean().optional().default(false)
 }).strict();
@@ -830,13 +862,14 @@ export const GetEmbeddingModelOptionsSchema = z.object({}).strict();
 // Agentic
 const agenticAssistFields = {
   flow_id: z.string().min(1, 'Flow ID is required'),
-  input_value: z.string().optional(),
-  session_id: z.string().optional(),
-  component_id: z.string().optional(),
-  field_name: z.string().optional(),
-  model_name: z.string().optional(),
-  provider: z.string().optional(),
-  max_retries: z.number().int().nonnegative().optional()
+  input_value: z.string().max(2000).nullable().optional(),
+  iterations_limit: z.number().int().min(1).max(200).nullable().optional(),
+  max_retries: z.number().int().min(1).max(5).nullable().optional(),
+  session_id: z.string().nullable().optional(),
+  component_id: z.string().nullable().optional(),
+  field_name: z.string().nullable().optional(),
+  model_name: z.string().nullable().optional(),
+  provider: z.string().nullable().optional()
 };
 
 export const AgenticAssistSchema = z.object({ ...agenticAssistFields }).strict();
@@ -855,10 +888,18 @@ export const GetWorkflowResultSchema = z.object({
 
 export const RunWorkflowSchema = z.object({
   flow_id: z.string().min(1, 'Flow ID is required'),
-  inputs: z.record(z.string(), z.unknown()).optional(),
-  stream: z.boolean().optional(),
-  background: z.boolean().optional(),
-  globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional()
+  input_value: z.string().optional(),
+  mode: z.enum(['sync', 'stream', 'background']).optional(),
+  stream_protocol: z.string().optional(),
+  data: z.record(z.string(), z.unknown()).nullable().optional(),
+  files: z.array(z.string()).nullable().optional(),
+  globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
+  idempotency_key: z.string().max(255).nullable().optional(),
+  output_ids: z.array(z.string()).nullable().optional(),
+  session_id: z.string().nullable().optional(),
+  start_component_id: z.string().nullable().optional(),
+  stop_component_id: z.string().nullable().optional(),
+  tweaks: z.record(z.string(), z.unknown()).optional()
 }).strict();
 
 export const StopWorkflowSchema = z.object({
@@ -1027,6 +1068,9 @@ export type DeleteVariableInput = z.infer<typeof DeleteVariableSchema>;
 export type BuildFlowInput = z.infer<typeof BuildFlowSchema>;
 export type GetBuildStatusInput = z.infer<typeof GetBuildStatusSchema>;
 export type CancelBuildInput = z.infer<typeof CancelBuildSchema>;
+export type BuildPublicFlowInput = z.infer<typeof BuildPublicFlowSchema>;
+export type GetPublicBuildEventsInput = z.infer<typeof GetPublicBuildEventsSchema>;
+export type CancelPublicBuildInput = z.infer<typeof CancelPublicBuildSchema>;
 export type ListKnowledgeBasesInput = z.infer<typeof ListKnowledgeBasesSchema>;
 export type GetKnowledgeBaseInput = z.infer<typeof GetKnowledgeBaseSchema>;
 export type DeleteKnowledgeBaseInput = z.infer<typeof DeleteKnowledgeBaseSchema>;
@@ -1414,7 +1458,7 @@ export type ResetAgenticSessionInput = z.infer<typeof ResetAgenticSessionSchema>
 export type GetFlowNoteTranslationsInput = z.infer<typeof GetFlowNoteTranslationsSchema>;
 export type GetJobQueueMetricsInput = z.infer<typeof GetJobQueueMetricsSchema>;
 
-// --- Langflow 1.11.0 ---
+// --- Langflow 1.11.x ---
 
 // A2A (Agent-to-Agent) protocol
 export const ListA2aAgentsSchema = z.object({}).strict();
@@ -1433,7 +1477,7 @@ export const InvokeA2aJsonrpcSchema = z.object({
 
 // Workflows V2 — human-in-the-loop & public execution
 export const ListPendingWorkflowsSchema = z.object({
-  flow_id: z.string().optional()
+  flow_id: z.string().min(1, 'Flow ID is required')
 }).strict();
 
 export const GetWorkflowEventsSchema = z.object({
@@ -1442,14 +1486,19 @@ export const GetWorkflowEventsSchema = z.object({
 
 export const ResumeWorkflowSchema = z.object({
   job_id: z.string().min(1, 'Job ID is required'),
-  decision: z.record(z.string(), z.unknown())
+  request_id: z.string().min(1, 'Request ID is required'),
+  decision: z.record(z.string(), z.unknown()).nullable().optional()
 }).strict();
 
 export const RunPublicWorkflowSchema = z.object({
   flow_id: z.string().min(1, 'Flow ID is required'),
-  inputs: z.record(z.string(), z.unknown()).optional(),
-  globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
-  stream: z.boolean().optional()
+  input_value: z.string().max(65536).optional(),
+  mode: z.literal('stream').optional(),
+  stream_protocol: z.string().optional(),
+  files: z.array(z.string()).nullable().optional(),
+  session_id: z.string().max(256).nullable().optional(),
+  start_component_id: z.string().nullable().optional(),
+  stop_component_id: z.string().nullable().optional()
 }).strict();
 
 export type ListA2aAgentsInput = z.infer<typeof ListA2aAgentsSchema>;

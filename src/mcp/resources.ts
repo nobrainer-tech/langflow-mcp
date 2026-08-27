@@ -1,3 +1,6 @@
+import { langflowMCPTools } from './tools';
+import { consolidatedTools } from './tools-consolidated';
+
 export interface McpResource {
   uri: string;
   name: string;
@@ -66,26 +69,13 @@ export function getResourceContent(uri: string): {
       const summary = isConsolidated
         ? {
             mode: 'consolidated',
-            tool_count: 15,
-            tools: [
-              'flow', 'flow_execution', 'build', 'folder', 'project',
-              'variable', 'knowledge_base', 'file', 'monitor', 'user',
-              'auth', 'store', 'registration', 'validation', 'system',
-            ],
+            tool_count: consolidatedTools.length,
+            tools: consolidatedTools.map(tool => tool.name),
           }
         : {
             mode: 'standard',
-            tool_count: 93,
-            categories: [
-              'Flow Management (6)', 'Flow Execution (2)', 'Import/Export (3)',
-              'Folder Management (5)', 'Project Management (7)', 'Variable Management (4)',
-              'Build Operations (3)', 'Knowledge Base (4)', 'Component Discovery (1)',
-              'File Management (5)', 'Monitoring & Analytics (9)', 'User Management (5)',
-              'API Key Management (3)', 'Custom Components (2)', 'Authentication (4)',
-              'Store & Marketplace (6)', 'Validation (2)', 'Advanced Execution (3)',
-              'Batch & Public (3)', 'Folder Operations (2)', 'Starter & Templates (2)',
-              'Profile & Media (2)', 'Integration (1)', 'System & Health (3)',
-            ],
+            tool_count: langflowMCPTools.length,
+            tools: langflowMCPTools.map(tool => tool.name),
           };
       return {
         uri,

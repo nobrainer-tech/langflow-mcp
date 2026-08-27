@@ -40,7 +40,7 @@ async function callTool(server: LangflowMCPServer, name: string, args: Record<st
   return handler({ method: 'tools/call', params: { name, arguments: args } });
 }
 
-describe('Langflow 1.11.0 full-mode tools dispatch', () => {
+describe('Langflow 1.11.x full-mode tools dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -63,6 +63,40 @@ describe('Langflow 1.11.0 full-mode tools dispatch', () => {
     expect(clientMock.listA2aAgents).toHaveBeenCalledTimes(1);
     expect(clientMock.listA2aAgents).toHaveBeenCalledWith();
     expect(res.isError).toBeUndefined();
+  });
+
+  it('dispatches the public build lifecycle tools', async () => {
+    const server = new LangflowMCPServer();
+
+    await callTool(server, 'build_public_flow', {
+      flow_id: '12345678-1234-4234-a234-123456789012',
+      inputs: { input_value: 'hello', type: 'chat' },
+      event_delivery: 'polling'
+    });
+    await callTool(server, 'get_public_build_events', { job_id: 'job-1' });
+    await callTool(server, 'cancel_public_build', { job_id: 'job-1' });
+
+    expect(clientMock.buildPublicFlow).toHaveBeenCalledWith(
+      '12345678-1234-4234-a234-123456789012',
+      { inputs: { input_value: 'hello', type: 'chat' }, files: undefined },
+      { log_builds: true, event_delivery: 'polling' }
+    );
+    expect(clientMock.getPublicBuildEvents).toHaveBeenCalledWith('job-1', 'streaming');
+    expect(clientMock.cancelPublicBuild).toHaveBeenCalledWith('job-1');
+  });
+
+  it('dispatches agentic_assist_stream with the current assistant fields', async () => {
+    const server = new LangflowMCPServer();
+    const args = {
+      flow_id: 'flow-1',
+      input_value: 'help',
+      iterations_limit: 5,
+      max_retries: 2
+    };
+
+    await callTool(server, 'agentic_assist_stream', args);
+
+    expect(clientMock.agenticAssistStream).toHaveBeenCalledWith(args);
   });
 
   it('dispatches get_a2a_agent_card by flow_id', async () => {
@@ -112,19 +146,24 @@ describe('Langflow 1.11.0 full-mode tools dispatch', () => {
     const server = new LangflowMCPServer();
     await callTool(server, 'resume_workflow', {
       job_id: 'job-1',
+      request_id: 'request-1',
       decision: { approved: true }
     });
 
     expect(clientMock.resumeWorkflow).toHaveBeenCalledTimes(1);
-    expect(clientMock.resumeWorkflow).toHaveBeenCalledWith('job-1', { decision: { approved: true } });
+    expect(clientMock.resumeWorkflow).toHaveBeenCalledWith('job-1', {
+      request_id: 'request-1',
+      decision: { approved: true }
+    });
   });
 
   it('passes run_public_workflow body through to client.runPublicWorkflow', async () => {
     const server = new LangflowMCPServer();
     const args = {
       flow_id: 'flow-abc',
-      inputs: { question: 'hi' },
-      globals: { TENANT: 'acme' }
+      input_value: 'hi',
+      mode: 'stream' as const,
+      stream_protocol: 'langflow'
     };
     await callTool(server, 'run_public_workflow', args);
 

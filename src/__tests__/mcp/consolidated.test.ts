@@ -587,7 +587,7 @@ describe('Langflow 1.10.0 Tool Schemas', () => {
   });
 });
 
-describe('Langflow 1.11.0 Tool Schemas', () => {
+describe('Langflow 1.11.x Tool Schemas', () => {
   it('A2A: validates list_agents/agent_card/jsonrpc actions', () => {
     expect(A2aToolSchema.safeParse({ action: 'list_agents' }).success).toBe(true);
     expect(A2aToolSchema.safeParse({ action: 'agent_card', flow_id: 'f1' }).success).toBe(true);
@@ -600,11 +600,11 @@ describe('Langflow 1.11.0 Tool Schemas', () => {
   });
 
   it('Workflow: validates HITL & public actions', () => {
-    expect(WorkflowToolSchema.safeParse({ action: 'pending' }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'pending' }).success).toBe(false);
     expect(WorkflowToolSchema.safeParse({ action: 'pending', flow_id: 'f1' }).success).toBe(true);
     expect(WorkflowToolSchema.safeParse({ action: 'events', job_id: 'j1' }).success).toBe(true);
     expect(WorkflowToolSchema.safeParse({ action: 'events' }).success).toBe(false);
-    expect(WorkflowToolSchema.safeParse({ action: 'resume', job_id: 'j1', decision: { approved: true } }).success).toBe(true);
+    expect(WorkflowToolSchema.safeParse({ action: 'resume', job_id: 'j1', request_id: 'r1', decision: { approved: true } }).success).toBe(true);
     expect(WorkflowToolSchema.safeParse({ action: 'resume', job_id: 'j1' }).success).toBe(false);
     expect(WorkflowToolSchema.safeParse({ action: 'run_public', flow_id: 'f1' }).success).toBe(true);
     expect(WorkflowToolSchema.safeParse({ action: 'run_public' }).success).toBe(false);
@@ -761,6 +761,41 @@ describe('Consolidated handler dispatch', () => {
     expect(client.agenticExecute).toHaveBeenCalledWith('n', { flow_id: 'f1', input_value: 'hi' });
   });
 
+  it('agentic.assist_stream dispatches to agenticAssistStream', async () => {
+    await server.handleAgenticTool({
+      action: 'assist_stream',
+      flow_id: 'f1',
+      input_value: 'help',
+      iterations_limit: 5,
+      max_retries: 2
+    });
+    expect(client.agenticAssistStream).toHaveBeenCalledWith({
+      flow_id: 'f1',
+      input_value: 'help',
+      iterations_limit: 5,
+      max_retries: 2
+    });
+  });
+
+  it('build public lifecycle actions dispatch to the public endpoints', async () => {
+    await server.handleBuildTool({
+      action: 'public_start',
+      flow_id: VALID_UUID,
+      inputs: { input_value: 'hello', type: 'chat' },
+      event_delivery: 'polling'
+    });
+    await server.handleBuildTool({ action: 'public_events', job_id: 'j1' });
+    await server.handleBuildTool({ action: 'public_cancel', job_id: 'j1' });
+
+    expect(client.buildPublicFlow).toHaveBeenCalledWith(
+      VALID_UUID,
+      { inputs: { input_value: 'hello', type: 'chat' }, files: undefined },
+      { log_builds: true, event_delivery: 'polling' }
+    );
+    expect(client.getPublicBuildEvents).toHaveBeenCalledWith('j1', 'streaming');
+    expect(client.cancelPublicBuild).toHaveBeenCalledWith('j1');
+  });
+
   it('flow_execution.run dispatches to runFlow with input request and stream', async () => {
     await server.handleFlowExecutionTool({
       action: 'run',
@@ -786,19 +821,20 @@ describe('Consolidated handler dispatch', () => {
 
   it('flow_execution.run_advanced dispatches to runFlowAdvanced with user_id and stream', async () => {
     await server.handleFlowExecutionTool({
-      action: 'run_advanced', flow_id_or_name: 'my-flow', input_value: 'hi', user_id: VALID_UUID, stream: true
+      action: 'run_advanced', flow_id_or_name: 'my-flow',
+      inputs: [{ input_value: 'hi' }], user_id: VALID_UUID, stream: true
     });
     expect(client.runFlowAdvanced).toHaveBeenCalledWith(
       'my-flow',
-      { input_value: 'hi' },
+      { inputs: [{ input_value: 'hi' }] },
       true,
       VALID_UUID
     );
   });
 
   it('workflow.run dispatches to runWorkflow', async () => {
-    await server.handleWorkflowTool({ action: 'run', flow_id: 'f1', inputs: { a: 1 } });
-    expect(client.runWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', inputs: { a: 1 } });
+    await server.handleWorkflowTool({ action: 'run', flow_id: 'f1', input_value: 'hi', mode: 'sync' });
+    expect(client.runWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', input_value: 'hi', mode: 'sync' });
   });
 
   it('workflow.stop dispatches to stopWorkflow', async () => {
@@ -817,13 +853,13 @@ describe('Consolidated handler dispatch', () => {
   });
 
   it('workflow.resume dispatches with job_id extracted', async () => {
-    await server.handleWorkflowTool({ action: 'resume', job_id: 'j1', decision: { approved: true } });
-    expect(client.resumeWorkflow).toHaveBeenCalledWith('j1', { decision: { approved: true } });
+    await server.handleWorkflowTool({ action: 'resume', job_id: 'j1', request_id: 'r1', decision: { approved: true } });
+    expect(client.resumeWorkflow).toHaveBeenCalledWith('j1', { request_id: 'r1', decision: { approved: true } });
   });
 
   it('workflow.run_public dispatches to runPublicWorkflow', async () => {
-    await server.handleWorkflowTool({ action: 'run_public', flow_id: 'f1', inputs: { a: 1 } });
-    expect(client.runPublicWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', inputs: { a: 1 } });
+    await server.handleWorkflowTool({ action: 'run_public', flow_id: 'f1', input_value: 'hi', mode: 'stream' });
+    expect(client.runPublicWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', input_value: 'hi', mode: 'stream' });
   });
 
   it('a2a.list_agents dispatches to listA2aAgents', async () => {

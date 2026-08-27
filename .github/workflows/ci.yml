@@ -97,7 +97,6 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Run npm outdated
         run: npm outdated || true

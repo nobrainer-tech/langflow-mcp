@@ -6,6 +6,13 @@ dist/
 
 # Environment files
 .env
+.env.*
+!.env.example
+*credentials*.json
+*service_account*.json
+*.pem
+*.key
+*.p12
 
 # Logs
 *.log

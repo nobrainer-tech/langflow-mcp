@@ -2,10 +2,15 @@
 
 import { LangflowMCPServer } from './server';
 import { LangflowMCPServerConsolidated } from './server-consolidated';
+import { LangflowMCPHttpServer } from './http';
 import { logger } from '../utils/logger';
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+const HTTP_FORCE_EXIT_TIMEOUT_MS = 15_000;
+
+// dotenv's startup notice is written to stdout by default, which would corrupt
+// the JSON-RPC stream used by stdio MCP hosts.
+dotenv.config({ quiet: true });
 
 process.on('uncaughtException', (error) => {
   if (process.env.MCP_MODE !== 'stdio') {
@@ -26,20 +31,55 @@ process.on('unhandledRejection', (reason, promise) => {
 async function main() {
   try {
     const mode = process.env.MCP_MODE || 'stdio';
+    const useConsolidated = process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true';
 
-    if (mode === 'http') {
-      logger.error('HTTP mode not yet implemented. Use stdio mode.');
-      process.exit(1);
+    if (!['stdio', 'http'].includes(mode)) {
+      throw new Error(`Unsupported MCP_MODE: ${mode}. Use "stdio" or "http".`);
     }
 
-    // Use consolidated tools (15 grouped tools) or granular tools (93 individual tools)
-    const useConsolidated = process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true';
+    if (mode === 'http') {
+      const httpServer = new LangflowMCPHttpServer({
+        createMcpServer: () => useConsolidated
+          ? new LangflowMCPServerConsolidated()
+          : new LangflowMCPServer()
+      });
+
+      let isShuttingDown = false;
+      const shutdown = async (signal: string = 'UNKNOWN') => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+
+        const forceExitTimer = setTimeout(() => {
+          logger.warn('HTTP shutdown did not finish within the force-exit window');
+          process.exit(0);
+        }, HTTP_FORCE_EXIT_TIMEOUT_MS);
+
+        try {
+          logger.info(`Shutdown initiated by: ${signal}`);
+          await httpServer.shutdown();
+        } catch (error) {
+          logger.error('Error during HTTP shutdown:', error);
+          process.exitCode = 1;
+        } finally {
+          clearTimeout(forceExitTimer);
+        }
+      };
+
+      process.on('SIGTERM', () => void shutdown('SIGTERM'));
+      process.on('SIGINT', () => void shutdown('SIGINT'));
+      process.on('SIGHUP', () => void shutdown('SIGHUP'));
+
+      await httpServer.start();
+      return;
+    }
+
+    // Use consolidated tools or granular tools.
     const server = useConsolidated
       ? new LangflowMCPServerConsolidated()
       : new LangflowMCPServer();
 
     if (useConsolidated) {
-      logger.info('Using consolidated tools mode (15 grouped tools)');
+      logger.info('Using consolidated tools mode');
     }
 
     let isShuttingDown = false;

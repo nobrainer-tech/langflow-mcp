@@ -124,7 +124,7 @@ describe('Langflow 1.9.x full-mode tools dispatch', () => {
 
   it('dispatches run_workflow to client.runWorkflow', async () => {
     const server = new LangflowMCPServer();
-    const args = { flow_id: 'flow-abc', inputs: { question: 'hi' }, background: true };
+    const args = { flow_id: 'flow-abc', input_value: 'hi', mode: 'background' as const };
     await callTool(server, 'run_workflow', args);
 
     expect(clientMock.runWorkflow).toHaveBeenCalledTimes(1);

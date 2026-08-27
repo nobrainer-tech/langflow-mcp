@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-780%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-903%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -13,17 +13,17 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.11.0**. Langflow 1.11.0 adds A2A (Agent-to-Agent) protocol endpoints, v2 workflow human-in-the-loop lifecycle (pending/resume/events) plus public execution, and external trusted-JWT / JIT-provisioning auth (config-only, no new tools), all on top of the 1.10.0 surface (RBAC/authz, Memory Bases, the Knowledge Base ingestion overhaul, extensions, agentic sandbox files) without breaking existing routes; this release covers them.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.11.5**. The 1.11.x API family adds A2A (Agent-to-Agent) endpoints, v2 workflow human-in-the-loop lifecycle (pending/resume/events) plus public execution, and external trusted-JWT / JIT-provisioning auth (config-only, no new tools). Langflow 1.11.5 keeps the route surface used by this server and includes upstream security hardening; this release targets that latest 1.11.x patch.
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.11.x` ↔ Langflow `1.11.x`, `4.10.x` ↔ Langflow `1.10.x`). The patch component is used for fixes within the same Langflow minor.
 
 ### Consolidated Tools Mode
 
-**Consolidated Tools Mode** is an architecture that groups the 216 individual tools into **28 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
+**Consolidated Tools Mode** is an architecture that groups the 220 individual tools into **28 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
 
 | Mode | Tools | Best For |
 |------|-------|----------|
-| Standard | 216 tools | Full granular control |
+| Standard | 220 tools | Full granular control |
 | Consolidated | 28 tools | Reduced token usage, better context |
 
 To enable consolidated mode:
@@ -35,9 +35,9 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `flow` - All flow operations (list, get, create, update, delete, download, upload, replace, expand, batch, public, note_translations)
 - `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
 - `flow_version` - Flow versions and lifecycle events (list, create, get, delete, activate, get_events, create_event)
-- `build` - Build operations (start, status, cancel, vertices)
-- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop, plus Langflow 1.11.0 HITL/public: pending, events, resume, run_public)
-- `agentic` - Agentic assistant + sandbox (assist, check_config, execute, get_file, reset_session)
+- `build` - Build operations (start, status, cancel, public build lifecycle, vertices)
+- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop, plus Langflow 1.11.x HITL/public: pending, events, resume, run_public)
+- `agentic` - Agentic assistant + sandbox (assist, assist_stream, check_config, execute, get_file, reset_session)
 - `folder` - Folder management (list, get, create, update, delete, download, upload)
 - `project` - Project management (list, get, create, update, delete, download, upload)
 - `variable` - Variable operations (list, create, update, delete, detect)
@@ -59,7 +59,7 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `extension` - Langflow extensions (reload, events)
 - `response` - OpenAI-compatible responses (create)
 - `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
-- `a2a` - A2A (Agent-to-Agent) protocol (list_agents, agent_card, jsonrpc) — Langflow 1.11.0
+- `a2a` - A2A (Agent-to-Agent) protocol (list_agents, agent_card, jsonrpc) — Langflow 1.11.x
 
 It provides structured access to:
 
@@ -158,6 +158,79 @@ Add to your Claude Desktop config file:
 
 Restart Claude Desktop after updating configuration.
 
+### Claude Code, Codex, and other MCP hosts
+
+The server supports both standard MCP transports: local `stdio` and remote
+Streamable HTTP. MCP clients use the same tool and schema surface regardless
+of transport. Use `stdio` when the host can launch a local process; use HTTP
+when the server runs as a separately deployed service.
+
+#### Codex CLI — local stdio
+
+```bash
+codex mcp add langflow \
+  --env LANGFLOW_BASE_URL=http://localhost:7860 \
+  --env LANGFLOW_API_KEY=your-api-key-here \
+  -- npx -y langflow-mcp-server
+```
+
+#### Claude Code — local stdio
+
+```bash
+claude mcp add langflow \
+  -e LANGFLOW_BASE_URL=http://localhost:7860 \
+  -e LANGFLOW_API_KEY=your-api-key-here \
+  -- npx -y langflow-mcp-server
+```
+
+#### Remote Streamable HTTP
+
+Start the server with an explicit bearer token when binding outside the local
+machine. `HOST=127.0.0.1` is the secure default; use `HOST=0.0.0.0` only with
+authentication and a TLS-terminating reverse proxy.
+
+```bash
+MCP_MODE=http \
+HOST=0.0.0.0 \
+PORT=3000 \
+AUTH_TOKEN=replace-with-a-long-random-token \
+LANGFLOW_BASE_URL=https://langflow.example.com \
+LANGFLOW_API_KEY=your-api-key-here \
+npx -y langflow-mcp-server
+```
+
+The MCP endpoint is `https://your-host.example/mcp`; the health endpoint is
+`https://your-host.example/health`. For browser-based callers, set
+`MCP_ALLOWED_ORIGINS` to a comma-separated list of exact HTTPS origins. Wildcard
+origins are rejected.
+
+Codex CLI can keep the bearer token in an environment variable:
+
+```bash
+export LANGFLOW_MCP_TOKEN='set-this-in-your-shell'
+codex mcp add langflow-remote \
+  --url https://your-host.example/mcp \
+  --bearer-token-env-var LANGFLOW_MCP_TOKEN
+```
+
+The environment variable must be present whenever Codex starts or reconnects
+to this server.
+
+Claude Code accepts the same Streamable HTTP endpoint:
+
+```bash
+export LANGFLOW_MCP_TOKEN='set-this-in-your-shell'
+claude mcp add --transport http --scope user \
+  --header "Authorization: Bearer ${LANGFLOW_MCP_TOKEN}" \
+  langflow-remote https://your-host.example/mcp
+```
+
+This stores the header in the Claude MCP configuration; keep that configuration
+outside source control. Hosts such as Cloud Code, Gemini
+clients, and other MCP-compatible tools can use the same `/mcp` endpoint when
+they support Streamable HTTP; their configuration syntax is host-specific and
+has not been claimed as an end-to-end test in this repository.
+
 ### Docker Deployment
 
 The MCP server can be run in a Docker container for easier deployment and isolation.
@@ -199,8 +272,10 @@ docker run -it --rm \
 docker run -d \
   -p 3000:3000 \
   -e MCP_MODE=http \
+  -e HOST=0.0.0.0 \
   -e PORT=3000 \
   -e AUTH_TOKEN=your-secure-token \
+  -e MCP_ALLOWED_ORIGINS=https://your-client.example \
   -e LANGFLOW_BASE_URL=http://langflow:7860 \
   -e LANGFLOW_API_KEY=your-api-key \
   langflow-mcp-server:latest
@@ -222,19 +297,20 @@ environment:
   - MCP_MODE=http
   - PORT=3000
   - AUTH_TOKEN=your-secure-token
+  - MCP_ALLOWED_ORIGINS=https://your-client.example
 ```
 
 ## Available MCP Tools
 
 Once connected, Claude can use:
-- **Standard mode**: 216 individual tools
+- **Standard mode**: 220 individual tools
 - **Consolidated mode**: 28 action-based tools (recommended for reduced token usage)
 
-> **Note**: Raw MCP transport endpoints (SSE/streamable, `/api/mcp/*`) and doc-rendering
+> **Note**: Raw Langflow transport endpoints (`/api/mcp/*`) and doc-rendering
 > endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
 > tools — they are protocol/transport surfaces, not data operations.
 
-### Standard Mode Tools (216 tools)
+### Standard Mode Tools (220 tools)
 
 ### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
@@ -269,21 +345,29 @@ Once connected, Claude can use:
 - **`get_flow_events`** - Get lifecycle events for a flow
 - **`create_flow_event`** - Create a lifecycle event for a flow
 
-### Build Operations (6 tools)
+### Build Operations (9 tools)
 - **`build_flow`** - Build/compile a flow and return job_id for async execution
 - **`get_build_status`** - Poll build status and events for a specific job
 - **`cancel_build`** - Cancel a running build job
+- **`build_public_flow`** - Build a public flow without authentication
+- **`get_public_build_events`** - Get events for a public build job
+- **`cancel_public_build`** - Cancel a public build job
 - **`get_task_status`** - Get status of an async task
 - **`build_vertices`** - Get vertex build order for a flow
 - **`stream_vertex_build`** - Stream real-time build events for a vertex
 
-### Workflows (v2) (3 tools)
+### Workflows (v2) (7 tools)
 - **`run_workflow`** - Run a v2 workflow
 - **`get_workflow_result`** - Get the result of a workflow run
 - **`stop_workflow`** - Stop a running workflow
+- **`list_pending_workflows`** - List pending HITL requests for a flow
+- **`get_workflow_events`** - Re-attach to a workflow job event stream
+- **`resume_workflow`** - Resume a workflow with a request ID and optional decision
+- **`run_public_workflow`** - Run a public stream-only workflow
 
-### Agentic (3 tools)
+### Agentic (4 tools)
 - **`agentic_assist`** - Get agentic assistance for a flow component
+- **`agentic_assist_stream`** - Get streaming agentic assistance for a flow component
 - **`agentic_check_config`** - Check whether agentic features are configured
 - **`agentic_execute`** - Execute an agentic flow by name
 
@@ -490,10 +574,10 @@ Once connected, Claude can use:
 - **`get_job_queue_metrics`** - Job-queue metrics snapshot (superuser)
 
 > The v2 workflow runner (`run_workflow` / `workflow` action `run`) also accepts request-level
-> `globals` (Langflow 1.10.0), the preferred replacement for the deprecated
+> `globals`, the preferred replacement for the deprecated
 > `X-LANGFLOW-GLOBAL-VAR-*` headers.
 
-### A2A Protocol (3 tools, Langflow 1.11.0)
+### A2A Protocol (3 tools, Langflow 1.11.x)
 - **`list_a2a_agents`** - List available A2A (Agent-to-Agent) agents
 - **`get_a2a_agent_card`** - Get a flow's A2A agent card (`.well-known/agent-card.json`)
 - **`invoke_a2a_jsonrpc`** - Invoke a flow via the A2A JSON-RPC endpoint (passthrough envelope)
@@ -501,18 +585,18 @@ Once connected, Claude can use:
 > A2A endpoints require server-side enablement (`LANGFLOW_A2A_ENABLED`); otherwise
 > requests surface as a thrown `Failed to ...` error.
 
-### v2 Workflow HITL & Public Execution (4 tools, Langflow 1.11.0)
-- **`list_pending_workflows`** - List pending human-in-the-loop workflows (optional `flow_id` filter)
+### v2 Workflow HITL & Public Execution (4 tools, Langflow 1.11.x)
+- **`list_pending_workflows`** - List pending human-in-the-loop requests for a required `flow_id`
 - **`get_workflow_events`** - Re-attach to a workflow job event stream by job ID
-- **`resume_workflow`** - Resume a paused HITL workflow with a decision payload
+- **`resume_workflow`** - Resume a paused HITL workflow with `request_id` and an optional decision
 - **`run_public_workflow`** - Run a public (unauthenticated-eligible) workflow
 
 > The `get_workflow_events` and `run_public_workflow` endpoints return server-sent-event
 > streams; the initial payload is captured but streaming is not incrementally surfaced.
 
-### External / Trusted-JWT Authentication (Langflow 1.11.0)
+### External / Trusted-JWT Authentication (Langflow 1.11.x)
 
-Langflow 1.11.0 adds external trusted-JWT / JIT-provisioning authentication. This is
+Langflow 1.11.x adds external trusted-JWT / JIT-provisioning authentication. This is
 controlled entirely by the Langflow **server** environment and adds **no MCP tools**:
 `EXTERNAL_AUTH_ENABLED`, `EXTERNAL_AUTH_TOKEN_HEADER`/`EXTERNAL_AUTH_TOKEN_COOKIE`,
 `EXTERNAL_AUTH_JWKS_URL`, `EXTERNAL_AUTH_ISSUER`/`EXTERNAL_AUTH_AUDIENCE`/`EXTERNAL_AUTH_ALGORITHMS`,
@@ -634,6 +718,7 @@ langflow-mcp/
 ├── src/
 │   ├── mcp/
 │   │   ├── index.ts       # MCP server entry point
+│   │   ├── http.ts        # Streamable HTTP transport
 │   │   ├── server.ts      # MCP server implementation
 │   │   └── tools.ts       # Tool definitions
 │   ├── services/

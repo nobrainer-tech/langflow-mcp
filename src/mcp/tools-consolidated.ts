@@ -65,7 +65,7 @@ Examples:
 
 Actions:
 - run: Simple flow execution with input
-- run_advanced: Advanced execution with full control (tweaks, session, streaming)
+- run_advanced: Advanced execution with InputValueRequest arrays, outputs, tweaks, session, and streaming
 - run_session: Session-based execution with persistent state
 - webhook: Trigger flow via webhook
 - process: Legacy process endpoint
@@ -73,7 +73,7 @@ Actions:
 
 Examples:
 - Simple run: { "action": "run", "flow_id_or_name": "my-flow", "input_value": "Hello" }
-- Advanced: { "action": "run_advanced", "flow_id_or_name": "uuid", "input_value": "Hi", "session_id": "sess-1" }
+- Advanced: { "action": "run_advanced", "flow_id_or_name": "uuid", "inputs": [{ "input_value": "Hi", "type": "chat" }], "session_id": "sess-1" }
 - Session: { "action": "run_session", "flow_id_or_name": "my-flow", "session_id": "sess-1", "input_value": "Continue" }`,
     inputSchema: {
       type: 'object',
@@ -89,12 +89,13 @@ Examples:
         input_type: { type: 'string', description: 'Input type (e.g., "chat", "text")' },
         output_type: { type: 'string', description: 'Expected output type' },
         output_component: { type: 'string', description: 'Specific output component' },
+        outputs: { type: ['array', 'null'], items: { type: 'string' }, description: 'Output component names or IDs - for run_advanced' },
         tweaks: { type: 'object', description: 'Component parameter overrides' },
         session_id: { type: 'string', description: 'Session ID for conversation continuity' },
         context: { type: 'object', description: 'Request context for simplified run/session execution' },
         user_id: { type: 'string', description: 'User ID for user-scoped execution' },
         stream: { type: 'boolean', description: 'Streaming is currently rejected by this MCP client for run and run_session' },
-        inputs: { type: 'object', description: 'Input values - for process, predict' }
+        inputs: { type: ['array', 'object', 'null'], description: 'InputValueRequest array - for run_advanced; object values - for process, predict' }
       },
       required: ['action']
     },
@@ -113,6 +114,9 @@ Actions:
 - start: Start building a flow
 - status: Get build job status
 - cancel: Cancel a running build
+- public_start: Build a public flow without authentication
+- public_events: Get events for a public build job
+- public_cancel: Cancel a public build job
 - vertices: Build specific vertices
 - stream_vertex: Stream vertex build (deprecated)
 - task_status: Get async task status
@@ -126,7 +130,7 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['start', 'status', 'cancel', 'vertices', 'stream_vertex', 'task_status'],
+          enum: ['start', 'status', 'cancel', 'public_start', 'public_events', 'public_cancel', 'vertices', 'stream_vertex', 'task_status'],
           description: 'Build action'
         },
         flow_id: { type: 'string', description: 'Flow ID (UUID)' },
@@ -138,6 +142,8 @@ Examples:
         files: { type: 'array', description: 'Files for build' },
         stop_component_id: { type: 'string', description: 'Stop at component' },
         start_component_id: { type: 'string', description: 'Start from component' },
+        log_builds: { type: ['boolean', 'null'], description: 'Whether to log the build' },
+        flow_name: { type: ['string', 'null'], description: 'Optional flow name override' },
         event_delivery: { type: 'string', enum: ['polling', 'streaming', 'direct'], description: 'Event delivery mode' }
       },
       required: ['action']
@@ -834,6 +840,7 @@ Examples:
 
 Actions:
 - assist: Get agentic assistance for a flow component
+- assist_stream: Get streaming agentic assistance for a flow component
 - check_config: Check whether agentic features are configured
 - execute: Execute an agentic flow by name
 - get_file: Read a file from the per-user agentic sandbox (Langflow 1.10.0)
@@ -850,18 +857,19 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['assist', 'check_config', 'execute', 'get_file', 'reset_session'],
+          enum: ['assist', 'assist_stream', 'check_config', 'execute', 'get_file', 'reset_session'],
           description: 'Agentic action'
         },
         flow_id: { type: 'string', description: 'Flow ID - for assist, execute' },
         flow_name: { type: 'string', description: 'Flow name - for execute' },
-        input_value: { type: 'string', description: 'Input value' },
-        session_id: { type: 'string', description: 'Session ID - for assist, reset_session' },
-        component_id: { type: 'string', description: 'Component ID' },
-        field_name: { type: 'string', description: 'Field name' },
-        model_name: { type: 'string', description: 'Model name' },
-        provider: { type: 'string', description: 'Provider' },
-        max_retries: { type: 'number', description: 'Max retries' },
+        input_value: { type: ['string', 'null'], description: 'Input value (max 2000 characters)' },
+        iterations_limit: { type: ['number', 'null'], description: 'Maximum iterations (1-200)' },
+        session_id: { type: ['string', 'null'], description: 'Session ID - for assist, assist_stream, reset_session' },
+        component_id: { type: ['string', 'null'], description: 'Component ID' },
+        field_name: { type: ['string', 'null'], description: 'Field name' },
+        model_name: { type: ['string', 'null'], description: 'Model name' },
+        provider: { type: ['string', 'null'], description: 'Provider' },
+        max_retries: { type: ['number', 'null'], description: 'Max retries (1-5)' },
         path: { type: 'string', description: 'Relative sandbox file path - for get_file' },
         download: { type: 'boolean', description: 'Return file as base64 attachment - for get_file' }
       },
@@ -882,20 +890,20 @@ Actions:
 - run: Run a workflow
 - get_result: Get a workflow result (optionally by job_id)
 - stop: Stop a running workflow
-- pending: List pending human-in-the-loop workflows (Langflow 1.11.0)
-- events: Re-attach to a workflow job event stream by job_id (Langflow 1.11.0)
-- resume: Resume a paused HITL workflow with a decision payload (Langflow 1.11.0)
-- run_public: Run a public workflow (Langflow 1.11.0)
+- pending: List pending human-in-the-loop requests for a required flow_id (Langflow 1.11.x)
+- events: Re-attach to a workflow job event stream by job_id (Langflow 1.11.x)
+- resume: Resume a paused HITL workflow with request_id and an optional decision (Langflow 1.11.x)
+- run_public: Run a public workflow (Langflow 1.11.x)
 
 Examples:
 - Run: { "action": "run", "flow_id": "uuid" }
 - Run with globals: { "action": "run", "flow_id": "uuid", "globals": { "API_KEY": "x" } }
 - Get result: { "action": "get_result", "job_id": "job-1" }
 - Stop: { "action": "stop", "job_id": "job-1" }
-- Pending: { "action": "pending" } (Langflow 1.11.0)
-- Events: { "action": "events", "job_id": "job-1" } (Langflow 1.11.0)
-- Resume: { "action": "resume", "job_id": "job-1", "decision": { "approved": true } } (Langflow 1.11.0)
-- Run public: { "action": "run_public", "flow_id": "uuid" } (Langflow 1.11.0)`,
+- Pending: { "action": "pending", "flow_id": "uuid" } (Langflow 1.11.x)
+- Events: { "action": "events", "job_id": "job-1" } (Langflow 1.11.x)
+- Resume: { "action": "resume", "job_id": "job-1", "request_id": "request-1", "decision": { "approved": true } } (Langflow 1.11.x)
+- Run public: { "action": "run_public", "flow_id": "uuid" } (Langflow 1.11.x)`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -905,11 +913,20 @@ Examples:
           description: 'Workflow action'
         },
         flow_id: { type: 'string', description: 'Flow ID - for run, run_public; filter for pending' },
-        inputs: { type: 'object', description: 'Workflow inputs - for run, run_public' },
-        globals: { type: 'object', description: 'Request-level global variables (Langflow 1.10.0) - for run, run_public' },
-        stream: { type: 'boolean', description: 'Stream results - for run, run_public' },
-        background: { type: 'boolean', description: 'Run in background - for run' },
-        decision: { type: 'object', description: 'HITL decision payload - for resume (Langflow 1.11.0)' },
+        input_value: { type: 'string', description: 'Chat-style input value - for run, run_public' },
+        mode: { type: 'string', enum: ['sync', 'stream', 'background'], description: 'Execution mode - for run' },
+        stream_protocol: { type: 'string', description: 'Streaming protocol - for run, run_public' },
+        data: { type: ['object', 'null'], description: 'Live-canvas data override - for run' },
+        files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Pre-uploaded file paths - for run, run_public' },
+        globals: { type: 'object', description: 'Request-level global variables - for run' },
+        idempotency_key: { type: ['string', 'null'], description: 'Background deduplication key - for run' },
+        output_ids: { type: ['array', 'null'], items: { type: 'string' }, description: 'Sync output component IDs - for run' },
+        session_id: { type: ['string', 'null'], description: 'Session ID - for run, run_public' },
+        start_component_id: { type: ['string', 'null'], description: 'Partial-run start component - for run, run_public' },
+        stop_component_id: { type: ['string', 'null'], description: 'Partial-run stop component - for run, run_public' },
+        tweaks: { type: 'object', description: 'Per-component overrides - for run' },
+        request_id: { type: 'string', description: 'Pending request ID - for resume (Langflow 1.11.x)' },
+        decision: { type: ['object', 'null'], description: 'Optional HITL decision payload - for resume (Langflow 1.11.x)' },
         job_id: { type: 'string', description: 'Job ID - for get_result, stop, events, resume' }
       },
       required: ['action']
@@ -923,7 +940,7 @@ Examples:
   },
   {
     name: 'a2a',
-    description: `A2A (Agent-to-Agent) protocol (Langflow 1.11.0). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).
+    description: `A2A (Agent-to-Agent) protocol (Langflow 1.11.x). Requires server-side A2A enablement (LANGFLOW_A2A_ENABLED).
 
 Actions:
 - list_agents: List available A2A agents

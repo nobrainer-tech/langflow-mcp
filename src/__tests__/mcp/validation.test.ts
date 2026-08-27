@@ -36,6 +36,14 @@ import {
   DeleteKnowledgeBaseSchema,
   BulkDeleteKnowledgeBasesSchema,
   RunFlowAdvancedSchema,
+  AgenticAssistSchema,
+  RunWorkflowSchema,
+  ListPendingWorkflowsSchema,
+  ResumeWorkflowSchema,
+  RunPublicWorkflowSchema,
+  BuildPublicFlowSchema,
+  GetPublicBuildEventsSchema,
+  CancelPublicBuildSchema,
   RunFlowSessionSchema,
   GetRegistrationSchema,
   RegisterUserSchema
@@ -1397,7 +1405,7 @@ describe('Validation Schemas', () => {
     it('should validate with flow_id_or_name (UUID)', () => {
       const validData = {
         flow_id_or_name: '123e4567-e89b-12d3-a456-426614174000',
-        input_value: 'test'
+        inputs: [{ input_value: 'test', type: 'text' }]
       };
 
       expect(() => RunFlowAdvancedSchema.parse(validData)).not.toThrow();
@@ -1406,7 +1414,7 @@ describe('Validation Schemas', () => {
     it('should validate with flow_id_or_name (flow name)', () => {
       const validData = {
         flow_id_or_name: 'my-flow-name',
-        input_value: 'test'
+        inputs: [{ input_value: 'test', components: ['ChatInput'] }]
       };
 
       expect(() => RunFlowAdvancedSchema.parse(validData)).not.toThrow();
@@ -1527,6 +1535,68 @@ describe('Validation Schemas', () => {
 
     it('should reject missing email', () => {
       expect(() => RegisterUserSchema.parse({})).toThrow();
+    });
+  });
+
+  describe('Langflow 1.11.x request contracts', () => {
+    it('validates current v2 workflow modes and fields', () => {
+      expect(RunWorkflowSchema.parse({
+        flow_id: 'flow-1',
+        input_value: 'hello',
+        mode: 'background',
+        stream_protocol: 'langflow',
+        idempotency_key: 'dedupe-1'
+      })).toMatchObject({ mode: 'background' });
+      expect(() => RunWorkflowSchema.parse({
+        flow_id: 'flow-1',
+        inputs: { stale: true }
+      })).toThrow();
+    });
+
+    it('enforces pending flow_id and resume request_id', () => {
+      expect(() => ListPendingWorkflowsSchema.parse({})).toThrow();
+      expect(ResumeWorkflowSchema.parse({
+        job_id: 'job-1',
+        request_id: 'request-1',
+        decision: null
+      }).request_id).toBe('request-1');
+      expect(() => ResumeWorkflowSchema.parse({ job_id: 'job-1', decision: {} })).toThrow();
+    });
+
+    it('enforces public workflow limits and stream-only mode', () => {
+      expect(RunPublicWorkflowSchema.parse({
+        flow_id: 'flow-1',
+        input_value: 'hello',
+        mode: 'stream'
+      }).mode).toBe('stream');
+      expect(() => RunPublicWorkflowSchema.parse({
+        flow_id: 'flow-1',
+        input_value: 'x'.repeat(65537)
+      })).toThrow();
+      expect(() => RunPublicWorkflowSchema.parse({
+        flow_id: 'flow-1',
+        mode: 'background'
+      })).toThrow();
+    });
+
+    it('enforces current agentic limits', () => {
+      expect(AgenticAssistSchema.parse({
+        flow_id: 'flow-1',
+        input_value: 'help',
+        iterations_limit: 10,
+        max_retries: 3
+      })).toMatchObject({ iterations_limit: 10, max_retries: 3 });
+      expect(() => AgenticAssistSchema.parse({ flow_id: 'flow-1', max_retries: 6 })).toThrow();
+      expect(() => AgenticAssistSchema.parse({ flow_id: 'flow-1', input_value: 'x'.repeat(2001) })).toThrow();
+    });
+
+    it('validates public build request shapes', () => {
+      expect(BuildPublicFlowSchema.parse({
+        flow_id: '123e4567-e89b-12d3-a456-426614174000',
+        inputs: { input_value: 'hello', type: 'chat' }
+      }).flow_id).toBe('123e4567-e89b-12d3-a456-426614174000');
+      expect(GetPublicBuildEventsSchema.parse({ job_id: 'job-1' }).event_delivery).toBe('streaming');
+      expect(CancelPublicBuildSchema.parse({ job_id: 'job-1' }).job_id).toBe('job-1');
     });
   });
 });

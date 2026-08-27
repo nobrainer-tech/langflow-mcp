@@ -248,7 +248,8 @@ describe('Langflow 1.10.0 full-mode tools dispatch', () => {
     const server = new LangflowMCPServer();
     const args = {
       flow_id: 'flow-abc',
-      inputs: { question: 'hi' },
+      input_value: 'hi',
+      mode: 'sync' as const,
       globals: { TENANT: 'acme' }
     };
     await callTool(server, 'run_workflow', args);
