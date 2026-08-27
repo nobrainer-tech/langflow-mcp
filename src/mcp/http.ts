@@ -373,13 +373,14 @@ export class LangflowMCPHttpServer {
 
   private async handleRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
     this.setCorsHeaders(request, response);
+    const requestPath = new URL(request.url ?? '/', 'http://localhost').pathname;
 
-    if (request.url === '/health' && request.method === 'GET') {
+    if (requestPath === '/health' && request.method === 'GET') {
       this.sendJson(response, 200, { status: 'ok' });
       return;
     }
 
-    if (request.url !== MCP_PATH) {
+    if (requestPath !== MCP_PATH) {
       request.resume();
       this.sendError(response, 404, -32601, 'Not found');
       return;

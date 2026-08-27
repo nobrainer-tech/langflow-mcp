@@ -323,13 +323,7 @@ export const GetUserLikesSchema = z.object({}).strict();
 
 export const RunFlowAdvancedSchema = z.object({
   flow_id_or_name: z.string().min(1, 'Flow ID or name is required'),
-  inputs: z.array(z.object({
-    components: z.array(z.string()).nullable().optional(),
-    input_value: z.string().nullable().optional(),
-    session: z.string().nullable().optional(),
-    type: z.enum(['chat', 'text', 'any']).nullable().optional(),
-    client_request_time: z.number().int().nullable().optional()
-  }).strict()).nullable().optional(),
+  inputs: z.array(publicBuildInputSchema).nullable().optional(),
   outputs: z.array(z.string()).nullable().optional(),
   tweaks: z.record(z.string(), z.unknown()).nullable().optional(),
   session_id: z.string().nullable().optional(),

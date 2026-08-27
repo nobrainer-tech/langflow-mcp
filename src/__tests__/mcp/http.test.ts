@@ -142,6 +142,21 @@ describe('LangflowMCPHttpServer', () => {
     expect(afterDeleteResponse.status).toBe(404);
   });
 
+  it('matches MCP requests by pathname when a query string is present', async () => {
+    const response = await fetch(`${baseUrl}/mcp?client=codex`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json, text/event-stream',
+        Authorization: `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(initializeRequest)
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('mcp-session-id')).toBeTruthy();
+  });
+
   it('requires initialization before creating a session', async () => {
     const response = await post({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} });
 
