@@ -65,7 +65,7 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.0",
     "@vitest/coverage-v8": "^4.1.11",
     "@vitest/ui": "^4.1.11",
     "axios-mock-adapter": "^2.1.0",
