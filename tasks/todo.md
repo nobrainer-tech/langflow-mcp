@@ -1,7 +1,7 @@
 # Goal: all open PRs and issues
 
 GOAL_ID: `01a027f4-bbcf-71c0-831e-6a439fc45bc6`
-STATUS: ACTIVE
+STATUS: COMPLETE
 OWNER: MAIN
 CHECKOUT: repository checkout (host-local)
 
@@ -87,7 +87,15 @@ Cel można zamknąć dopiero, gdy nie pozostanie nieobsłużony otwarty PR ani i
 - [x] Audyt Langflow `1.11.5 -> 1.12.0`; wykryto nowe kontrakty wymagające implementacji.
 - [x] Implementacja wsparcia Langflow `1.12.0` w kliencie, walidacji i obu trybach MCP; lokalne testy przechodzą.
 - [x] Issue #104 obsłużone: skomentowane i zamknięte jako `not planned` jako oferta marketingowa poza zakresem inżynieryjnym.
-- [ ] Końcowa weryfikacja API, CI, merge i release readiness.
+- [x] Końcowa weryfikacja API, CI, merge i release readiness.
+
+## Final readback - 2026-09-06
+
+- Langflow latest stable: `v1.12.0`, published `2026-09-01`; watcher reports `supported=1.12.0`, `latest=1.12.0`, `has_update=false`.
+- PR #159 merged into `master` as `68fa61c`; post-merge CI run `34053236598` passed on Node 20, Node 22, build, and security audit.
+- Open PR inventory: empty. Open issue inventory: empty; issue #104 was commented and closed as `not planned` because it was a promotional listing, not engineering work.
+- Local verification on the merged tree: `npm ci --ignore-scripts`, typecheck, 925 tests, coverage, build, `npm audit --audit-level=high` with zero vulnerabilities, stdio smoke with zero stdout bytes.
+- Release readiness: repository contains package `4.12.0`, OIDC workflow, matching repository metadata, and release instructions. NPM still reports `4.11.0`; no `v4.12.0` tag was pushed because npm trusted-publisher registration remains a separate owner-gated publication action.
 
 ### Dependency PR evidence
 
