@@ -158,6 +158,15 @@ export const UpdateProjectSchema = z.object({
   { message: 'At least one field must be provided for update' }
 );
 
+export const UpsertProjectSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID format'),
+  name: z.string().min(1, 'Project name is required').max(255, 'Project name too long'),
+  description: z.string().nullable().optional(),
+  auth_settings: z.record(z.string(), z.unknown()).nullable().optional(),
+  components_list: z.array(z.string().uuid('Invalid component ID format')).nullable().optional(),
+  flows_list: z.array(z.string().uuid('Invalid flow ID format')).nullable().optional()
+}).strict();
+
 export const DeleteProjectSchema = z.object({
   project_id: z.string().uuid('Invalid project ID format')
 }).strict();
@@ -642,6 +651,7 @@ export const GetWebhookEventsSchema = z.object({
 }).strict();
 
 export const GetHealthCheckSchema = z.object({}).strict();
+export const GetHealthzSchema = z.object({}).strict();
 
 // Files V2
 export const ListFilesV2Schema = z.object({}).strict();
@@ -799,6 +809,11 @@ export const DeleteTraceSchema = z.object({
 }).strict();
 
 // Models
+const modelProviderPurposeSchema = z.enum(['use', 'configure']).optional();
+const providerIdSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/, 'Invalid provider ID').max(255);
+const catalogPolicyKeySchema = z.string().trim().min(1).max(255);
+const catalogPolicyKeysSchema = z.array(catalogPolicyKeySchema).max(1000);
+
 export const ListModelsSchema = z.object({
   provider: z.string().optional(),
   model_name: z.string().optional(),
@@ -807,17 +822,26 @@ export const ListModelsSchema = z.object({
   include_deprecated: z.boolean().optional(),
   tool_calling: z.boolean().optional(),
   reasoning: z.boolean().optional(),
-  search: z.string().optional()
+  search: z.string().optional(),
+  purpose: modelProviderPurposeSchema
 }).strict();
 
-export const ListModelProvidersSchema = z.object({}).strict();
+export const ListModelProvidersSchema = z.object({
+  purpose: modelProviderPurposeSchema
+}).strict();
+
+export const ListModelProviderDescriptorsSchema = z.object({
+  purpose: modelProviderPurposeSchema
+}).strict();
 
 export const ListEnabledProvidersSchema = z.object({
-  providers: z.array(z.string()).optional()
+  providers: z.array(z.string()).optional(),
+  purpose: modelProviderPurposeSchema
 }).strict();
 
 export const ListEnabledModelsSchema = z.object({
-  model_names: z.array(z.string()).optional()
+  model_names: z.array(z.string()).optional(),
+  purpose: modelProviderPurposeSchema
 }).strict();
 
 export const SetEnabledModelsSchema = z.object({
@@ -842,28 +866,35 @@ export const DeleteDefaultModelSchema = z.object({
   model_type: z.string().min(1, 'Model type is required')
 }).strict();
 
-export const GetProviderVariableMappingSchema = z.object({}).strict();
+export const GetProviderVariableMappingSchema = z.object({
+  purpose: modelProviderPurposeSchema
+}).strict();
 
 export const ValidateModelProviderSchema = z.object({
   provider: z.string().min(1, 'Provider is required'),
   variables: z.record(z.string(), z.unknown())
 }).strict();
 
-export const GetLanguageModelOptionsSchema = z.object({}).strict();
+export const GetLanguageModelOptionsSchema = z.object({
+  purpose: modelProviderPurposeSchema
+}).strict();
 
-export const GetEmbeddingModelOptionsSchema = z.object({}).strict();
+export const GetEmbeddingModelOptionsSchema = z.object({
+  purpose: modelProviderPurposeSchema
+}).strict();
 
 // Agentic
 const agenticAssistFields = {
   flow_id: z.string().min(1, 'Flow ID is required'),
-  input_value: z.string().max(2000).nullable().optional(),
+  input_value: z.string().nullable().optional(),
   iterations_limit: z.number().int().min(1).max(200).nullable().optional(),
   max_retries: z.number().int().min(1).max(5).nullable().optional(),
   session_id: z.string().nullable().optional(),
   component_id: z.string().nullable().optional(),
   field_name: z.string().nullable().optional(),
   model_name: z.string().nullable().optional(),
-  provider: z.string().nullable().optional()
+  provider: z.string().nullable().optional(),
+  history_limit: z.number().int().min(0).max(100).nullable().optional()
 };
 
 export const AgenticAssistSchema = z.object({ ...agenticAssistFields }).strict();
@@ -873,6 +904,14 @@ export const AgenticCheckConfigSchema = z.object({}).strict();
 export const AgenticExecuteSchema = z.object({
   flow_name: z.string().min(1, 'Flow name is required'),
   ...agenticAssistFields
+}).strict();
+
+export const AgenticAssistRunSchema = z.object({
+  instruction: z.string().min(1, 'Instruction is required'),
+  flow_id: z.string().min(1).nullable().optional(),
+  provider: z.string().min(1).nullable().optional(),
+  model_name: z.string().min(1).nullable().optional(),
+  session_id: z.string().nullable().optional()
 }).strict();
 
 // Workflows V2
@@ -1004,6 +1043,7 @@ export type GetTraceInput = z.infer<typeof GetTraceSchema>;
 export type DeleteTraceInput = z.infer<typeof DeleteTraceSchema>;
 export type ListModelsInput = z.infer<typeof ListModelsSchema>;
 export type ListModelProvidersInput = z.infer<typeof ListModelProvidersSchema>;
+export type ListModelProviderDescriptorsInput = z.infer<typeof ListModelProviderDescriptorsSchema>;
 export type ListEnabledProvidersInput = z.infer<typeof ListEnabledProvidersSchema>;
 export type ListEnabledModelsInput = z.infer<typeof ListEnabledModelsSchema>;
 export type SetEnabledModelsInput = z.infer<typeof SetEnabledModelsSchema>;
@@ -1495,6 +1535,49 @@ export const RunPublicWorkflowSchema = z.object({
   stop_component_id: z.string().nullable().optional()
 }).strict();
 
+// Langflow 1.12.x governance endpoints
+export const GetModelProviderPolicySchema = z.object({}).strict();
+
+export const ReplaceModelProviderPolicySchema = z.object({
+  approved_provider_ids: z.array(providerIdSchema).max(1000)
+}).strict();
+
+export const GetCatalogComponentPolicySchema = z.object({}).strict();
+export const ReplaceCatalogComponentPolicySchema = z.object({
+  blocked: catalogPolicyKeysSchema
+}).strict();
+export const GetCatalogTemplatePolicySchema = z.object({}).strict();
+export const ReplaceCatalogTemplatePolicySchema = z.object({
+  blocked: catalogPolicyKeysSchema
+}).strict();
+export const GetCatalogPolicyUsageSchema = z.object({}).strict();
+export const GetCatalogPolicyUsageFlowsSchema = z.object({
+  component: catalogPolicyKeySchema,
+  limit: z.number().int().min(1).max(500).optional()
+}).strict();
+
+const policyBundleReasonSchema = z.string().max(1024).nullable().optional();
+const policyBundleProviderIdsSchema = z.array(providerIdSchema).max(1000);
+
+export const GetPolicyBundleSchema = z.object({}).strict();
+export const ReplacePolicyBundleSchema = z.object({
+  expected_revision: z.number().int().min(1),
+  approved_provider_ids: policyBundleProviderIdsSchema,
+  blocked_component_keys: catalogPolicyKeysSchema,
+  blocked_template_keys: catalogPolicyKeysSchema,
+  blocked_model_keys: catalogPolicyKeysSchema.optional(),
+  reason: policyBundleReasonSchema
+}).strict();
+export const ListPolicyBundleHistorySchema = z.object({
+  limit: z.number().int().min(1).max(200).optional(),
+  before_revision: z.number().int().min(1).nullable().optional()
+}).strict();
+export const RollbackPolicyBundleSchema = z.object({
+  revision: z.number().int().min(1),
+  expected_revision: z.number().int().min(1),
+  reason: policyBundleReasonSchema
+}).strict();
+
 export type ListA2aAgentsInput = z.infer<typeof ListA2aAgentsSchema>;
 export type GetA2aAgentCardInput = z.infer<typeof GetA2aAgentCardSchema>;
 export type InvokeA2aJsonrpcInput = z.infer<typeof InvokeA2aJsonrpcSchema>;
@@ -1502,3 +1585,18 @@ export type ListPendingWorkflowsInput = z.infer<typeof ListPendingWorkflowsSchem
 export type GetWorkflowEventsInput = z.infer<typeof GetWorkflowEventsSchema>;
 export type ResumeWorkflowInput = z.infer<typeof ResumeWorkflowSchema>;
 export type RunPublicWorkflowInput = z.infer<typeof RunPublicWorkflowSchema>;
+export type GetHealthzInput = z.infer<typeof GetHealthzSchema>;
+export type UpsertProjectInput = z.infer<typeof UpsertProjectSchema>;
+export type AgenticAssistRunInput = z.infer<typeof AgenticAssistRunSchema>;
+export type GetModelProviderPolicyInput = z.infer<typeof GetModelProviderPolicySchema>;
+export type ReplaceModelProviderPolicyInput = z.infer<typeof ReplaceModelProviderPolicySchema>;
+export type GetCatalogComponentPolicyInput = z.infer<typeof GetCatalogComponentPolicySchema>;
+export type ReplaceCatalogComponentPolicyInput = z.infer<typeof ReplaceCatalogComponentPolicySchema>;
+export type GetCatalogTemplatePolicyInput = z.infer<typeof GetCatalogTemplatePolicySchema>;
+export type ReplaceCatalogTemplatePolicyInput = z.infer<typeof ReplaceCatalogTemplatePolicySchema>;
+export type GetCatalogPolicyUsageInput = z.infer<typeof GetCatalogPolicyUsageSchema>;
+export type GetCatalogPolicyUsageFlowsInput = z.infer<typeof GetCatalogPolicyUsageFlowsSchema>;
+export type GetPolicyBundleInput = z.infer<typeof GetPolicyBundleSchema>;
+export type ReplacePolicyBundleInput = z.infer<typeof ReplacePolicyBundleSchema>;
+export type ListPolicyBundleHistoryInput = z.infer<typeof ListPolicyBundleHistorySchema>;
+export type RollbackPolicyBundleInput = z.infer<typeof RollbackPolicyBundleSchema>;

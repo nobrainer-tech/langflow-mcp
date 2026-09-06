@@ -38,6 +38,7 @@ import {
   CreateProjectSchema,
   GetProjectSchema,
   UpdateProjectSchema,
+  UpsertProjectSchema,
   DeleteProjectSchema,
   UploadProjectSchema,
   DownloadProjectSchema,
@@ -128,6 +129,7 @@ import {
   CreateUserSchema,
   GetWebhookEventsSchema,
   GetHealthCheckSchema,
+  GetHealthzSchema,
   ListFilesV2Schema,
   UploadFileV2Schema,
   GetFileV2Schema,
@@ -156,6 +158,7 @@ import {
   DeleteTraceSchema,
   ListModelsSchema,
   ListModelProvidersSchema,
+  ListModelProviderDescriptorsSchema,
   ListEnabledProvidersSchema,
   ListEnabledModelsSchema,
   SetEnabledModelsSchema,
@@ -167,6 +170,7 @@ import {
   GetLanguageModelOptionsSchema,
   GetEmbeddingModelOptionsSchema,
   AgenticAssistSchema,
+  AgenticAssistRunSchema,
   AgenticCheckConfigSchema,
   AgenticExecuteSchema,
   GetWorkflowResultSchema,
@@ -234,7 +238,19 @@ import {
   ListPendingWorkflowsSchema,
   GetWorkflowEventsSchema,
   ResumeWorkflowSchema,
-  RunPublicWorkflowSchema
+  RunPublicWorkflowSchema,
+  GetModelProviderPolicySchema,
+  ReplaceModelProviderPolicySchema,
+  GetCatalogComponentPolicySchema,
+  ReplaceCatalogComponentPolicySchema,
+  GetCatalogTemplatePolicySchema,
+  ReplaceCatalogTemplatePolicySchema,
+  GetCatalogPolicyUsageSchema,
+  GetCatalogPolicyUsageFlowsSchema,
+  GetPolicyBundleSchema,
+  ReplacePolicyBundleSchema,
+  ListPolicyBundleHistorySchema,
+  RollbackPolicyBundleSchema
 } from './validation';
 
 export class LangflowMCPServer {
@@ -339,7 +355,7 @@ export class LangflowMCPServer {
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
       'private_key', 'secret', 'credentials', 'api-key',
-      'file_content', 'file', 'content', 'payload', 'data'
+      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction'
     ]);
 
     // Prevent infinite recursion
@@ -687,6 +703,13 @@ export class LangflowMCPServer {
             const { project_id, ...updates } = validated;
             const updated = await this.client.updateProject(project_id, updates);
             return this.formatSuccessResponse(updated);
+          }
+
+          case 'upsert_project': {
+            const validated = UpsertProjectSchema.parse(args);
+            const { project_id, ...body } = validated;
+            const project = await this.client.upsertProject(project_id, body);
+            return this.formatSuccessResponse(project);
           }
 
           case 'delete_project': {
@@ -1354,6 +1377,12 @@ export class LangflowMCPServer {
             return this.formatSuccessResponse(result);
           }
 
+          case 'get_healthz': {
+            GetHealthzSchema.parse(args);
+            const result = await this.client.getHealthz();
+            return this.formatSuccessResponse(result);
+          }
+
           case 'list_files_v2': {
             ListFilesV2Schema.parse(args);
             const result = await this.client.listFilesV2();
@@ -1542,15 +1571,27 @@ export class LangflowMCPServer {
           }
 
           case 'list_model_providers': {
-            ListModelProvidersSchema.parse(args);
-            const result = await this.client.listModelProviders();
+            const validated = ListModelProvidersSchema.parse(args);
+            const result = await this.client.listModelProviders(
+              validated.purpose ? { purpose: validated.purpose } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_model_provider_descriptors': {
+            const validated = ListModelProviderDescriptorsSchema.parse(args);
+            const result = await this.client.listModelProviderDescriptors(
+              validated.purpose ? { purpose: validated.purpose } : undefined
+            );
             return this.formatSuccessResponse(result);
           }
 
           case 'list_enabled_providers': {
             const validated = ListEnabledProvidersSchema.parse(args);
             const result = await this.client.listEnabledProviders(
-              validated.providers ? { providers: validated.providers } : undefined
+              validated.providers || validated.purpose
+                ? { providers: validated.providers, purpose: validated.purpose }
+                : undefined
             );
             return this.formatSuccessResponse(result);
           }
@@ -1558,7 +1599,9 @@ export class LangflowMCPServer {
           case 'list_enabled_models': {
             const validated = ListEnabledModelsSchema.parse(args);
             const result = await this.client.listEnabledModels(
-              validated.model_names ? { model_names: validated.model_names } : undefined
+              validated.model_names || validated.purpose
+                ? { model_names: validated.model_names, purpose: validated.purpose }
+                : undefined
             );
             return this.formatSuccessResponse(result);
           }
@@ -1592,8 +1635,10 @@ export class LangflowMCPServer {
           }
 
           case 'get_provider_variable_mapping': {
-            GetProviderVariableMappingSchema.parse(args);
-            const result = await this.client.getProviderVariableMapping();
+            const validated = GetProviderVariableMappingSchema.parse(args);
+            const result = await this.client.getProviderVariableMapping(
+              validated.purpose ? { purpose: validated.purpose } : undefined
+            );
             return this.formatSuccessResponse(result);
           }
 
@@ -1607,14 +1652,91 @@ export class LangflowMCPServer {
           }
 
           case 'get_language_model_options': {
-            GetLanguageModelOptionsSchema.parse(args);
-            const result = await this.client.getLanguageModelOptions();
+            const validated = GetLanguageModelOptionsSchema.parse(args);
+            const result = await this.client.getLanguageModelOptions(
+              validated.purpose ? { purpose: validated.purpose } : undefined
+            );
             return this.formatSuccessResponse(result);
           }
 
           case 'get_embedding_model_options': {
-            GetEmbeddingModelOptionsSchema.parse(args);
-            const result = await this.client.getEmbeddingModelOptions();
+            const validated = GetEmbeddingModelOptionsSchema.parse(args);
+            const result = await this.client.getEmbeddingModelOptions(
+              validated.purpose ? { purpose: validated.purpose } : undefined
+            );
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_model_provider_policy': {
+            GetModelProviderPolicySchema.parse(args);
+            const result = await this.client.getModelProviderPolicy();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'replace_model_provider_policy': {
+            const validated = ReplaceModelProviderPolicySchema.parse(args);
+            const result = await this.client.replaceModelProviderPolicy(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_catalog_component_policy': {
+            GetCatalogComponentPolicySchema.parse(args);
+            const result = await this.client.getCatalogComponentPolicy();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'replace_catalog_component_policy': {
+            const validated = ReplaceCatalogComponentPolicySchema.parse(args);
+            const result = await this.client.replaceCatalogComponentPolicy(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_catalog_template_policy': {
+            GetCatalogTemplatePolicySchema.parse(args);
+            const result = await this.client.getCatalogTemplatePolicy();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'replace_catalog_template_policy': {
+            const validated = ReplaceCatalogTemplatePolicySchema.parse(args);
+            const result = await this.client.replaceCatalogTemplatePolicy(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_catalog_policy_usage': {
+            GetCatalogPolicyUsageSchema.parse(args);
+            const result = await this.client.getCatalogPolicyUsage();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_catalog_policy_usage_flows': {
+            const validated = GetCatalogPolicyUsageFlowsSchema.parse(args);
+            const result = await this.client.getCatalogPolicyUsageFlows(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'get_policy_bundle': {
+            GetPolicyBundleSchema.parse(args);
+            const result = await this.client.getPolicyBundle();
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'replace_policy_bundle': {
+            const validated = ReplacePolicyBundleSchema.parse(args);
+            const result = await this.client.replacePolicyBundle(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'list_policy_bundle_history': {
+            const validated = ListPolicyBundleHistorySchema.parse(args);
+            const result = await this.client.listPolicyBundleHistory(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'rollback_policy_bundle': {
+            const validated = RollbackPolicyBundleSchema.parse(args);
+            const { revision, ...body } = validated;
+            const result = await this.client.rollbackPolicyBundle(revision, body);
             return this.formatSuccessResponse(result);
           }
 
@@ -1627,6 +1749,12 @@ export class LangflowMCPServer {
           case 'agentic_assist_stream': {
             const validated = AgenticAssistSchema.parse(args);
             const result = await this.client.agenticAssistStream(validated);
+            return this.formatSuccessResponse(result);
+          }
+
+          case 'agentic_assist_run': {
+            const validated = AgenticAssistRunSchema.parse(args);
+            const result = await this.client.agenticAssistRun(validated);
             return this.formatSuccessResponse(result);
           }
 

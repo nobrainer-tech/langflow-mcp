@@ -29,15 +29,16 @@ import {
   AuthzToolSchema,
   MemoryToolSchema,
   ExtensionToolSchema,
-  A2aToolSchema
+  A2aToolSchema,
+  GovernanceToolSchema
 } from '../../mcp/validation-consolidated';
 
 // Valid UUIDs for testing (v4 format: xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx)
 const VALID_UUID = '12345678-1234-4234-a234-123456789012';
 
 describe('Consolidated Tools', () => {
-  it('should have exactly 28 tools', () => {
-    expect(consolidatedTools).toHaveLength(28);
+  it('should have exactly 29 tools', () => {
+    expect(consolidatedTools).toHaveLength(29);
   });
 
   it('should have all expected tool names', () => {
@@ -70,6 +71,7 @@ describe('Consolidated Tools', () => {
     expect(toolNames).toContain('memory');
     expect(toolNames).toContain('extension');
     expect(toolNames).toContain('a2a');
+    expect(toolNames).toContain('governance');
   });
 
   it('each tool should have required properties', () => {
@@ -360,6 +362,10 @@ describe('System Tool Schema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should validate the Langflow 1.12.x readiness action', () => {
+    expect(SystemToolSchema.safeParse({ action: 'healthz' }).success).toBe(true);
+  });
+
   it('should validate logs action', () => {
     const result = SystemToolSchema.safeParse({ action: 'logs' });
     expect(result.success).toBe(true);
@@ -611,6 +617,31 @@ describe('Langflow 1.11.x Tool Schemas', () => {
   });
 });
 
+describe('Langflow 1.12.x Tool Schemas', () => {
+  it('validates new model, project, and agentic actions', () => {
+    expect(ModelToolSchema.safeParse({ action: 'provider_descriptors', purpose: 'configure' }).success).toBe(true);
+    expect(ProjectToolSchema.safeParse({ action: 'upsert', project_id: VALID_UUID, name: 'Project' }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'assist_run', instruction: 'Build a flow' }).success).toBe(true);
+    expect(AgenticToolSchema.safeParse({ action: 'assist', flow_id: 'f1', history_limit: 0 }).success).toBe(true);
+  });
+
+  it('validates optimistic governance writes and rejects invalid revisions', () => {
+    expect(GovernanceToolSchema.safeParse({
+      action: 'replace_policy_bundle',
+      expected_revision: 1,
+      approved_provider_ids: ['openai'],
+      blocked_component_keys: [],
+      blocked_template_keys: []
+    }).success).toBe(true);
+    expect(GovernanceToolSchema.safeParse({
+      action: 'rollback_policy_bundle', revision: 0, expected_revision: 1
+    }).success).toBe(false);
+    expect(GovernanceToolSchema.safeParse({
+      action: 'get_catalog_policy_usage_flows', component: '  '
+    }).success).toBe(false);
+  });
+});
+
 describe('Consolidated handler dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let server: any;
@@ -721,6 +752,43 @@ describe('Consolidated handler dispatch', () => {
     expect(client.getWebhookEvents).toHaveBeenCalledWith('fl', { user_id: 'u1' });
     await server.handleSystemTool({ action: 'health_check' });
     expect(client.getHealthCheck).toHaveBeenCalled();
+    await server.handleSystemTool({ action: 'healthz' });
+    expect(client.getHealthz).toHaveBeenCalled();
+  });
+
+  it('dispatches Langflow 1.12.x project, model, and agentic actions', async () => {
+    await server.handleProjectTool({ action: 'upsert', project_id: VALID_UUID, name: 'Project' });
+    await server.handleModelTool({ action: 'provider_descriptors', purpose: 'use' });
+    await server.handleAgenticTool({ action: 'assist_run', instruction: 'Build a flow' });
+
+    expect(client.upsertProject).toHaveBeenCalledWith(VALID_UUID, { name: 'Project' });
+    expect(client.listModelProviderDescriptors).toHaveBeenCalledWith({ purpose: 'use' });
+    expect(client.agenticAssistRun).toHaveBeenCalledWith({ instruction: 'Build a flow' });
+  });
+
+  it('dispatches governance actions with exact request bodies', async () => {
+    await server.handleGovernanceTool({ action: 'get_model_provider_policy' });
+    await server.handleGovernanceTool({ action: 'replace_model_provider_policy', approved_provider_ids: ['openai'] });
+    await server.handleGovernanceTool({ action: 'get_catalog_policy_usage_flows', component: 'ChatInput', limit: 5 });
+    await server.handleGovernanceTool({
+      action: 'replace_policy_bundle',
+      expected_revision: 1,
+      approved_provider_ids: [],
+      blocked_component_keys: [],
+      blocked_template_keys: [],
+      reason: 'test'
+    });
+
+    expect(client.getModelProviderPolicy).toHaveBeenCalledWith();
+    expect(client.replaceModelProviderPolicy).toHaveBeenCalledWith({ approved_provider_ids: ['openai'] });
+    expect(client.getCatalogPolicyUsageFlows).toHaveBeenCalledWith({ component: 'ChatInput', limit: 5 });
+    expect(client.replacePolicyBundle).toHaveBeenCalledWith({
+      expected_revision: 1,
+      approved_provider_ids: [],
+      blocked_component_keys: [],
+      blocked_template_keys: [],
+      reason: 'test'
+    });
   });
 
   it('flow_version.activate dispatches with save_draft', async () => {

@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-903%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-924%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -13,18 +13,18 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.11.5**. The 1.11.x API family adds A2A (Agent-to-Agent) endpoints, v2 workflow human-in-the-loop lifecycle (pending/resume/events) plus public execution, and external trusted-JWT / JIT-provisioning auth (config-only, no new tools). Langflow 1.11.5 keeps the route surface used by this server and includes upstream security hardening; this release targets that latest 1.11.x patch.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.12.0**, the latest stable release. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
 
-**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor — `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.11.x` ↔ Langflow `1.11.x`, `4.10.x` ↔ Langflow `1.10.x`). The patch component is used for fixes within the same Langflow minor.
+**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
 
 ### Consolidated Tools Mode
 
-**Consolidated Tools Mode** is an architecture that groups the 220 individual tools into **28 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
+**Consolidated Tools Mode** is an architecture that groups the 236 individual tools into **29 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
 
 | Mode | Tools | Best For |
 |------|-------|----------|
-| Standard | 220 tools | Full granular control |
-| Consolidated | 28 tools | Reduced token usage, better context |
+| Standard | 236 tools | Full granular control |
+| Consolidated | 29 tools | Reduced token usage, better context |
 
 To enable consolidated mode:
 ```bash
@@ -36,10 +36,10 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `flow_execution` - Run flows (run, run_advanced, run_session, webhook, process, predict)
 - `flow_version` - Flow versions and lifecycle events (list, create, get, delete, activate, get_events, create_event)
 - `build` - Build operations (start, status, cancel, public build lifecycle, vertices)
-- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop, plus Langflow 1.11.x HITL/public: pending, events, resume, run_public)
-- `agentic` - Agentic assistant + sandbox (assist, assist_stream, check_config, execute, get_file, reset_session)
+- `workflow` - Run and manage v2 workflows (run with request-level globals, get_result, stop, plus HITL/public execution)
+- `agentic` - Agentic assistant + sandbox (assist, assist_stream, assist_run, check_config, execute, get_file, reset_session)
 - `folder` - Folder management (list, get, create, update, delete, download, upload)
-- `project` - Project management (list, get, create, update, delete, download, upload)
+- `project` - Project management (list, get, create, update, upsert, delete, download, upload)
 - `variable` - Variable operations (list, create, update, delete, detect)
 - `knowledge_base` - Knowledge base management (list, get, delete, bulk_delete, upload, create, preview/list chunks, ingest, cancel_ingest, test_connection, list_connectors, ingest_folder, ingest_connector, metadata_keys, list_runs, get_run)
 - `memory` - Memory bases (create, list, get, list_sessions, list_messages, update, delete, flush, mismatch, regenerate) — experimental Langflow API
@@ -47,7 +47,8 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `file_v2` - User-scoped v2 files (list, upload, get, rename, delete, delete_all, batch_download, batch_delete)
 - `monitor` - Monitoring (builds, messages, sessions, transactions, job_queue)
 - `trace` - Execution traces (list, get, delete, delete_by_flow)
-- `model` - Models and providers (list, providers, enabled, default get/set/delete, mapping, validate, options)
+- `model` - Models and providers (list, providers, provider descriptors, enabled, default get/set/delete, mapping, validate, options)
+- `governance` - Langflow 1.12.x provider, catalog, and policy-bundle administration
 - `authz` - RBAC authorization (roles, role assignments, teams, shares, audit, my permissions)
 - `user` - User management (list, get_current, update, reset_password, create)
 - `auth` - Authentication (login, auto_login, logout, refresh, api keys, save_store_key)
@@ -58,8 +59,8 @@ LANGFLOW_CONSOLIDATED_TOOLS=true
 - `mcp_project` - MCP project config/install (get/update config, get_installed, install, composer_url)
 - `extension` - Langflow extensions (reload, events)
 - `response` - OpenAI-compatible responses (create)
-- `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check)
-- `a2a` - A2A (Agent-to-Agent) protocol (list_agents, agent_card, jsonrpc) — Langflow 1.11.x
+- `system` - System info (health, version, logs, pictures, voices, session, webhook_events, health_check, healthz)
+- `a2a` - A2A (Agent-to-Agent) protocol (list_agents, agent_card, jsonrpc)
 
 It provides structured access to:
 
@@ -303,14 +304,14 @@ environment:
 ## Available MCP Tools
 
 Once connected, Claude can use:
-- **Standard mode**: 220 individual tools
-- **Consolidated mode**: 28 action-based tools (recommended for reduced token usage)
+- **Standard mode**: 236 individual tools
+- **Consolidated mode**: 29 action-based tools (recommended for reduced token usage)
 
 > **Note**: Raw Langflow transport endpoints (`/api/mcp/*`) and doc-rendering
 > endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
 > tools — they are protocol/transport surfaces, not data operations.
 
-### Standard Mode Tools (220 tools)
+### Standard Mode Tools (236 tools)
 
 ### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
@@ -365,9 +366,10 @@ Once connected, Claude can use:
 - **`resume_workflow`** - Resume a workflow with a request ID and optional decision
 - **`run_public_workflow`** - Run a public stream-only workflow
 
-### Agentic (4 tools)
+### Agentic (5 tools)
 - **`agentic_assist`** - Get agentic assistance for a flow component
 - **`agentic_assist_stream`** - Get streaming agentic assistance for a flow component
+- **`agentic_assist_run`** - Run the assistant headlessly and persist flow changes
 - **`agentic_check_config`** - Check whether agentic features are configured
 - **`agentic_execute`** - Execute an agentic flow by name
 
@@ -384,11 +386,12 @@ Once connected, Claude can use:
 - **`download_folder`** - Download entire folder as archive
 - **`upload_folder`** - Upload folder from archive
 
-### Project Management (7 tools)
+### Project Management (8 tools)
 - **`list_projects`** - List all projects with pagination
 - **`create_project`** - Create a new project
 - **`get_project`** - Get project details by ID
 - **`update_project`** - Update project name or description
+- **`upsert_project`** - Create or update a project at a caller-supplied ID
 - **`delete_project`** - Delete a project
 - **`upload_project`** - Upload a project from JSON data
 - **`download_project`** - Download a project as JSON export
@@ -462,9 +465,10 @@ Once connected, Claude can use:
 - **`migrate_shared_session`** - Migrate a shared session
 - **`delete_shared_session`** - Delete a shared session
 
-### Models & Providers (12 tools)
+### Models & Providers (13 tools)
 - **`list_models`** - List available models
 - **`list_model_providers`** - List all model providers
+- **`list_model_provider_descriptors`** - List providers with stable IDs and display names
 - **`list_enabled_providers`** - List enabled providers
 - **`list_enabled_models`** - List enabled models
 - **`set_enabled_models`** - Enable/disable models
@@ -537,10 +541,11 @@ Once connected, Claude can use:
 ### Integration Tools (1 tool)
 - **`list_elevenlabs_voices`** - List ElevenLabs text-to-speech voices
 
-### System & Health (4 tools)
+### System & Health (5 tools)
 - **`get_version`** - Get Langflow API version information
 - **`health_check`** - Check Langflow instance health status
 - **`get_health_check`** - Get a detailed health-check report
+- **`get_healthz`** - Get the Kubernetes-style readiness report
 - **`get_logs`** - Retrieve system logs (supports streaming)
 
 ### Authorization / RBAC (23 tools, Langflow 1.10.0)
@@ -573,11 +578,23 @@ Once connected, Claude can use:
 - **`get_flow_note_translations`** - Get localized note-node translations for a flow
 - **`get_job_queue_metrics`** - Job-queue metrics snapshot (superuser)
 
+### Langflow 1.12.x Governance (12 tools)
+- **`get_model_provider_policy`**, **`replace_model_provider_policy`** - Read or replace the install-wide approved-provider policy
+- **`get_catalog_component_policy`**, **`replace_catalog_component_policy`** - Read or replace blocked component keys
+- **`get_catalog_template_policy`**, **`replace_catalog_template_policy`** - Read or replace blocked template keys
+- **`get_catalog_policy_usage`**, **`get_catalog_policy_usage_flows`** - Inspect component usage across flows
+- **`get_policy_bundle`**, **`replace_policy_bundle`** - Read or atomically replace the combined governance policy
+- **`list_policy_bundle_history`**, **`rollback_policy_bundle`** - Inspect or roll back policy revisions
+
+Policy replacement operations are superuser-only and use complete sets. Read the
+current policy revision before writing so optimistic concurrency conflicts are
+handled explicitly.
+
 > The v2 workflow runner (`run_workflow` / `workflow` action `run`) also accepts request-level
 > `globals`, the preferred replacement for the deprecated
 > `X-LANGFLOW-GLOBAL-VAR-*` headers.
 
-### A2A Protocol (3 tools, Langflow 1.11.x)
+### A2A Protocol (3 tools, Langflow 1.12.x)
 - **`list_a2a_agents`** - List available A2A (Agent-to-Agent) agents
 - **`get_a2a_agent_card`** - Get a flow's A2A agent card (`.well-known/agent-card.json`)
 - **`invoke_a2a_jsonrpc`** - Invoke a flow via the A2A JSON-RPC endpoint (passthrough envelope)
@@ -585,7 +602,7 @@ Once connected, Claude can use:
 > A2A endpoints require server-side enablement (`LANGFLOW_A2A_ENABLED`); otherwise
 > requests surface as a thrown `Failed to ...` error.
 
-### v2 Workflow HITL & Public Execution (4 tools, Langflow 1.11.x)
+### v2 Workflow HITL & Public Execution (4 tools, Langflow 1.12.x)
 - **`list_pending_workflows`** - List pending human-in-the-loop requests for a required `flow_id`
 - **`get_workflow_events`** - Re-attach to a workflow job event stream by job ID
 - **`resume_workflow`** - Resume a paused HITL workflow with `request_id` and an optional decision

@@ -44,7 +44,8 @@ import {
   AuthzToolSchema,
   MemoryToolSchema,
   ExtensionToolSchema,
-  A2aToolSchema
+  A2aToolSchema,
+  GovernanceToolSchema
 } from './validation-consolidated';
 
 export class LangflowMCPServerConsolidated {
@@ -128,7 +129,7 @@ export class LangflowMCPServerConsolidated {
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
       'private_key', 'secret', 'credentials', 'api-key',
-      'file_content', 'file', 'content', 'payload', 'data'
+      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction'
     ]);
 
     if (depth > MAX_DEPTH) return { __error: 'max depth exceeded' };
@@ -343,6 +344,8 @@ export class LangflowMCPServerConsolidated {
             return await this.handleWorkflowTool(args);
           case 'a2a':
             return await this.handleA2aTool(args);
+          case 'governance':
+            return await this.handleGovernanceTool(args);
           case 'mcp_server':
             return await this.handleMcpServerTool(args);
           case 'mcp_project':
@@ -582,6 +585,11 @@ export class LangflowMCPServerConsolidated {
       case 'update': {
         const { action: _, project_id, ...updates } = validated;
         const updated = await this.client!.updateProject(project_id, updates);
+        return this.formatSuccessResponse(updated);
+      }
+      case 'upsert': {
+        const { action: _, project_id, ...body } = validated;
+        const updated = await this.client!.upsertProject(project_id, body);
         return this.formatSuccessResponse(updated);
       }
       case 'delete': {
@@ -1068,6 +1076,10 @@ export class LangflowMCPServerConsolidated {
         const result = await this.client!.getHealthCheck();
         return this.formatSuccessResponse(result);
       }
+      case 'healthz': {
+        const result = await this.client!.getHealthz();
+        return this.formatSuccessResponse(result);
+      }
     }
   }
 
@@ -1171,18 +1183,30 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'providers': {
-        const result = await this.client!.listModelProviders();
+        const result = await this.client!.listModelProviders(
+          validated.purpose ? { purpose: validated.purpose } : undefined
+        );
+        return this.formatSuccessResponse(result);
+      }
+      case 'provider_descriptors': {
+        const result = await this.client!.listModelProviderDescriptors(
+          validated.purpose ? { purpose: validated.purpose } : undefined
+        );
         return this.formatSuccessResponse(result);
       }
       case 'enabled_providers': {
         const result = await this.client!.listEnabledProviders(
-          validated.providers ? { providers: validated.providers } : undefined
+          validated.providers || validated.purpose
+            ? { providers: validated.providers, purpose: validated.purpose }
+            : undefined
         );
         return this.formatSuccessResponse(result);
       }
       case 'enabled_models': {
         const result = await this.client!.listEnabledModels(
-          validated.model_names ? { model_names: validated.model_names } : undefined
+          validated.model_names || validated.purpose
+            ? { model_names: validated.model_names, purpose: validated.purpose }
+            : undefined
         );
         return this.formatSuccessResponse(result);
       }
@@ -1207,7 +1231,9 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'provider_mapping': {
-        const result = await this.client!.getProviderVariableMapping();
+        const result = await this.client!.getProviderVariableMapping(
+          validated.purpose ? { purpose: validated.purpose } : undefined
+        );
         return this.formatSuccessResponse(result);
       }
       case 'validate_provider': {
@@ -1218,11 +1244,15 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'options_language': {
-        const result = await this.client!.getLanguageModelOptions();
+        const result = await this.client!.getLanguageModelOptions(
+          validated.purpose ? { purpose: validated.purpose } : undefined
+        );
         return this.formatSuccessResponse(result);
       }
       case 'options_embedding': {
-        const result = await this.client!.getEmbeddingModelOptions();
+        const result = await this.client!.getEmbeddingModelOptions(
+          validated.purpose ? { purpose: validated.purpose } : undefined
+        );
         return this.formatSuccessResponse(result);
       }
     }
@@ -1240,6 +1270,11 @@ export class LangflowMCPServerConsolidated {
       case 'assist_stream': {
         const { action: _, ...body } = validated;
         const result = await this.client!.agenticAssistStream(body);
+        return this.formatSuccessResponse(result);
+      }
+      case 'assist_run': {
+        const { action: _, ...body } = validated;
+        const result = await this.client!.agenticAssistRun(body);
         return this.formatSuccessResponse(result);
       }
       case 'check_config': {
@@ -1263,6 +1298,49 @@ export class LangflowMCPServerConsolidated {
           validated.session_id !== undefined ? { session_id: validated.session_id } : undefined
         );
         return this.formatSuccessResponse(result);
+      }
+    }
+  }
+
+  private async handleGovernanceTool(args: Record<string, unknown>) {
+    const validated = GovernanceToolSchema.parse(args);
+
+    switch (validated.action) {
+      case 'get_model_provider_policy':
+        return this.formatSuccessResponse(await this.client!.getModelProviderPolicy());
+      case 'replace_model_provider_policy': {
+        const { action: _, ...body } = validated;
+        return this.formatSuccessResponse(await this.client!.replaceModelProviderPolicy(body));
+      }
+      case 'get_catalog_component_policy':
+        return this.formatSuccessResponse(await this.client!.getCatalogComponentPolicy());
+      case 'replace_catalog_component_policy':
+        return this.formatSuccessResponse(await this.client!.replaceCatalogComponentPolicy({ blocked: validated.blocked }));
+      case 'get_catalog_template_policy':
+        return this.formatSuccessResponse(await this.client!.getCatalogTemplatePolicy());
+      case 'replace_catalog_template_policy':
+        return this.formatSuccessResponse(await this.client!.replaceCatalogTemplatePolicy({ blocked: validated.blocked }));
+      case 'get_catalog_policy_usage':
+        return this.formatSuccessResponse(await this.client!.getCatalogPolicyUsage());
+      case 'get_catalog_policy_usage_flows':
+        return this.formatSuccessResponse(await this.client!.getCatalogPolicyUsageFlows({
+          component: validated.component,
+          limit: validated.limit
+        }));
+      case 'get_policy_bundle':
+        return this.formatSuccessResponse(await this.client!.getPolicyBundle());
+      case 'replace_policy_bundle': {
+        const { action: _, ...body } = validated;
+        return this.formatSuccessResponse(await this.client!.replacePolicyBundle(body));
+      }
+      case 'list_policy_bundle_history':
+        return this.formatSuccessResponse(await this.client!.listPolicyBundleHistory({
+          limit: validated.limit,
+          before_revision: validated.before_revision
+        }));
+      case 'rollback_policy_bundle': {
+        const { action: _, revision, ...body } = validated;
+        return this.formatSuccessResponse(await this.client!.rollbackPolicyBundle(revision, body));
       }
     }
   }

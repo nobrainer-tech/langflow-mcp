@@ -51,6 +51,15 @@ export interface FlowRead {
   updated_at: string;
 }
 
+export interface PublicFlowCapabilities {
+  can_read: boolean;
+  can_execute: boolean;
+}
+
+export interface PublicFlowRead extends FlowRead {
+  public_access: PublicFlowCapabilities;
+}
+
 export interface FlowUpdate {
   name?: string;
   description?: string;
@@ -139,6 +148,14 @@ export interface ProjectRead {
 export interface ProjectCreate {
   name: string;
   description?: string;
+}
+
+export interface ProjectUpsertRequest {
+  name: string;
+  description?: string | null;
+  auth_settings?: Record<string, unknown> | null;
+  components_list?: string[] | null;
+  flows_list?: string[] | null;
 }
 
 export interface ProjectUpdate {
@@ -650,15 +667,40 @@ export interface ListModelsParams {
   preview?: boolean;
   deprecated?: boolean;
   not_supported?: boolean;
+  purpose?: ModelProviderReadPurpose;
   [key: string]: any;
+}
+
+export type ModelProviderReadPurpose = 'use' | 'configure';
+
+export interface ModelProviderPurposeParams {
+  purpose?: ModelProviderReadPurpose;
+}
+
+export interface ModelProviderDescriptor {
+  provider_id: string;
+  display_name: string;
+  provider: string;
+}
+
+export interface ModelProviderPolicy {
+  approved_provider_ids: string[];
+  registered_providers: ModelProviderDescriptor[];
+  managed_externally: boolean;
+}
+
+export interface ModelProviderPolicyWrite {
+  approved_provider_ids: string[];
 }
 
 export interface EnabledProvidersParams {
   providers?: string[];
+  purpose?: ModelProviderReadPurpose;
 }
 
 export interface EnabledModelsParams {
   model_names?: string[];
+  purpose?: ModelProviderReadPurpose;
 }
 
 export interface ModelStatusUpdate {
@@ -698,6 +740,15 @@ export interface AssistantRequest {
   field_name?: string | null;
   model_name?: string | null;
   provider?: string | null;
+  history_limit?: number | null;
+}
+
+export interface HeadlessAssistantRequest {
+  instruction: string;
+  flow_id?: string | null;
+  provider?: string | null;
+  model_name?: string | null;
+  session_id?: string | null;
 }
 
 export interface GetWorkflowResultParams {
@@ -1005,4 +1056,76 @@ export interface BuildPublicFlowParams {
   log_builds?: boolean | null;
   flow_name?: string | null;
   event_delivery?: 'polling' | 'streaming' | 'direct';
+}
+
+// --- Langflow 1.12.x additional endpoints ---
+
+export interface CatalogPolicyBlockedSet {
+  blocked: string[];
+}
+
+export interface CatalogPolicyRead {
+  blocked: string[];
+  managed_externally: boolean;
+}
+
+export interface CatalogPolicyUsageRead {
+  components: Record<string, number>;
+  flows_scanned: number;
+}
+
+export interface CatalogPolicyUsageFlowsParams {
+  component: string;
+  limit?: number;
+}
+
+export interface CatalogPolicyUsageFlowRef {
+  id: string;
+  name: string;
+}
+
+export interface CatalogPolicyUsageFlowsRead {
+  component: string;
+  total: number;
+  flows: CatalogPolicyUsageFlowRef[];
+}
+
+export interface PolicyBundleRead {
+  revision: number;
+  initialized: boolean;
+  source: string;
+  approved_provider_ids: string[];
+  blocked_component_keys: string[];
+  blocked_template_keys: string[];
+  blocked_model_keys: string[];
+  content_hash: string;
+  created_at: string | null;
+  created_by: string | null;
+  reason: string | null;
+  rollback_of_revision: number | null;
+  managed_externally: boolean;
+}
+
+export interface PolicyBundleWrite {
+  expected_revision: number;
+  approved_provider_ids: string[];
+  blocked_component_keys: string[];
+  blocked_template_keys: string[];
+  blocked_model_keys?: string[];
+  reason?: string | null;
+}
+
+export interface PolicyBundleHistoryParams {
+  limit?: number;
+  before_revision?: number | null;
+}
+
+export interface PolicyBundleHistoryRead {
+  items: PolicyBundleRead[];
+  next_before_revision: number | null;
+}
+
+export interface PolicyBundleRollbackWrite {
+  expected_revision: number;
+  reason?: string | null;
 }

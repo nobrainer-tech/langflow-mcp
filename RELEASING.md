@@ -4,7 +4,7 @@
 
 The npm package version tracks the supported Langflow API version:
 npm `4.<langflow_minor>.<patch>` targets Langflow API `1.<langflow_minor>.x`.
-Langflow API 1.11.5 is therefore covered by `langflow-mcp-server@4.11.x`.
+Langflow API 1.12.0 is therefore covered by `langflow-mcp-server@4.12.x`.
 
 ## Cutting a release
 
@@ -12,8 +12,8 @@ Langflow API 1.11.5 is therefore covered by `langflow-mcp-server@4.11.x`.
 2. Push the matching tag:
 
    ```bash
-   git tag v4.11.1
-   git push origin v4.11.1
+   git tag v4.12.0
+   git push origin v4.12.0
    ```
 
 `.github/workflows/publish.yml` runs on every `v*` tag: install, test, build,
