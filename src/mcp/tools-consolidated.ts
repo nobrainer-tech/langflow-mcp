@@ -207,6 +207,7 @@ Actions:
 - get: Get project details
 - create: Create a new project
 - update: Update project
+- upsert: Create or update a project at a caller-supplied ID (Langflow 1.12.x)
 - delete: Delete project
 - download: Download project
 - upload: Upload project
@@ -219,12 +220,15 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'get', 'create', 'update', 'delete', 'download', 'upload'],
+          enum: ['list', 'get', 'create', 'update', 'upsert', 'delete', 'download', 'upload'],
           description: 'Project action'
         },
         project_id: { type: 'string', description: 'Project ID (UUID)' },
         name: { type: 'string', description: 'Project name' },
         description: { type: 'string', description: 'Project description' },
+        auth_settings: { type: ['object', 'null'], description: 'Project authentication settings - for upsert' },
+        components_list: { type: ['array', 'null'], items: { type: 'string' }, description: 'Component IDs - for upsert' },
+        flows_list: { type: ['array', 'null'], items: { type: 'string' }, description: 'Flow IDs - for upsert' },
         page: { type: 'number', description: 'Page number' },
         size: { type: 'number', description: 'Page size' },
         file: { type: 'object', description: 'File object - for upload' }
@@ -665,6 +669,7 @@ Actions:
 - session: Get current session info
 - webhook_events: Get webhook events for a flow
 - health_check: Detailed root health check
+- healthz: Kubernetes-style readiness report (Langflow 1.12.x)
 
 Examples:
 - Health check: { "action": "health" }
@@ -675,7 +680,7 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['health', 'version', 'logs', 'list_pictures', 'get_picture', 'list_voices', 'session', 'webhook_events', 'health_check'],
+          enum: ['health', 'version', 'logs', 'list_pictures', 'get_picture', 'list_voices', 'session', 'webhook_events', 'health_check', 'healthz'],
           description: 'System action'
         },
         folder_name: { type: 'string', description: 'Folder name - for get_picture' },
@@ -789,6 +794,7 @@ Examples:
 Actions:
 - list: List available models
 - providers: List all model providers
+- provider_descriptors: List providers with stable IDs and display names (Langflow 1.12.x)
 - enabled_providers: List enabled providers
 - enabled_models: List enabled models
 - set_enabled: Enable/disable models
@@ -809,7 +815,7 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'providers', 'enabled_providers', 'enabled_models', 'set_enabled', 'get_default', 'set_default', 'delete_default', 'provider_mapping', 'validate_provider', 'options_language', 'options_embedding'],
+          enum: ['list', 'providers', 'provider_descriptors', 'enabled_providers', 'enabled_models', 'set_enabled', 'get_default', 'set_default', 'delete_default', 'provider_mapping', 'validate_provider', 'options_language', 'options_embedding'],
           description: 'Model action'
         },
         provider: { type: 'string', description: 'Provider name - for list, set_default, validate_provider' },
@@ -823,7 +829,8 @@ Examples:
         include_deprecated: { type: 'boolean', description: 'Include deprecated - for list' },
         tool_calling: { type: 'boolean', description: 'Filter tool-calling models - for list' },
         reasoning: { type: 'boolean', description: 'Filter reasoning models - for list' },
-        search: { type: 'string', description: 'Search query - for list' }
+        search: { type: 'string', description: 'Search query - for list' },
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
       },
       required: ['action']
     },
@@ -841,6 +848,7 @@ Examples:
 Actions:
 - assist: Get agentic assistance for a flow component
 - assist_stream: Get streaming agentic assistance for a flow component
+- assist_run: Run the assistant headlessly and persist flow changes (Langflow 1.12.x)
 - check_config: Check whether agentic features are configured
 - execute: Execute an agentic flow by name
 - get_file: Read a file from the per-user agentic sandbox (Langflow 1.10.0)
@@ -857,18 +865,20 @@ Examples:
       properties: {
         action: {
           type: 'string',
-          enum: ['assist', 'assist_stream', 'check_config', 'execute', 'get_file', 'reset_session'],
+          enum: ['assist', 'assist_stream', 'assist_run', 'check_config', 'execute', 'get_file', 'reset_session'],
           description: 'Agentic action'
         },
         flow_id: { type: 'string', description: 'Flow ID - for assist, execute' },
         flow_name: { type: 'string', description: 'Flow name - for execute' },
-        input_value: { type: ['string', 'null'], description: 'Input value (max 2000 characters)' },
+        input_value: { type: ['string', 'null'], description: 'Input value (server-configured limit)' },
+        instruction: { type: 'string', description: 'Headless assistant instruction - for assist_run' },
         iterations_limit: { type: ['number', 'null'], description: 'Maximum iterations (1-200)' },
         session_id: { type: ['string', 'null'], description: 'Session ID - for assist, assist_stream, reset_session' },
         component_id: { type: ['string', 'null'], description: 'Component ID' },
         field_name: { type: ['string', 'null'], description: 'Field name' },
         model_name: { type: ['string', 'null'], description: 'Model name' },
         provider: { type: ['string', 'null'], description: 'Provider' },
+        history_limit: { type: ['number', 'null'], description: 'Optional assistant history limit (0-100)' },
         max_retries: { type: ['number', 'null'], description: 'Max retries (1-5)' },
         path: { type: 'string', description: 'Relative sandbox file path - for get_file' },
         download: { type: 'boolean', description: 'Return file as base64 attachment - for get_file' }
@@ -1287,6 +1297,56 @@ Examples:
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true
+    }
+  },
+  {
+    name: 'governance',
+    description: `Manage Langflow 1.12.x governance policies (superuser-only endpoints).
+
+Actions:
+- get_model_provider_policy / replace_model_provider_policy
+- get_catalog_component_policy / replace_catalog_component_policy
+- get_catalog_template_policy / replace_catalog_template_policy
+- get_catalog_policy_usage / get_catalog_policy_usage_flows
+- get_policy_bundle / replace_policy_bundle
+- list_policy_bundle_history / rollback_policy_bundle
+
+Policy replacements are complete-set operations. Read the current revision before
+using replace or rollback so optimistic concurrency conflicts are visible.`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: [
+            'get_model_provider_policy', 'replace_model_provider_policy',
+            'get_catalog_component_policy', 'replace_catalog_component_policy',
+            'get_catalog_template_policy', 'replace_catalog_template_policy',
+            'get_catalog_policy_usage', 'get_catalog_policy_usage_flows',
+            'get_policy_bundle', 'replace_policy_bundle',
+            'list_policy_bundle_history', 'rollback_policy_bundle'
+          ],
+          description: 'Governance action'
+        },
+        approved_provider_ids: { type: 'array', items: { type: 'string' }, description: 'Complete approved provider set' },
+        blocked: { type: 'array', items: { type: 'string' }, description: 'Complete blocked catalog key set' },
+        component: { type: 'string', description: 'Catalog component key - for usage flows' },
+        limit: { type: 'number', description: 'Result limit' },
+        expected_revision: { type: 'number', description: 'Current revision for optimistic concurrency' },
+        blocked_component_keys: { type: 'array', items: { type: 'string' } },
+        blocked_template_keys: { type: 'array', items: { type: 'string' } },
+        blocked_model_keys: { type: 'array', items: { type: 'string' } },
+        reason: { type: ['string', 'null'], description: 'Optional policy change reason' },
+        revision: { type: 'number', description: 'Target revision - for rollback' },
+        before_revision: { type: ['number', 'null'], description: 'History cursor' }
+      },
+      required: ['action']
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
       idempotentHint: false,
       openWorldHint: true
     }

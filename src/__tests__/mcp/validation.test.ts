@@ -1587,7 +1587,11 @@ describe('Validation Schemas', () => {
         max_retries: 3
       })).toMatchObject({ iterations_limit: 10, max_retries: 3 });
       expect(() => AgenticAssistSchema.parse({ flow_id: 'flow-1', max_retries: 6 })).toThrow();
-      expect(() => AgenticAssistSchema.parse({ flow_id: 'flow-1', input_value: 'x'.repeat(2001) })).toThrow();
+      expect(AgenticAssistSchema.parse({
+        flow_id: 'flow-1',
+        input_value: 'x'.repeat(2001),
+        history_limit: 0
+      }).history_limit).toBe(0);
     });
 
     it('validates public build request shapes', () => {

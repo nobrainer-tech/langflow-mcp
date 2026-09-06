@@ -4,6 +4,7 @@ import {
   LangflowConfig,
   FlowCreate,
   FlowRead,
+  PublicFlowRead,
   FlowUpdate,
   ListFlowsParams,
   DeleteFlowsRequest,
@@ -17,6 +18,7 @@ import {
   ListFoldersParams,
   ProjectRead,
   ProjectCreate,
+  ProjectUpsertRequest,
   ProjectUpdate,
   ListProjectsParams,
   VariableRead,
@@ -96,9 +98,24 @@ import {
   DefaultModelRequest,
   ValidateProviderRequest,
   ValidateProviderResponse,
+  ModelProviderPurposeParams,
+  ModelProviderDescriptor,
+  ModelProviderPolicy,
+  ModelProviderPolicyWrite,
   AssistantRequest,
+  HeadlessAssistantRequest,
   BuildPublicFlowRequest,
   BuildPublicFlowParams,
+  CatalogPolicyBlockedSet,
+  CatalogPolicyRead,
+  CatalogPolicyUsageRead,
+  CatalogPolicyUsageFlowsParams,
+  CatalogPolicyUsageFlowsRead,
+  PolicyBundleRead,
+  PolicyBundleWrite,
+  PolicyBundleHistoryParams,
+  PolicyBundleHistoryRead,
+  PolicyBundleRollbackWrite,
   GetWorkflowResultParams,
   RunWorkflowRequest,
   StopWorkflowResponse,
@@ -378,6 +395,18 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to update project ${projectId}`);
+    }
+  }
+
+  async upsertProject(projectId: string, body: ProjectUpsertRequest): Promise<FolderRead> {
+    try {
+      const response = await this.client.put<FolderRead>(
+        `/projects/${encodeURIComponent(projectId)}`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to upsert project ${projectId}`);
     }
   }
 
@@ -989,9 +1018,9 @@ export class LangflowClient {
     }
   }
 
-  async getPublicFlow(flowId: string): Promise<FlowRead> {
+  async getPublicFlow(flowId: string): Promise<PublicFlowRead> {
     try {
-      const response = await this.client.get<FlowRead>(`/flows/public_flow/${encodeURIComponent(flowId)}`);
+      const response = await this.client.get<PublicFlowRead>(`/flows/public_flow/${encodeURIComponent(flowId)}`);
       return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get public flow ${flowId}`);
@@ -1075,6 +1104,17 @@ export class LangflowClient {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  async getHealthz(): Promise<HealthResponse> {
+    try {
+      const response = await this.client.get<HealthResponse>('/healthz', {
+        baseURL: this.config.baseUrl
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get readiness health status');
     }
   }
 
@@ -1738,12 +1778,21 @@ export class LangflowClient {
     }
   }
 
-  async listModelProviders(): Promise<string[]> {
+  async listModelProviders(params?: ModelProviderPurposeParams): Promise<string[]> {
     try {
-      const response = await this.client.get<string[]>('/models/providers');
+      const response = await this.client.get<string[]>('/models/providers', { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to list model providers');
+    }
+  }
+
+  async listModelProviderDescriptors(params?: ModelProviderPurposeParams): Promise<ModelProviderDescriptor[]> {
+    try {
+      const response = await this.client.get<ModelProviderDescriptor[]>('/models/provider-descriptors', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list model provider descriptors');
     }
   }
 
@@ -1801,9 +1850,9 @@ export class LangflowClient {
     }
   }
 
-  async getProviderVariableMapping(): Promise<any> {
+  async getProviderVariableMapping(params?: ModelProviderPurposeParams): Promise<any> {
     try {
-      const response = await this.client.get('/models/provider-variable-mapping');
+      const response = await this.client.get('/models/provider-variable-mapping', { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get provider variable mapping');
@@ -1819,20 +1868,133 @@ export class LangflowClient {
     }
   }
 
+  // --- Governance policies (Langflow 1.12.x) ---
+
+  async getModelProviderPolicy(): Promise<ModelProviderPolicy> {
+    try {
+      const response = await this.client.get<ModelProviderPolicy>('/model-provider-policy');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get model provider policy');
+    }
+  }
+
+  async replaceModelProviderPolicy(body: ModelProviderPolicyWrite): Promise<ModelProviderPolicy> {
+    try {
+      const response = await this.client.put<ModelProviderPolicy>('/model-provider-policy', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to replace model provider policy');
+    }
+  }
+
+  async getCatalogComponentPolicy(): Promise<CatalogPolicyRead> {
+    try {
+      const response = await this.client.get<CatalogPolicyRead>('/catalog-policy/components');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get catalog component policy');
+    }
+  }
+
+  async replaceCatalogComponentPolicy(body: CatalogPolicyBlockedSet): Promise<CatalogPolicyRead> {
+    try {
+      const response = await this.client.put<CatalogPolicyRead>('/catalog-policy/components', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to replace catalog component policy');
+    }
+  }
+
+  async getCatalogTemplatePolicy(): Promise<CatalogPolicyRead> {
+    try {
+      const response = await this.client.get<CatalogPolicyRead>('/catalog-policy/templates');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get catalog template policy');
+    }
+  }
+
+  async replaceCatalogTemplatePolicy(body: CatalogPolicyBlockedSet): Promise<CatalogPolicyRead> {
+    try {
+      const response = await this.client.put<CatalogPolicyRead>('/catalog-policy/templates', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to replace catalog template policy');
+    }
+  }
+
+  async getCatalogPolicyUsage(): Promise<CatalogPolicyUsageRead> {
+    try {
+      const response = await this.client.get<CatalogPolicyUsageRead>('/catalog-policy/usage');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get catalog policy usage');
+    }
+  }
+
+  async getCatalogPolicyUsageFlows(params: CatalogPolicyUsageFlowsParams): Promise<CatalogPolicyUsageFlowsRead> {
+    try {
+      const response = await this.client.get<CatalogPolicyUsageFlowsRead>('/catalog-policy/usage/flows', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get catalog policy usage flows');
+    }
+  }
+
+  async getPolicyBundle(): Promise<PolicyBundleRead> {
+    try {
+      const response = await this.client.get<PolicyBundleRead>('/policy-bundle');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get policy bundle');
+    }
+  }
+
+  async replacePolicyBundle(body: PolicyBundleWrite): Promise<PolicyBundleRead> {
+    try {
+      const response = await this.client.put<PolicyBundleRead>('/policy-bundle', body);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to replace policy bundle');
+    }
+  }
+
+  async listPolicyBundleHistory(params?: PolicyBundleHistoryParams): Promise<PolicyBundleHistoryRead> {
+    try {
+      const response = await this.client.get<PolicyBundleHistoryRead>('/policy-bundle/history', { params });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list policy bundle history');
+    }
+  }
+
+  async rollbackPolicyBundle(revision: number, body: PolicyBundleRollbackWrite): Promise<PolicyBundleRead> {
+    try {
+      const response = await this.client.post<PolicyBundleRead>(
+        `/policy-bundle/rollback/${encodeURIComponent(revision)}`,
+        body
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, `Failed to roll back policy bundle revision ${revision}`);
+    }
+  }
+
   // --- Model Options ---
 
-  async getLanguageModelOptions(): Promise<any> {
+  async getLanguageModelOptions(params?: ModelProviderPurposeParams): Promise<any> {
     try {
-      const response = await this.client.get('/model_options/language');
+      const response = await this.client.get('/model_options/language', { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get language model options');
     }
   }
 
-  async getEmbeddingModelOptions(): Promise<any> {
+  async getEmbeddingModelOptions(params?: ModelProviderPurposeParams): Promise<any> {
     try {
-      const response = await this.client.get('/model_options/embedding');
+      const response = await this.client.get('/model_options/embedding', { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get embedding model options');
@@ -1858,6 +2020,17 @@ export class LangflowClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to run streaming agentic assist');
+    }
+  }
+
+  async agenticAssistRun(body: HeadlessAssistantRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/agentic/assist/run', body, {
+        responseType: 'text'
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to run headless agentic assist');
     }
   }
 

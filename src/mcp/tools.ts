@@ -3230,7 +3230,8 @@ Related Tools:
         include_deprecated: { type: 'boolean', description: 'Include deprecated models' },
         tool_calling: { type: 'boolean', description: 'Filter to tool-calling models' },
         reasoning: { type: 'boolean', description: 'Filter to reasoning models' },
-        search: { type: 'string', description: 'Search query' }
+        search: { type: 'string', description: 'Search query' },
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
       }
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -3238,7 +3239,12 @@ Related Tools:
   {
     name: 'list_model_providers',
     description: 'List all known model providers.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
+      }
+    },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
   {
@@ -3247,7 +3253,8 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {
-        providers: { type: 'array', items: { type: 'string' }, description: 'Optional provider names to check' }
+        providers: { type: 'array', items: { type: 'string' }, description: 'Optional provider names to check' },
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
       }
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -3258,7 +3265,8 @@ Related Tools:
     inputSchema: {
       type: 'object',
       properties: {
-        model_names: { type: 'array', items: { type: 'string' }, description: 'Optional model names to check' }
+        model_names: { type: 'array', items: { type: 'string' }, description: 'Optional model names to check' },
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
       }
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -3328,7 +3336,12 @@ Related Tools:
   {
     name: 'get_provider_variable_mapping',
     description: 'Get the mapping between model providers and their required global variables.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
+      }
+    },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
   {
@@ -3347,13 +3360,23 @@ Related Tools:
   {
     name: 'get_language_model_options',
     description: 'Get available language (LLM) model options.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
+      }
+    },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
   {
     name: 'get_embedding_model_options',
     description: 'Get available embedding model options.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
+      }
+    },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   },
   {
@@ -3363,13 +3386,14 @@ Related Tools:
       type: 'object',
       properties: {
         flow_id: { type: 'string', description: 'Flow ID' },
-        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (server-configured limit)' },
         iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
         session_id: { type: ['string', 'null'], description: 'Optional session ID' },
         component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
         field_name: { type: ['string', 'null'], description: 'Optional target field name' },
         model_name: { type: ['string', 'null'], description: 'Optional model name' },
         provider: { type: ['string', 'null'], description: 'Optional provider' },
+        history_limit: { type: ['number', 'null'], description: 'Optional assistant history limit (0-100)' },
         max_retries: { type: ['number', 'null'], description: 'Optional max retries (1-5)' }
       },
       required: ['flow_id']
@@ -3383,14 +3407,15 @@ Related Tools:
       type: 'object',
       properties: {
         flow_id: { type: 'string', description: 'Flow ID' },
-        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (server-configured limit)' },
         iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
         max_retries: { type: ['number', 'null'], description: 'Maximum retries (1-5)' },
         session_id: { type: ['string', 'null'], description: 'Optional session ID' },
         component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
         field_name: { type: ['string', 'null'], description: 'Optional target field name' },
         model_name: { type: ['string', 'null'], description: 'Optional model name' },
-        provider: { type: ['string', 'null'], description: 'Optional provider' }
+        provider: { type: ['string', 'null'], description: 'Optional provider' },
+        history_limit: { type: ['number', 'null'], description: 'Optional assistant history limit (0-100)' }
       },
       required: ['flow_id']
     },
@@ -3410,13 +3435,14 @@ Related Tools:
       properties: {
         flow_name: { type: 'string', description: 'Agentic flow name to execute' },
         flow_id: { type: 'string', description: 'Flow ID' },
-        input_value: { type: ['string', 'null'], description: 'User input/instruction (max 2000 characters)' },
+        input_value: { type: ['string', 'null'], description: 'User input/instruction (server-configured limit)' },
         iterations_limit: { type: ['number', 'null'], description: 'Maximum assistant iterations (1-200)' },
         session_id: { type: ['string', 'null'], description: 'Optional session ID' },
         component_id: { type: ['string', 'null'], description: 'Optional target component ID' },
         field_name: { type: ['string', 'null'], description: 'Optional target field name' },
         model_name: { type: ['string', 'null'], description: 'Optional model name' },
         provider: { type: ['string', 'null'], description: 'Optional provider' },
+        history_limit: { type: ['number', 'null'], description: 'Optional assistant history limit (0-100)' },
         max_retries: { type: ['number', 'null'], description: 'Optional max retries (1-5)' }
       },
       required: ['flow_name', 'flow_id']
@@ -4344,5 +4370,174 @@ Related Tools:
       required: ['flow_id']
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  },
+  // --- Langflow 1.12.x ---
+  {
+    name: 'get_healthz',
+    description: 'Get the Langflow Kubernetes-style readiness report from /healthz (Langflow 1.12.x).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_model_provider_descriptors',
+    description: 'List policy-visible model providers with stable IDs and display names (Langflow 1.12.x).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        purpose: { type: 'string', enum: ['use', 'configure'], description: 'Optional provider visibility purpose' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_model_provider_policy',
+    description: 'Read the install-wide approved model-provider policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'replace_model_provider_policy',
+    description: 'Replace the install-wide approved model-provider policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        approved_provider_ids: { type: 'array', items: { type: 'string' }, description: 'Complete approved provider ID set' }
+      },
+      required: ['approved_provider_ids']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_catalog_component_policy',
+    description: 'Read the global blocked-component catalog policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'replace_catalog_component_policy',
+    description: 'Replace the global blocked-component catalog policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: {
+      type: 'object',
+      properties: { blocked: { type: 'array', items: { type: 'string' }, description: 'Complete blocked component key set' } },
+      required: ['blocked']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_catalog_template_policy',
+    description: 'Read the global blocked-template catalog policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'replace_catalog_template_policy',
+    description: 'Replace the global blocked-template catalog policy (superuser-only Langflow 1.12.x API).',
+    inputSchema: {
+      type: 'object',
+      properties: { blocked: { type: 'array', items: { type: 'string' }, description: 'Complete blocked template key set' } },
+      required: ['blocked']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_catalog_policy_usage',
+    description: 'Count flows using each catalog component (superuser-only Langflow 1.12.x API).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_catalog_policy_usage_flows',
+    description: 'List flows affected by blocking a catalog component key (superuser-only Langflow 1.12.x API).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        component: { type: 'string', description: 'Component key to look up' },
+        limit: { type: 'number', description: 'Maximum number of flows, 1-500' }
+      },
+      required: ['component']
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'get_policy_bundle',
+    description: 'Read the atomic provider-and-catalog policy bundle (superuser-only Langflow 1.12.x API).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'replace_policy_bundle',
+    description: 'Atomically replace the provider-and-catalog policy bundle using an expected revision (Langflow 1.12.x).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        expected_revision: { type: 'number', description: 'Revision read before the replacement' },
+        approved_provider_ids: { type: 'array', items: { type: 'string' } },
+        blocked_component_keys: { type: 'array', items: { type: 'string' } },
+        blocked_template_keys: { type: 'array', items: { type: 'string' } },
+        blocked_model_keys: { type: 'array', items: { type: 'string' } },
+        reason: { type: ['string', 'null'], description: 'Optional change reason, max 1024 characters' }
+      },
+      required: ['expected_revision', 'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'list_policy_bundle_history',
+    description: 'List historical policy bundle revisions (superuser-only Langflow 1.12.x API).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Number of revisions, 1-200' },
+        before_revision: { type: ['number', 'null'], description: 'Return revisions before this number' }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'rollback_policy_bundle',
+    description: 'Roll back the policy bundle to a prior revision with optimistic concurrency protection (Langflow 1.12.x).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        revision: { type: 'number', description: 'Target revision' },
+        expected_revision: { type: 'number', description: 'Current revision required for the rollback' },
+        reason: { type: ['string', 'null'], description: 'Optional rollback reason, max 1024 characters' }
+      },
+      required: ['revision', 'expected_revision']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
+  },
+  {
+    name: 'upsert_project',
+    description: 'Create or update a project at a caller-supplied ID using Langflow 1.12.x PUT upsert semantics.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string', description: 'Project UUID' },
+        name: { type: 'string', description: 'Project name' },
+        description: { type: ['string', 'null'], description: 'Project description' },
+        auth_settings: { type: ['object', 'null'], description: 'Project authentication settings' },
+        components_list: { type: ['array', 'null'], items: { type: 'string' } },
+        flows_list: { type: ['array', 'null'], items: { type: 'string' } }
+      },
+      required: ['project_id', 'name']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: 'agentic_assist_run',
+    description: 'Run the Langflow agentic assistant headlessly and persist its flow changes (Langflow 1.12.x SSE API).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        instruction: { type: 'string', description: 'Assistant instruction' },
+        flow_id: { type: ['string', 'null'], description: 'Optional existing flow ID' },
+        provider: { type: ['string', 'null'], description: 'Optional model provider' },
+        model_name: { type: ['string', 'null'], description: 'Optional model name' },
+        session_id: { type: ['string', 'null'], description: 'Optional assistant session ID' }
+      },
+      required: ['instruction']
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
   }
 ];

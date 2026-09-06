@@ -305,6 +305,15 @@ export const ProjectToolSchema = z.discriminatedUnion('action', [
     name: z.string().min(1).max(255).optional(),
     description: z.string().optional()
   }),
+  z.object({
+    action: z.literal('upsert'),
+    project_id: uuidSchema('project ID'),
+    name: z.string().min(1).max(255),
+    description: z.string().nullable().optional(),
+    auth_settings: z.record(z.string(), z.unknown()).nullable().optional(),
+    components_list: z.array(uuidSchema('component ID')).nullable().optional(),
+    flows_list: z.array(uuidSchema('flow ID')).nullable().optional()
+  }),
   z.object({ action: z.literal('delete'), project_id: uuidSchema('project ID') }),
   z.object({ action: z.literal('download'), project_id: uuidSchema('project ID') }),
   z.object({
@@ -686,7 +695,8 @@ export const SystemToolSchema = z.discriminatedUnion('action', [
     flow_id_or_name: z.string().min(1),
     user_id: z.string().optional()
   }),
-  z.object({ action: z.literal('health_check') })
+  z.object({ action: z.literal('health_check') }),
+  z.object({ action: z.literal('healthz') })
 ]);
 
 // Model tool schema
@@ -700,16 +710,20 @@ export const ModelToolSchema = z.discriminatedUnion('action', [
     include_deprecated: z.boolean().optional(),
     tool_calling: z.boolean().optional(),
     reasoning: z.boolean().optional(),
-    search: z.string().optional()
+    search: z.string().optional(),
+    purpose: z.enum(['use', 'configure']).optional()
   }),
-  z.object({ action: z.literal('providers') }),
+  z.object({ action: z.literal('providers'), purpose: z.enum(['use', 'configure']).optional() }),
+  z.object({ action: z.literal('provider_descriptors'), purpose: z.enum(['use', 'configure']).optional() }),
   z.object({
     action: z.literal('enabled_providers'),
-    providers: z.array(z.string()).optional()
+    providers: z.array(z.string()).optional(),
+    purpose: z.enum(['use', 'configure']).optional()
   }),
   z.object({
     action: z.literal('enabled_models'),
-    model_names: z.array(z.string()).optional()
+    model_names: z.array(z.string()).optional(),
+    purpose: z.enum(['use', 'configure']).optional()
   }),
   z.object({
     action: z.literal('set_enabled'),
@@ -727,32 +741,41 @@ export const ModelToolSchema = z.discriminatedUnion('action', [
     model_type: z.string().min(1)
   }),
   z.object({ action: z.literal('delete_default'), model_type: z.string().min(1) }),
-  z.object({ action: z.literal('provider_mapping') }),
+  z.object({ action: z.literal('provider_mapping'), purpose: z.enum(['use', 'configure']).optional() }),
   z.object({
     action: z.literal('validate_provider'),
     provider: z.string().min(1),
     variables: z.record(z.string(), z.unknown())
   }),
-  z.object({ action: z.literal('options_language') }),
-  z.object({ action: z.literal('options_embedding') })
+  z.object({ action: z.literal('options_language'), purpose: z.enum(['use', 'configure']).optional() }),
+  z.object({ action: z.literal('options_embedding'), purpose: z.enum(['use', 'configure']).optional() })
 ]);
 
 // Agentic tool schema
 const assistantRequestShape = {
   flow_id: z.string().min(1),
-  input_value: z.string().max(2000).nullable().optional(),
+  input_value: z.string().nullable().optional(),
   iterations_limit: z.number().int().min(1).max(200).nullable().optional(),
   max_retries: z.number().int().min(1).max(5).nullable().optional(),
   session_id: z.string().nullable().optional(),
   component_id: z.string().nullable().optional(),
   field_name: z.string().nullable().optional(),
   model_name: z.string().nullable().optional(),
-  provider: z.string().nullable().optional()
+  provider: z.string().nullable().optional(),
+  history_limit: z.number().int().min(0).max(100).nullable().optional()
 };
 
 export const AgenticToolSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('assist'), ...assistantRequestShape }),
   z.object({ action: z.literal('assist_stream'), ...assistantRequestShape }),
+  z.object({
+    action: z.literal('assist_run'),
+    instruction: z.string().min(1),
+    flow_id: z.string().min(1).nullable().optional(),
+    provider: z.string().min(1).nullable().optional(),
+    model_name: z.string().min(1).nullable().optional(),
+    session_id: z.string().nullable().optional()
+  }),
   z.object({ action: z.literal('check_config') }),
   z.object({
     action: z.literal('execute'),
@@ -823,6 +846,51 @@ export const A2aToolSchema = z.discriminatedUnion('action', [
     method: z.string().min(1),
     params: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
     id: z.union([z.string(), z.number()]).optional()
+  })
+]);
+
+// Langflow 1.12.x governance tool schema
+const governanceProviderId = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/).max(255);
+const governancePolicyKey = z.string().trim().min(1).max(255);
+const governancePolicyKeys = z.array(governancePolicyKey).max(1000);
+const governancePolicyReason = z.string().max(1024).nullable().optional();
+
+export const GovernanceToolSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('get_model_provider_policy') }),
+  z.object({
+    action: z.literal('replace_model_provider_policy'),
+    approved_provider_ids: z.array(governanceProviderId).max(1000)
+  }),
+  z.object({ action: z.literal('get_catalog_component_policy') }),
+  z.object({ action: z.literal('replace_catalog_component_policy'), blocked: governancePolicyKeys }),
+  z.object({ action: z.literal('get_catalog_template_policy') }),
+  z.object({ action: z.literal('replace_catalog_template_policy'), blocked: governancePolicyKeys }),
+  z.object({ action: z.literal('get_catalog_policy_usage') }),
+  z.object({
+    action: z.literal('get_catalog_policy_usage_flows'),
+    component: governancePolicyKey,
+    limit: z.number().int().min(1).max(500).optional()
+  }),
+  z.object({ action: z.literal('get_policy_bundle') }),
+  z.object({
+    action: z.literal('replace_policy_bundle'),
+    expected_revision: z.number().int().min(1),
+    approved_provider_ids: z.array(governanceProviderId).max(1000),
+    blocked_component_keys: governancePolicyKeys,
+    blocked_template_keys: governancePolicyKeys,
+    blocked_model_keys: governancePolicyKeys.optional(),
+    reason: governancePolicyReason
+  }),
+  z.object({
+    action: z.literal('list_policy_bundle_history'),
+    limit: z.number().int().min(1).max(200).optional(),
+    before_revision: z.number().int().min(1).nullable().optional()
+  }),
+  z.object({
+    action: z.literal('rollback_policy_bundle'),
+    revision: z.number().int().min(1),
+    expected_revision: z.number().int().min(1),
+    reason: governancePolicyReason
   })
 ]);
 
@@ -1118,6 +1186,7 @@ export type ModelToolInput = z.infer<typeof ModelToolSchema>;
 export type AgenticToolInput = z.infer<typeof AgenticToolSchema>;
 export type WorkflowToolInput = z.infer<typeof WorkflowToolSchema>;
 export type A2aToolInput = z.infer<typeof A2aToolSchema>;
+export type GovernanceToolInput = z.infer<typeof GovernanceToolSchema>;
 export type McpServerToolInput = z.infer<typeof McpServerToolSchema>;
 export type McpProjectToolInput = z.infer<typeof McpProjectToolSchema>;
 export type TraceToolInput = z.infer<typeof TraceToolSchema>;
