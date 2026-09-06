@@ -23,7 +23,7 @@ class TestableSecurityMethods {
       'access_token', 'refresh_token', 'authorization',
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
-      'private_key', 'secret', 'credentials', 'api-key', 'auth_settings'
+      'private_key', 'secret', 'credentials', 'api-key', 'auth_settings', 'input_value', 'instruction'
     ]);
 
     // Prevent infinite recursion
@@ -283,6 +283,12 @@ describe('Server Security Features', () => {
     it('should redact project authentication settings', () => {
       const sanitized = testClass.testSanitize({ auth_settings: { client_secret: 'secret' } });
       expect(sanitized.auth_settings).toBe('***REDACTED***');
+    });
+
+    it('should redact agentic prompts', () => {
+      const sanitized = testClass.testSanitize({ input_value: 'prompt', instruction: 'private instruction' });
+      expect(sanitized.input_value).toBe('***REDACTED***');
+      expect(sanitized.instruction).toBe('***REDACTED***');
     });
 
     it('should handle nested objects recursively', () => {

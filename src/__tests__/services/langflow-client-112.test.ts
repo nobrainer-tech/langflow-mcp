@@ -45,11 +45,13 @@ describe('LangflowClient - Langflow 1.12.x endpoints', () => {
   });
 
   it('upserts a project with a stable ID', async () => {
-    const body = { name: 'Project', flows_list: ['123'] };
-    mock.onPut('/projects/project-1').reply(201, { id: 'project-1', name: 'Project' });
+    const projectId = '12345678-1234-4234-a234-123456789012';
+    const flowId = '12345678-1234-4234-a234-123456789013';
+    const body = { name: 'Project', flows_list: [flowId] };
+    mock.onPut(`/projects/${projectId}`).reply(201, { id: projectId, name: 'Project' });
 
-    await expect(client.upsertProject('project-1', body)).resolves.toEqual({
-      id: 'project-1',
+    await expect(client.upsertProject(projectId, body)).resolves.toEqual({
+      id: projectId,
       name: 'Project'
     });
     expect(JSON.parse(mock.history.put[0].data)).toEqual(body);

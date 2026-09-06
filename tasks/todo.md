@@ -3,7 +3,7 @@
 GOAL_ID: `01a027f4-bbcf-71c0-831e-6a439fc45bc6`
 STATUS: ACTIVE
 OWNER: MAIN
-CHECKOUT: `/Volumes/1TB/MacMini/Github/langflow-mcp`
+CHECKOUT: repository checkout (host-local)
 
 ## Scope revision - 2026-09-06
 

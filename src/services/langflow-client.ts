@@ -398,9 +398,9 @@ export class LangflowClient {
     }
   }
 
-  async upsertProject(projectId: string, body: ProjectUpsertRequest): Promise<FolderRead> {
+  async upsertProject(projectId: string, body: ProjectUpsertRequest): Promise<ProjectRead> {
     try {
-      const response = await this.client.put<FolderRead>(
+      const response = await this.client.put<ProjectRead>(
         `/projects/${encodeURIComponent(projectId)}`,
         body
       );

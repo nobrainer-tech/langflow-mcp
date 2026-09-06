@@ -355,7 +355,7 @@ export class LangflowMCPServer {
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
       'private_key', 'secret', 'credentials', 'api-key',
-      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings'
+      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction'
     ]);
 
     // Prevent infinite recursion
