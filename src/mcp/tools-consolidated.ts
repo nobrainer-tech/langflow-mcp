@@ -1220,7 +1220,7 @@ Examples:
   },
   {
     name: 'memory',
-    description: `Manage MemoryBases (Langflow 1.10.0). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
+    description: `Manage MemoryBases (Langflow 1.12.1). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
 
 Actions:
 - create: Create a memory base bound to a flow
@@ -1251,6 +1251,7 @@ Examples:
         flow_id: { type: 'string', description: 'Flow ID - for create; filter for list' },
         threshold: { type: 'number', description: 'Capture threshold - for create, update' },
         auto_capture: { type: 'boolean', description: 'Auto-capture flag - for create, update' },
+        embedding_provider: { type: 'string', description: 'Embedding provider selected for the embedding model - for create' },
         embedding_model: { type: 'string', description: 'Embedding model - for create' },
         preprocessing: { type: 'boolean', description: 'Enable preprocessing - for create' },
         preproc_model: { type: 'string', description: 'Preprocessing model (required when preprocessing enabled) - for create' },

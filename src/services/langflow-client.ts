@@ -2418,7 +2418,7 @@ export class LangflowClient {
     }
   }
 
-  // --- MemoryBases (Langflow 1.10.0; hidden/experimental in OpenAPI) ---
+  // --- MemoryBases (Langflow 1.12.1; hidden/experimental in OpenAPI) ---
 
   async createMemoryBase(body: MemoryBaseCreate): Promise<any> {
     try {

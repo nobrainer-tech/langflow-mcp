@@ -579,6 +579,7 @@ describe('Langflow 1.10.0 Tool Schemas', () => {
 
   it('Memory: validates create/list/flush actions', () => {
     expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb', flow_id: VALID_UUID }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb', flow_id: VALID_UUID, embedding_provider: 'OpenAI' }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'list' }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'get', memory_base_id: VALID_UUID }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'flush', memory_base_id: VALID_UUID, session_id: 's1' }).success).toBe(true);
