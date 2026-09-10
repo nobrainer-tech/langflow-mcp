@@ -557,7 +557,7 @@ Once connected, Claude can use:
 - **`get_authz_audit`** - Query the authorization audit log (superuser)
 - **`get_my_permissions`** - Get the caller's effective permissions
 
-### Memory Bases (10 tools, Langflow 1.12.1 — experimental)
+### Memory Bases (10 tools, Langflow 1.12.1 - experimental)
 - **`create_memory_base`**, **`list_memory_bases`**, **`get_memory_base`** - Manage memory bases
 - **`list_memory_base_sessions`**, **`list_memory_base_messages`** - Inspect tracked sessions/messages
 - **`update_memory_base`**, **`delete_memory_base`** - Update/delete a memory base
