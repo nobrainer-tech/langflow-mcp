@@ -1106,7 +1106,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   })
 ]);
 
-// Memory base tool schema (Langflow 1.10.0)
+// Memory base tool schema (Langflow 1.12.1)
 export const MemoryToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create'),
@@ -1114,6 +1114,7 @@ export const MemoryToolSchema = z.discriminatedUnion('action', [
     flow_id: uuidSchema('flow ID'),
     threshold: z.number().int().optional(),
     auto_capture: z.boolean().optional(),
+    embedding_provider: z.string().optional(),
     embedding_model: z.string().optional(),
     preprocessing: z.boolean().optional(),
     preproc_model: z.string().optional(),

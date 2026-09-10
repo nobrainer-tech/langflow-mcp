@@ -141,14 +141,16 @@ describe('Langflow 1.10.0 full-mode tools dispatch', () => {
     await callTool(server, 'create_memory_base', {
       name: 'mem-1',
       flow_id: 'flow-1',
-      auto_capture: true
+      auto_capture: true,
+      embedding_provider: 'OpenAI'
     });
 
     expect(clientMock.createMemoryBase).toHaveBeenCalledTimes(1);
     expect(clientMock.createMemoryBase).toHaveBeenCalledWith({
       name: 'mem-1',
       flow_id: 'flow-1',
-      auto_capture: true
+      auto_capture: true,
+      embedding_provider: 'OpenAI'
     });
   });
 

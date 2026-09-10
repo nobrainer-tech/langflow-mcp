@@ -937,6 +937,7 @@ export interface MemoryBaseCreate {
   flow_id: string;
   threshold?: number;
   auto_capture?: boolean;
+  embedding_provider?: string;
   embedding_model?: string;
   preprocessing?: boolean;
   preproc_model?: string;

@@ -13,7 +13,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.12.0**, the latest stable release. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.12.1** in the 1.12.x family. The latest stable upstream release check on **2026-09-10** found `v1.12.1`. The upstream patch changes behavior in existing knowledge-base, memory and model-provider endpoints; comparison of the client-relevant API modules found no added or removed route decorators, so no new client method is required for this patch. The existing Memory Base create path now exposes the patch's optional `embedding_provider` selection. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
 
@@ -557,7 +557,7 @@ Once connected, Claude can use:
 - **`get_authz_audit`** - Query the authorization audit log (superuser)
 - **`get_my_permissions`** - Get the caller's effective permissions
 
-### Memory Bases (10 tools, Langflow 1.10.0 — experimental)
+### Memory Bases (10 tools, Langflow 1.12.1 - experimental)
 - **`create_memory_base`**, **`list_memory_bases`**, **`get_memory_base`** - Manage memory bases
 - **`list_memory_base_sessions`**, **`list_memory_base_messages`** - Inspect tracked sessions/messages
 - **`update_memory_base`**, **`delete_memory_base`** - Update/delete a memory base

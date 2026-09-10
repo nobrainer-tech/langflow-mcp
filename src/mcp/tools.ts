@@ -3977,6 +3977,7 @@ Related Tools:
         flow_id: { type: 'string', description: 'Associated flow ID' },
         threshold: { type: 'number', description: 'Capture threshold' },
         auto_capture: { type: 'boolean', description: 'Automatically capture memories' },
+        embedding_provider: { type: 'string', description: 'Embedding provider selected for the embedding model' },
         embedding_model: { type: 'string', description: 'Embedding model name' },
         preprocessing: { type: 'boolean', description: 'Enable preprocessing' },
         preproc_model: { type: 'string', description: 'Preprocessing model name' },
