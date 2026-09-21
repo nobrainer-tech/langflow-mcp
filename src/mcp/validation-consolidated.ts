@@ -1106,7 +1106,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   })
 ]);
 
-// Memory base tool schema (Langflow 1.12.1)
+// Memory base tool schema (Langflow 1.12.2)
 export const MemoryToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create'),

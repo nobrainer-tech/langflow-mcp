@@ -1311,7 +1311,7 @@ export const GetMyPermissionsSchema = z.object({
   domain: z.string().optional()
 }).strict();
 
-// --- Memory bases (Langflow 1.12.1) ---
+// --- Memory bases (Langflow 1.12.2) ---
 export const CreateMemoryBaseSchema = z.object({
   name: z.string().min(1, 'Memory base name is required'),
   flow_id: z.string().min(1, 'Flow ID is required'),
