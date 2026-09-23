@@ -3845,6 +3845,20 @@ describe('LangflowClient', () => {
       expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
+    it('runWorkflow should POST an explicit AG-UI graph-state opt-in', async () => {
+      const body = {
+        flow_id: 'flow-1',
+        mode: 'stream' as const,
+        stream_protocol: 'agui',
+        expose_graph_state: true
+      } as const;
+      mock.onPost('/api/v2/workflows').reply(200, { job_id: 'job-1' });
+
+      await client.runWorkflow(body);
+
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
     it('stopWorkflow should POST job_id body', async () => {
       mock.onPost('/api/v2/workflows/stop').reply(200, { job_id: 'job-1', message: 'stopped' });
 

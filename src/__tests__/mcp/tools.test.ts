@@ -39,6 +39,12 @@ describe('MCP Tools Definitions', () => {
   });
 
   describe('Input Schemas', () => {
+    it('advertises graph-state control for run_workflow', () => {
+      const tool = langflowMCPTools.find(candidate => candidate.name === 'run_workflow');
+      expect(tool?.inputSchema.properties).toHaveProperty('expose_graph_state');
+      expect(tool?.inputSchema.properties?.expose_graph_state).toMatchObject({ type: ['boolean', 'null'] });
+    });
+
     it('should have valid JSON schema structure', () => {
       langflowMCPTools.forEach(tool => {
         expect(tool.inputSchema.type).toBe('object');

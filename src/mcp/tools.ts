@@ -3462,7 +3462,7 @@ Related Tools:
   },
   {
     name: 'run_workflow',
-    description: 'Run a Langflow 1.11.x v2 workflow with sync, stream, or background mode.',
+    description: 'Run a Langflow 1.12.x v2 workflow with sync, stream, or background mode.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3470,6 +3470,10 @@ Related Tools:
         input_value: { type: 'string', description: 'Chat-style input value' },
         mode: { type: 'string', enum: ['sync', 'stream', 'background'], description: 'Execution mode' },
         stream_protocol: { type: 'string', description: 'Streaming protocol, for example langflow or agui' },
+        expose_graph_state: {
+          type: ['boolean', 'null'],
+          description: 'For streaming runs, include per-node graph events. Omitted or null uses the protocol default: false for AG-UI and true for Langflow. Ignored in sync mode.'
+        },
         data: { type: ['object', 'null'], description: 'Optional live-canvas flow data override' },
         files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Pre-uploaded file paths' },
         globals: { type: 'object', description: 'Request-level global variables' },

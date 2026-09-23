@@ -1538,7 +1538,7 @@ describe('Validation Schemas', () => {
     });
   });
 
-  describe('Langflow 1.11.x request contracts', () => {
+  describe('Langflow 1.12.x request contracts', () => {
     it('validates current v2 workflow modes and fields', () => {
       expect(RunWorkflowSchema.parse({
         flow_id: 'flow-1',
@@ -1551,6 +1551,34 @@ describe('Validation Schemas', () => {
         flow_id: 'flow-1',
         inputs: { stale: true }
       })).toThrow();
+    });
+
+    it('accepts an explicit graph-state choice while preserving protocol defaults and strict fields', () => {
+      const agui = RunWorkflowSchema.safeParse({
+        flow_id: 'flow-1',
+        stream_protocol: 'agui',
+        expose_graph_state: true
+      });
+      expect(agui.success).toBe(true);
+      if (agui.success) expect(Reflect.get(agui.data, 'expose_graph_state')).toBe(true);
+
+      const langflow = RunWorkflowSchema.safeParse({
+        flow_id: 'flow-1',
+        stream_protocol: 'langflow',
+        expose_graph_state: false
+      });
+      expect(langflow.success).toBe(true);
+      if (langflow.success) expect(Reflect.get(langflow.data, 'expose_graph_state')).toBe(false);
+
+      const omitted = RunWorkflowSchema.parse({ flow_id: 'flow-1', stream_protocol: 'agui' });
+      expect('expose_graph_state' in omitted).toBe(false);
+
+      const protocolDefault = RunWorkflowSchema.safeParse({
+        flow_id: 'flow-1', stream_protocol: 'agui', expose_graph_state: null
+      });
+      expect(protocolDefault.success).toBe(true);
+      if (protocolDefault.success) expect(Reflect.get(protocolDefault.data, 'expose_graph_state')).toBeNull();
+      expect(RunWorkflowSchema.safeParse({ flow_id: 'flow-1', exposeGraphState: true }).success).toBe(false);
     });
 
     it('enforces pending flow_id and resume request_id', () => {

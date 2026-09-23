@@ -760,6 +760,7 @@ export interface RunWorkflowRequest {
   input_value?: string;
   mode?: 'sync' | 'stream' | 'background';
   stream_protocol?: string;
+  expose_graph_state?: boolean | null;
   data?: Record<string, unknown> | null;
   files?: string[] | null;
   globals?: Record<string, string>;

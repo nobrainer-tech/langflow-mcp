@@ -924,6 +924,7 @@ export const RunWorkflowSchema = z.object({
   input_value: z.string().optional(),
   mode: z.enum(['sync', 'stream', 'background']).optional(),
   stream_protocol: z.string().optional(),
+  expose_graph_state: z.boolean().nullable().optional(),
   data: z.record(z.string(), z.unknown()).nullable().optional(),
   files: z.array(z.string()).nullable().optional(),
   globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),

@@ -131,6 +131,19 @@ describe('Langflow 1.9.x full-mode tools dispatch', () => {
     expect(clientMock.runWorkflow).toHaveBeenCalledWith(args);
   });
 
+  it('dispatches the AG-UI graph-state opt-in to client.runWorkflow', async () => {
+    const server = new LangflowMCPServer();
+    const args = {
+      flow_id: 'flow-abc',
+      stream_protocol: 'agui',
+      expose_graph_state: true
+    };
+
+    await callTool(server, 'run_workflow', args);
+
+    expect(clientMock.runWorkflow).toHaveBeenCalledWith(args);
+  });
+
   it('dispatches create_mcp_server to client.createMcpServer with name + config', async () => {
     const server = new LangflowMCPServer();
     await callTool(server, 'create_mcp_server', {

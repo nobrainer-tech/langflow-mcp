@@ -926,6 +926,10 @@ Examples:
         input_value: { type: 'string', description: 'Chat-style input value - for run, run_public' },
         mode: { type: 'string', enum: ['sync', 'stream', 'background'], description: 'Execution mode - for run' },
         stream_protocol: { type: 'string', description: 'Streaming protocol - for run, run_public' },
+        expose_graph_state: {
+          type: ['boolean', 'null'],
+          description: 'For run only: include per-node graph events in streaming output. Omitted or null uses the protocol default: false for AG-UI and true for Langflow; ignored in sync mode.'
+        },
         data: { type: ['object', 'null'], description: 'Live-canvas data override - for run' },
         files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Pre-uploaded file paths - for run, run_public' },
         globals: { type: 'object', description: 'Request-level global variables - for run' },
