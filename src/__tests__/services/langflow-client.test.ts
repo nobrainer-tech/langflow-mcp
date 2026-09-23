@@ -3845,6 +3845,20 @@ describe('LangflowClient', () => {
       expect(mock.history.post[0].baseURL).toBe('http://localhost:7860');
     });
 
+    it('runWorkflow should POST an explicit AG-UI graph-state opt-in', async () => {
+      const body = {
+        flow_id: 'flow-1',
+        mode: 'stream' as const,
+        stream_protocol: 'agui',
+        expose_graph_state: true
+      } as const;
+      mock.onPost('/api/v2/workflows').reply(200, { job_id: 'job-1' });
+
+      await client.runWorkflow(body);
+
+      expect(mock.history.post[0].data).toBe(JSON.stringify(body));
+    });
+
     it('stopWorkflow should POST job_id body', async () => {
       mock.onPost('/api/v2/workflows/stop').reply(200, { job_id: 'job-1', message: 'stopped' });
 
@@ -3909,11 +3923,12 @@ describe('LangflowClient', () => {
 
   describe('mcp v1 project', () => {
     it('getMcpProjectConfig should GET with mcp_enabled param', async () => {
-      mock.onGet('/mcp/project/p1').reply(200, { settings: [] });
+      const response = { settings: [], server_name: 'lf-project' };
+      mock.onGet('/mcp/project/p1').reply(200, response);
 
       const result = await client.getMcpProjectConfig('p1', { mcp_enabled: true });
 
-      expect(result).toEqual({ settings: [] });
+      expect(result).toEqual(response);
       expect(mock.history.get[0].params).toEqual({ mcp_enabled: true });
     });
 

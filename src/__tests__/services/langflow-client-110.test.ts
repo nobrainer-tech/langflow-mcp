@@ -109,8 +109,13 @@ describe('LangflowClient — Langflow 1.10.0 endpoints', () => {
   describe('memory bases', () => {
     it('createMemoryBase POSTs /memories', async () => {
       mock.onPost('/memories').reply(201, { id: 'mb1' });
-      const result = await client.createMemoryBase({ name: 'mb', flow_id: 'f1' });
+      const result = await client.createMemoryBase({ name: 'mb', flow_id: 'f1', embedding_provider: 'OpenAI' });
       expect(result).toEqual({ id: 'mb1' });
+      expect(JSON.parse(mock.history.post[0].data)).toEqual({
+        name: 'mb',
+        flow_id: 'f1',
+        embedding_provider: 'OpenAI'
+      });
     });
 
     it('listMemoryBases GETs /memories with filters', async () => {

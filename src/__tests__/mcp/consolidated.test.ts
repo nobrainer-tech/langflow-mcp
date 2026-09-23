@@ -84,6 +84,12 @@ describe('Consolidated Tools', () => {
       expect(tool.inputSchema.properties).toHaveProperty('action');
     }
   });
+
+  it('workflow tool advertises graph-state control for run actions', () => {
+    const tool = consolidatedTools.find(candidate => candidate.name === 'workflow');
+    expect(tool?.inputSchema.properties).toHaveProperty('expose_graph_state');
+    expect(tool?.inputSchema.properties.expose_graph_state).toMatchObject({ type: ['boolean', 'null'] });
+  });
 });
 
 describe('Flow Tool Schema', () => {
@@ -562,6 +568,34 @@ describe('Langflow 1.10.0 Tool Schemas', () => {
     expect(WorkflowToolSchema.safeParse({ action: 'run', flow_id: 'f1', globals: { bad: 1 } }).success).toBe(false);
   });
 
+  it('Workflow: preserves explicit graph-state choices and leaves omitted defaults unset', () => {
+    const agui = WorkflowToolSchema.safeParse({
+      action: 'run', flow_id: 'f1', stream_protocol: 'agui', expose_graph_state: true
+    });
+    expect(agui.success).toBe(true);
+    if (agui.success) expect(Reflect.get(agui.data, 'expose_graph_state')).toBe(true);
+
+    const langflow = WorkflowToolSchema.safeParse({
+      action: 'run', flow_id: 'f1', stream_protocol: 'langflow', expose_graph_state: false
+    });
+    expect(langflow.success).toBe(true);
+    if (langflow.success) expect(Reflect.get(langflow.data, 'expose_graph_state')).toBe(false);
+
+    const omitted = WorkflowToolSchema.parse({ action: 'run', flow_id: 'f1', stream_protocol: 'agui' });
+    expect('expose_graph_state' in omitted).toBe(false);
+
+    const publicRun = WorkflowToolSchema.parse({
+      action: 'run_public', flow_id: 'f1', expose_graph_state: true
+    });
+    expect('expose_graph_state' in publicRun).toBe(false);
+
+    const protocolDefault = WorkflowToolSchema.safeParse({
+      action: 'run', flow_id: 'f1', stream_protocol: 'agui', expose_graph_state: null
+    });
+    expect(protocolDefault.success).toBe(true);
+    if (protocolDefault.success) expect(Reflect.get(protocolDefault.data, 'expose_graph_state')).toBeNull();
+  });
+
   it('Authz: validates role/team/share/audit/my_permissions actions', () => {
     expect(AuthzToolSchema.safeParse({ action: 'list_roles' }).success).toBe(true);
     expect(AuthzToolSchema.safeParse({ action: 'create_role', name: 'editor', permissions: ['flow:read'] }).success).toBe(true);
@@ -579,6 +613,7 @@ describe('Langflow 1.10.0 Tool Schemas', () => {
 
   it('Memory: validates create/list/flush actions', () => {
     expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb', flow_id: VALID_UUID }).success).toBe(true);
+    expect(MemoryToolSchema.safeParse({ action: 'create', name: 'mb', flow_id: VALID_UUID, embedding_provider: 'OpenAI' }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'list' }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'get', memory_base_id: VALID_UUID }).success).toBe(true);
     expect(MemoryToolSchema.safeParse({ action: 'flush', memory_base_id: VALID_UUID, session_id: 's1' }).success).toBe(true);
@@ -903,6 +938,15 @@ describe('Consolidated handler dispatch', () => {
   it('workflow.run dispatches to runWorkflow', async () => {
     await server.handleWorkflowTool({ action: 'run', flow_id: 'f1', input_value: 'hi', mode: 'sync' });
     expect(client.runWorkflow).toHaveBeenCalledWith({ flow_id: 'f1', input_value: 'hi', mode: 'sync' });
+  });
+
+  it('workflow.run dispatches an explicit non-AG-UI graph-state opt-out', async () => {
+    await server.handleWorkflowTool({
+      action: 'run', flow_id: 'f1', stream_protocol: 'langflow', expose_graph_state: false
+    });
+    expect(client.runWorkflow).toHaveBeenCalledWith({
+      flow_id: 'f1', stream_protocol: 'langflow', expose_graph_state: false
+    });
   });
 
   it('workflow.stop dispatches to stopWorkflow', async () => {

@@ -926,6 +926,10 @@ Examples:
         input_value: { type: 'string', description: 'Chat-style input value - for run, run_public' },
         mode: { type: 'string', enum: ['sync', 'stream', 'background'], description: 'Execution mode - for run' },
         stream_protocol: { type: 'string', description: 'Streaming protocol - for run, run_public' },
+        expose_graph_state: {
+          type: ['boolean', 'null'],
+          description: 'For run only: include per-node graph events in streaming output. Omitted or null uses the protocol default: false for AG-UI and true for Langflow; ignored in sync mode.'
+        },
         data: { type: ['object', 'null'], description: 'Live-canvas data override - for run' },
         files: { type: ['array', 'null'], items: { type: 'string' }, description: 'Pre-uploaded file paths - for run, run_public' },
         globals: { type: 'object', description: 'Request-level global variables - for run' },
@@ -1220,7 +1224,7 @@ Examples:
   },
   {
     name: 'memory',
-    description: `Manage MemoryBases (Langflow 1.10.0). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
+    description: `Manage MemoryBases (Langflow 1.12.3). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
 
 Actions:
 - create: Create a memory base bound to a flow
@@ -1251,6 +1255,7 @@ Examples:
         flow_id: { type: 'string', description: 'Flow ID - for create; filter for list' },
         threshold: { type: 'number', description: 'Capture threshold - for create, update' },
         auto_capture: { type: 'boolean', description: 'Auto-capture flag - for create, update' },
+        embedding_provider: { type: 'string', description: 'Embedding provider selected for the embedding model - for create' },
         embedding_model: { type: 'string', description: 'Embedding model - for create' },
         preprocessing: { type: 'boolean', description: 'Enable preprocessing - for create' },
         preproc_model: { type: 'string', description: 'Preprocessing model (required when preprocessing enabled) - for create' },

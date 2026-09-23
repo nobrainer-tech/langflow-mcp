@@ -924,6 +924,7 @@ export const RunWorkflowSchema = z.object({
   input_value: z.string().optional(),
   mode: z.enum(['sync', 'stream', 'background']).optional(),
   stream_protocol: z.string().optional(),
+  expose_graph_state: z.boolean().nullable().optional(),
   data: z.record(z.string(), z.unknown()).nullable().optional(),
   files: z.array(z.string()).nullable().optional(),
   globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
@@ -1311,12 +1312,13 @@ export const GetMyPermissionsSchema = z.object({
   domain: z.string().optional()
 }).strict();
 
-// --- Memory bases (Langflow 1.10.0) ---
+// --- Memory bases (Langflow 1.12.3) ---
 export const CreateMemoryBaseSchema = z.object({
   name: z.string().min(1, 'Memory base name is required'),
   flow_id: z.string().min(1, 'Flow ID is required'),
   threshold: z.number().int().optional(),
   auto_capture: z.boolean().optional(),
+  embedding_provider: z.string().optional(),
   embedding_model: z.string().optional(),
   preprocessing: z.boolean().optional(),
   preproc_model: z.string().optional(),

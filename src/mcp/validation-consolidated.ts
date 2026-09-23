@@ -801,6 +801,7 @@ export const WorkflowToolSchema = z.discriminatedUnion('action', [
     input_value: z.string().optional(),
     mode: z.enum(['sync', 'stream', 'background']).optional(),
     stream_protocol: z.string().optional(),
+    expose_graph_state: z.boolean().nullable().optional(),
     data: z.record(z.string(), z.unknown()).nullable().optional(),
     files: z.array(z.string()).nullable().optional(),
     globals: z.record(z.string().min(1).max(256), z.string().max(65536)).optional(),
@@ -1106,7 +1107,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
   })
 ]);
 
-// Memory base tool schema (Langflow 1.10.0)
+// Memory base tool schema (Langflow 1.12.3)
 export const MemoryToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('create'),
@@ -1114,6 +1115,7 @@ export const MemoryToolSchema = z.discriminatedUnion('action', [
     flow_id: uuidSchema('flow ID'),
     threshold: z.number().int().optional(),
     auto_capture: z.boolean().optional(),
+    embedding_provider: z.string().optional(),
     embedding_model: z.string().optional(),
     preprocessing: z.boolean().optional(),
     preproc_model: z.string().optional(),

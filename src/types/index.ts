@@ -760,6 +760,7 @@ export interface RunWorkflowRequest {
   input_value?: string;
   mode?: 'sync' | 'stream' | 'background';
   stream_protocol?: string;
+  expose_graph_state?: boolean | null;
   data?: Record<string, unknown> | null;
   files?: string[] | null;
   globals?: Record<string, string>;
@@ -937,6 +938,7 @@ export interface MemoryBaseCreate {
   flow_id: string;
   threshold?: number;
   auto_capture?: boolean;
+  embedding_provider?: string;
   embedding_model?: string;
   preprocessing?: boolean;
   preproc_model?: string;
