@@ -3909,11 +3909,12 @@ describe('LangflowClient', () => {
 
   describe('mcp v1 project', () => {
     it('getMcpProjectConfig should GET with mcp_enabled param', async () => {
-      mock.onGet('/mcp/project/p1').reply(200, { settings: [] });
+      const response = { settings: [], server_name: 'lf-project' };
+      mock.onGet('/mcp/project/p1').reply(200, response);
 
       const result = await client.getMcpProjectConfig('p1', { mcp_enabled: true });
 
-      expect(result).toEqual({ settings: [] });
+      expect(result).toEqual(response);
       expect(mock.history.get[0].params).toEqual({ mcp_enabled: true });
     });
 

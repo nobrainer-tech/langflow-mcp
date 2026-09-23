@@ -1220,7 +1220,7 @@ Examples:
   },
   {
     name: 'memory',
-    description: `Manage MemoryBases (Langflow 1.12.2). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
+    description: `Manage MemoryBases (Langflow 1.12.3). Note: this is an experimental Langflow API hidden from its OpenAPI schema; availability may vary by deployment.
 
 Actions:
 - create: Create a memory base bound to a flow

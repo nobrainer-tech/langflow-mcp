@@ -4,7 +4,7 @@
 
 The npm package version tracks the supported Langflow API version:
 npm `4.<langflow_minor>.<patch>` targets Langflow API `1.<langflow_minor>.x`.
-Langflow API 1.12.0 is therefore covered by `langflow-mcp-server@4.12.x`.
+Langflow API 1.12.x is therefore covered by `langflow-mcp-server@4.12.x`.
 
 ## Cutting a release
 
