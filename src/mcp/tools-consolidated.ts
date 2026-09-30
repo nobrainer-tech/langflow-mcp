@@ -1203,7 +1203,7 @@ Examples:
         actions: { type: 'array', items: { type: 'string' }, description: 'Actions to check - for my_permissions' },
         domain: { type: 'string', description: 'Permission domain - for my_permissions' },
         audit_action: { type: 'string', description: 'Audited action name filter - for audit' },
-        result: { type: 'string', description: 'Audit result filter (allow/deny) - for audit' },
+        result: { type: 'string', description: 'Audit result filter: allow, deny, owner_override or skip (Langflow 1.12.4+ rejects other values) - for audit' },
         since: { type: 'string', description: 'Audit lower time bound (ISO) - for audit' },
         until: { type: 'string', description: 'Audit upper time bound (ISO) - for audit' },
         is_system: { type: 'boolean', description: 'Filter system roles - for list_roles' },
