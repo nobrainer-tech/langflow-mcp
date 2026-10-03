@@ -4,19 +4,53 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    if: github.repository == 'nobrainer-tech/langflow-mcp' && startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
 
     permissions:
       contents: write
       id-token: write
 
     steps:
+      - name: Validate release tag
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo 'Expected a stable release tag such as v4.12.1' >&2
+            exit 1
+          fi
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ steps.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Verify release source and package version
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          git merge-base --is-ancestor HEAD origin/master
+          node -e 'const assert = require("node:assert/strict"); const p = require("./package.json"); const l = require("./package-lock.json"); assert.equal(p.name, "langflow-mcp-server"); assert.equal(p.version, process.env.RELEASE_VERSION); assert.equal(l.version, p.version); assert.equal(l.packages[""].version, p.version);'
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -30,29 +64,40 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type check
+        run: npm run typecheck
+
       - name: Run tests
         run: npm run test:run
+
+      - name: Test publication recovery
+        run: node --test scripts/publish-release.node-test.mjs
+
+      - name: Security audit
+        run: npm audit --audit-level=high
 
       - name: Build project
         run: npm run build
 
-      - name: Publish to npm (OIDC trusted publishing)
-        run: npm publish --access public
+      - name: Smoke test packaged MCP transports
+        run: node scripts/smoke-package.mjs
 
-      - name: Extract version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Publish or verify existing npm version
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: node scripts/publish-release.mjs
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          name: Release v${{ steps.get_version.outputs.VERSION }}
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: Release v${{ steps.release.outputs.version }}
           body: |
-            ## Changes in v${{ steps.get_version.outputs.VERSION }}
+            ## Changes in v${{ steps.release.outputs.version }}
 
-            Published to npm: https://www.npmjs.com/package/langflow-mcp-server/v/${{ steps.get_version.outputs.VERSION }}
+            Published to npm: https://www.npmjs.com/package/langflow-mcp-server/v/${{ steps.release.outputs.version }}
 
-            Install: \`npm install -g langflow-mcp-server@${{ steps.get_version.outputs.VERSION }}\`
+            Install: `npm install -g langflow-mcp-server@${{ steps.release.outputs.version }}`
           draft: false
           prerelease: false
           generate_release_notes: true

@@ -1295,10 +1295,15 @@ export const DeleteAuthzShareSchema = z.object({
 
 export const GetAuthzAuditSchema = z.object({
   user_id: z.string().optional(),
+  actor_type: z.enum(['user', 'api_key', 'unknown', 'anonymous_public']).optional(),
+  actor_id: z.string().optional(),
   resource_type: z.string().optional(),
   resource_id: z.string().optional(),
   action: z.string().optional(),
-  result: z.string().optional(),
+  exclude_action: z.array(z.string()).optional(),
+  result: z.enum(['allow', 'deny', 'owner_override', 'skip']).optional(),
+  event: z.array(z.string()).optional(),
+  exclude_event: z.array(z.string()).optional(),
   since: z.string().optional(),
   until: z.string().optional(),
   page: z.number().optional(),

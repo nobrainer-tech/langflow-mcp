@@ -30,6 +30,7 @@ vi.mock('../../services/langflow-client', () => ({
 }));
 
 import { LangflowMCPServer } from '../../mcp/server';
+import { langflowMCPTools } from '../../mcp/tools';
 
 function getCallToolHandler(server: LangflowMCPServer): (req: any) => Promise<any> {
   const sdkServer = (server as any).server;
@@ -117,6 +118,59 @@ describe('Langflow 1.10.0 full-mode tools dispatch', () => {
       action: 'delete',
       page: 2,
       size: 50
+    });
+  });
+
+  it('dispatches get_authz_audit preserving actor and list filters', async () => {
+    const server = new LangflowMCPServer();
+    const filters = {
+      actor_type: 'api_key',
+      actor_id: '12345678-1234-4234-a234-123456789012',
+      action: 'flow:write',
+      exclude_action: ['flow:read', 'share:create'],
+      result: 'owner_override',
+      event: ['mutation', 'authorization_decision'],
+      exclude_event: ['read', 'legacy']
+    };
+
+    const result = await callTool(server, 'get_authz_audit', filters);
+
+    expect(result.isError).toBeUndefined();
+    expect(clientMock.getAuthzAudit).toHaveBeenCalledWith(filters);
+  });
+
+  it.each(['user', 'api_key', 'unknown', 'anonymous_public'])('get_authz_audit accepts actor_type %s', async actor_type => {
+    const result = await callTool(new LangflowMCPServer(), 'get_authz_audit', { actor_type });
+    expect(result.isError).toBeUndefined();
+    expect(clientMock.getAuthzAudit).toHaveBeenCalledWith({ actor_type });
+  });
+
+  it.each(['allow', 'deny', 'owner_override', 'skip'])('get_authz_audit accepts result %s', async result => {
+    await callTool(new LangflowMCPServer(), 'get_authz_audit', { result });
+    expect(clientMock.getAuthzAudit).toHaveBeenCalledWith({ result });
+  });
+
+  it.each([
+    { actor_type: 'service' },
+    { result: 'success' },
+    { exclude_action: 'flow:read' },
+    { event: 'mutation' },
+    { exclude_event: [1] }
+  ])('get_authz_audit rejects invalid filter %j without calling the client', async filters => {
+    const result = await callTool(new LangflowMCPServer(), 'get_authz_audit', filters);
+    expect(result.isError).toBe(true);
+    expect(clientMock.getAuthzAudit).toBeUndefined();
+  });
+
+  it('get_authz_audit advertises actor, result and list filters', () => {
+    const tool = langflowMCPTools.find(candidate => candidate.name === 'get_authz_audit');
+    expect(tool?.inputSchema.properties).toMatchObject({
+      actor_type: { type: 'string', enum: ['user', 'api_key', 'unknown', 'anonymous_public'] },
+      actor_id: { type: 'string' },
+      result: { type: 'string', enum: ['allow', 'deny', 'owner_override', 'skip'] },
+      exclude_action: { type: 'array', items: { type: 'string' } },
+      event: { type: 'array', items: { type: 'string' } },
+      exclude_event: { type: 'array', items: { type: 'string' } }
     });
   });
 

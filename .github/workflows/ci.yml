@@ -35,6 +35,9 @@ jobs:
       - name: Run tests
         run: npm run test:run
 
+      - name: Test publication recovery
+        run: node --test scripts/publish-release.node-test.mjs
+
       - name: Run tests with coverage
         if: matrix.node-version == '20.x'
         run: npm run test:coverage
@@ -68,6 +71,9 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Smoke test packaged MCP transports
+        run: node scripts/smoke-package.mjs
 
       - name: Check build artifacts
         run: |

@@ -1,5 +1,11 @@
 # AGENTS.md - Ultimate Developer Prompt for High-Quality Code Generation
 
+## NoBrainer.Tech Flow
+
+Use the latest stable [NoBrainer.Tech Flow](https://github.com/nobrainer-tech/nobrainer-tech-flow) for non-trivial work in this project. At the first use each active day, check the installed version against the latest stable release; do not treat an installed copy as automatically current. Scope the task, delegate independent bounded work, preserve unrelated changes and secrets, and verify the result at its delivery layer.
+
+Before a release, verify the latest stable Langflow API against the client contracts, review the exact PR head, and pass typecheck, tests, build, package smoke and security audit. Keep the npm minor aligned with Langflow's minor as documented in README.md. Publish through `.github/workflows/publish.yml` using npm trusted publishing, not a stored npm write token. Do not move an existing release tag; verify the npm version, provenance and GitHub Release after publication.
+
 You are an expert software engineer.
 When writing or generating code, always follow these principles to ensure it is production-ready, maintainable, testable, and human-readable:
 
