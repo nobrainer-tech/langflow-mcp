@@ -677,6 +677,39 @@ describe('Langflow 1.12.x Tool Schemas', () => {
   });
 });
 
+describe('Authz audit filters', () => {
+  it.each(['user', 'api_key', 'unknown', 'anonymous_public'])('preserves actor_type %s', actor_type => {
+    expect(AuthzToolSchema.parse({ action: 'audit', actor_type })).toEqual({ action: 'audit', actor_type });
+  });
+
+  it.each(['allow', 'deny', 'owner_override', 'skip'])('accepts result %s', result => {
+    expect(AuthzToolSchema.parse({ action: 'audit', result })).toEqual({ action: 'audit', result });
+  });
+
+  it.each([
+    { actor_type: 'service' },
+    { actor_id: 'not-a-uuid' },
+    { result: 'success' },
+    { exclude_action: 'flow:read' },
+    { event: 'mutation' },
+    { exclude_event: [1] }
+  ])('rejects invalid filter %j', filters => {
+    expect(AuthzToolSchema.safeParse({ action: 'audit', ...filters }).success).toBe(false);
+  });
+
+  it('advertises actor, result and list filters', () => {
+    const tool = consolidatedTools.find(candidate => candidate.name === 'authz');
+    expect(tool?.inputSchema.properties).toMatchObject({
+      actor_type: { type: 'string', enum: ['user', 'api_key', 'unknown', 'anonymous_public'] },
+      actor_id: { type: 'string' },
+      result: { type: 'string', enum: ['allow', 'deny', 'owner_override', 'skip'] },
+      exclude_action: { type: 'array', items: { type: 'string' } },
+      event: { type: 'array', items: { type: 'string' } },
+      exclude_event: { type: 'array', items: { type: 'string' } }
+    });
+  });
+});
+
 describe('Consolidated handler dispatch', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let server: any;
@@ -1076,6 +1109,19 @@ describe('Consolidated handler dispatch', () => {
   it('authz.audit maps audit_action filter to action query param', async () => {
     await server.handleAuthzTool({ action: 'audit', audit_action: 'role.create', result: 'allow' });
     expect(client.getAuthzAudit).toHaveBeenCalledWith({ result: 'allow', action: 'role.create' });
+  });
+
+  it('authz.audit preserves actor and list filters while mapping audit_action', async () => {
+    const filters = {
+      actor_type: 'anonymous_public',
+      actor_id: VALID_UUID,
+      exclude_action: ['flow:read', 'share:create'],
+      result: 'skip',
+      event: ['mutation', 'authorization_decision'],
+      exclude_event: ['read', 'legacy']
+    };
+    await server.handleAuthzTool({ action: 'audit', audit_action: 'flow:write', ...filters });
+    expect(client.getAuthzAudit).toHaveBeenCalledWith({ action: 'flow:write', ...filters });
   });
 
   it('authz.my_permissions dispatches to getMyPermissions', async () => {

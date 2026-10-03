@@ -2402,7 +2402,10 @@ export class LangflowClient {
 
   async getAuthzAudit(params?: AuthzAuditParams): Promise<any> {
     try {
-      const response = await this.client.get('/authz/audit', { params });
+      const response = await this.client.get('/authz/audit', {
+        params,
+        paramsSerializer: { indexes: null }
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to get authz audit log');

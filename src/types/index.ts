@@ -908,10 +908,15 @@ export interface AuthzShareUpdate {
 // authz: audit
 export interface AuthzAuditParams {
   user_id?: string;
+  actor_type?: 'user' | 'api_key' | 'unknown' | 'anonymous_public';
+  actor_id?: string;
   resource_type?: string;
   resource_id?: string;
   action?: string;
-  result?: string;
+  exclude_action?: string[];
+  result?: 'allow' | 'deny' | 'owner_override' | 'skip';
+  event?: string[];
+  exclude_event?: string[];
   since?: string;
   until?: string;
   page?: number;

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import axios, { AxiosInstance } from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { LangflowClient } from '../../services/langflow-client';
-import { LangflowConfig } from '../../types';
+import { AuthzAuditParams, LangflowConfig } from '../../types';
 
 // Coverage for the Langflow 1.10.0 client methods (authz, memory bases,
 // knowledge-base overhaul, extensions, agentic sandbox, misc). The internal
@@ -96,6 +96,47 @@ describe('LangflowClient — Langflow 1.10.0 endpoints', () => {
       mock.onGet('/authz/audit').reply(200, { items: [], total: 0 });
       await client.getAuthzAudit({ result: 'allow', action: 'role.create' });
       expect(mock.history.get[0].params).toEqual({ result: 'allow', action: 'role.create' });
+    });
+
+    it('getAuthzAudit serializes list filters as repeated query parameters', async () => {
+      const params: AuthzAuditParams = {
+        user_id: '12345678-1234-4234-a234-123456789012',
+        actor_type: 'api_key',
+        actor_id: '22345678-1234-4234-a234-123456789012',
+        action: 'flow:write',
+        exclude_action: ['flow:read', 'share:create & role=editor'],
+        result: 'owner_override',
+        event: ['mutation', 'authorization_decision'],
+        exclude_event: ['read', 'legacy event'],
+        page: 2,
+        size: 50
+      };
+      mock.onGet('/authz/audit').reply(200, { items: [], total: 0 });
+
+      await client.getAuthzAudit(params);
+
+      expect(mock.history.get[0].params).toEqual(params);
+      const http = (client as any).client as AxiosInstance;
+      const uri = new URL(http.getUri(mock.history.get[0]));
+      expect(uri.pathname).toBe('/api/v1/authz/audit');
+      expect(uri.searchParams.get('actor_type')).toBe('api_key');
+      expect(uri.searchParams.get('actor_id')).toBe(params.actor_id);
+      expect(uri.searchParams.get('action')).toBe('flow:write');
+      expect(uri.searchParams.get('result')).toBe('owner_override');
+      expect(uri.searchParams.get('page')).toBe('2');
+      expect(uri.searchParams.get('size')).toBe('50');
+      for (const key of ['exclude_action', 'event', 'exclude_event'] as const) {
+        expect(uri.searchParams.getAll(key)).toEqual(params[key]);
+      }
+      expect([...uri.searchParams.keys()].some(key => /[\[\]]/.test(key))).toBe(false);
+      expect(http.defaults.paramsSerializer).toBeUndefined();
+    });
+
+    it('getAuthzAudit omits empty list filters from the URI', async () => {
+      mock.onGet('/authz/audit').reply(200, { items: [], total: 0 });
+      await client.getAuthzAudit({ exclude_action: [], event: [], exclude_event: [] });
+      const http = (client as any).client as AxiosInstance;
+      expect(http.getUri(mock.history.get[0])).toBe('http://localhost:7860/api/v1/authz/audit');
     });
 
     it('getMyPermissions POSTs /authz/me/permissions', async () => {

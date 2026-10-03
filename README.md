@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-932%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-967%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -16,6 +16,8 @@ langflow-mcp-server serves as a bridge between Langflow's workflow automation pl
 **API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.12.4** in the 1.12.x family. The latest stable upstream release check on **2026-09-30** found `v1.12.4` (published **2026-09-29**). The `v1.12.3` to `v1.12.4` comparison of the client-relevant API found no new, removed, or renamed routes and no fields added to or removed from the request and response models this server uses. The patch is a security-hardening release that tightens access and validation rules, so Langflow may now reject calls it used to accept (for example `globals` or `tweaks` from a non-owner on a flow that stores the owner's credentials, unknown audit-log `result` or `actor_type` filters, unsafe file names, or a second role in the same assignment scope); the client surfaces those errors through its normal error handling. Workflow runs expose the optional `expose_graph_state` control added in 1.12.3: omitted or `null` uses the protocol default (conversation-only for AG-UI, graph events for Langflow); synchronous runs ignore it, and stream or background runs by a non-owner of a shared flow always run with it off. Existing client methods pass MCP project responses through and surface the MCP server endpoint's 404 through normal error handling. Memory Base creation exposes the optional `embedding_provider` added in 1.12.1. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
+
+The **2026-10-03** API review reconfirmed [Langflow 1.12.4](https://github.com/langflow-ai/langflow/releases/tag/v1.12.4) as the latest stable release. Audit-log queries support credential actors and include/exclude event filters in both MCP modes. Langflow 1.12.4 also changes the knowledge-base chunk-preview default separator to an empty string and applies fallback separators to keep chunks within the requested size. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
 
 ### Consolidated Tools Mode
 
@@ -726,6 +728,9 @@ npm test
 
 # Type checking
 npm run typecheck
+
+# HTTP development server with automatic TypeScript reload
+npm run dev:http
 ```
 
 ## Project Structure
@@ -752,6 +757,8 @@ langflow-mcp/
 
 ## Attribution
 
+Developed with [NoBrainer.Tech Flow](https://github.com/nobrainer-tech/nobrainer-tech-flow) for scoped implementation, independent reviews and release verification.
+
 This project is inspired by and follows the structure of [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) by Romuald Czlonkowski. Special thanks to the n8n-mcp project for the excellent MCP server architecture and implementation patterns.
 
 ## License
@@ -771,6 +778,16 @@ Contributions are welcome! Please:
 - [Langflow](https://github.com/logspace-ai/langflow) team for the workflow automation platform
 - [Anthropic](https://anthropic.com) for the Model Context Protocol
 - [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp) for the inspiration and architecture
+
+## Releasing
+
+Release through `.github/workflows/publish.yml` on GitHub-hosted runners. The npm Trusted Publisher must use owner `nobrainer-tech`, repository `langflow-mcp`, workflow `publish.yml`, an empty environment and permission to run `npm publish`. No stored npm write token is required.
+
+After reviewed changes are merged, push a new stable tag matching `package.json` and the lockfile. The workflow checks that the tag belongs to master, runs typecheck, tests, packaged MCP smoke and security audit, then publishes and verifies the exact npm commit and provenance before creating the GitHub Release. Existing tags must not be moved.
+
+The provenance check binds the attestation's package, tarball SHA-512 digest, source repository and commit. It does not perform cryptographic verification of Sigstore signatures.
+
+For tags created from 4.12.1 onward, recover an interrupted release by running the workflow at that exact tag (for example `gh workflow run publish.yml --ref v4.12.1`). This keeps the build source aligned with GitHub's provenance identity. An already-published version is accepted only when its commit and provenance match; it is never overwritten.
 
 ---
 
