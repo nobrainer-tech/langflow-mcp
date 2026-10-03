@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-965%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-967%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -784,6 +784,8 @@ Contributions are welcome! Please:
 Release through `.github/workflows/publish.yml` on GitHub-hosted runners. The npm Trusted Publisher must use owner `nobrainer-tech`, repository `langflow-mcp`, workflow `publish.yml`, an empty environment and permission to run `npm publish`. No stored npm write token is required.
 
 After reviewed changes are merged, push a new stable tag matching `package.json` and the lockfile. The workflow checks that the tag belongs to master, runs typecheck, tests, packaged MCP smoke and security audit, then publishes and verifies the exact npm commit and provenance before creating the GitHub Release. Existing tags must not be moved.
+
+The provenance check binds the attestation's package, tarball SHA-512 digest, source repository and commit. It does not perform cryptographic verification of Sigstore signatures.
 
 For tags created from 4.12.1 onward, recover an interrupted release by running the workflow at that exact tag (for example `gh workflow run publish.yml --ref v4.12.1`). This keeps the build source aligned with GitHub's provenance identity. An already-published version is accepted only when its commit and provenance match; it is never overwritten.
 

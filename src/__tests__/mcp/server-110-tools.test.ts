@@ -152,6 +152,8 @@ describe('Langflow 1.10.0 full-mode tools dispatch', () => {
 
   it.each([
     { actor_type: 'service' },
+    { actor_id: 'not-a-uuid' },
+    { actor_id: '' },
     { result: 'success' },
     { exclude_action: 'flow:read' },
     { event: 'mutation' },

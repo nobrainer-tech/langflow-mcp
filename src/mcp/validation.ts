@@ -1296,7 +1296,7 @@ export const DeleteAuthzShareSchema = z.object({
 export const GetAuthzAuditSchema = z.object({
   user_id: z.string().optional(),
   actor_type: z.enum(['user', 'api_key', 'unknown', 'anonymous_public']).optional(),
-  actor_id: z.string().optional(),
+  actor_id: z.string().uuid('Invalid actor ID format').optional(),
   resource_type: z.string().optional(),
   resource_id: z.string().optional(),
   action: z.string().optional(),
