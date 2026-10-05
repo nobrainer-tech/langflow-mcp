@@ -706,7 +706,10 @@ export class LangflowClient {
 
   async listStoreComponents(params?: ListStoreComponentsParams): Promise<StoreComponent[]> {
     try {
-      const response = await this.client.get<StoreComponent[]>('/store/components/', { params });
+      const response = await this.client.get<StoreComponent[]>('/store/components/', {
+        params,
+        paramsSerializer: { indexes: null }
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to list store components');
@@ -1798,7 +1801,10 @@ export class LangflowClient {
 
   async listEnabledProviders(params?: EnabledProvidersParams): Promise<any> {
     try {
-      const response = await this.client.get('/models/enabled_providers', { params });
+      const response = await this.client.get('/models/enabled_providers', {
+        params,
+        paramsSerializer: { indexes: null }
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to list enabled providers');
@@ -1807,7 +1813,10 @@ export class LangflowClient {
 
   async listEnabledModels(params?: EnabledModelsParams): Promise<any> {
     try {
-      const response = await this.client.get('/models/enabled_models', { params });
+      const response = await this.client.get('/models/enabled_models', {
+        params,
+        paramsSerializer: { indexes: null }
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to list enabled models');

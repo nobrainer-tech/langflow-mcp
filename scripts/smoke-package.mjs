@@ -29,6 +29,23 @@ const auditFixture = {
   items: [{ actor_type: auditFilters.actor_type, actor_id: auditFilters.actor_id }],
   total: 1,
 };
+const queryFixtures = [
+  {
+    path: '/api/v1/models/enabled_providers',
+    args: { providers: ['OpenAI', 'Provider & scope=configure + 日本語'], purpose: 'use' },
+    standard: 'list_enabled_providers', consolidated: 'enabled_providers', tool: 'model',
+  },
+  {
+    path: '/api/v1/models/enabled_models',
+    args: { model_names: ['model-a', 'model & name=other + 日本語'], purpose: 'configure' },
+    standard: 'list_enabled_models', consolidated: 'enabled_models', tool: 'model',
+  },
+  {
+    path: '/api/v1/store/components/',
+    args: { tags: ['rag', 'tag & category=private + 日本語'], search: 'chat & name=x' },
+    standard: 'list_store_components', consolidated: 'list_store', tool: 'store',
+  },
+];
 const interrupted = new AbortController();
 const onInterrupt = () => interrupted.abort(new Error('Package smoke interrupted'));
 process.once('SIGINT', onInterrupt);
@@ -76,7 +93,7 @@ async function main() {
   let tempDir;
   let mock;
   let mockFailure;
-  const calls = { version: 0, audit: 0 };
+  const calls = { version: 0, audit: 0, listFilters: 0 };
   try {
     tempDir = await mkdtemp(join(tmpdir(), 'langflow-mcp-smoke-'));
     tempDir = await realpath(tempDir);
@@ -133,6 +150,16 @@ async function main() {
           assert.equal(url.search, '');
           calls.version += 1;
           response.end(JSON.stringify(versionFixture));
+        } else if (queryFixtures.some(fixture => fixture.path === url.pathname)) {
+          const fixture = queryFixtures.find(fixture => fixture.path === url.pathname);
+          assert.ok([...url.searchParams.keys()].every(key => !/[\[\]]/.test(key)),
+            'List filters must use repeated keys, never bracket suffixes');
+          assert.deepEqual([...new Set(url.searchParams.keys())].sort(), Object.keys(fixture.args).sort());
+          for (const [key, value] of Object.entries(fixture.args)) {
+            assert.deepEqual(url.searchParams.getAll(key), Array.isArray(value) ? value : [value], key);
+          }
+          calls.listFilters += 1;
+          response.end(JSON.stringify({ filters: fixture.args }));
         } else {
           assert.equal(url.pathname, '/api/v1/authz/audit');
           assert.ok([...url.searchParams.keys()].every((key) => !/[\[\]]/.test(key)),
@@ -214,10 +241,17 @@ async function main() {
           : { name: 'get_authz_audit', arguments: auditFilters }, undefined, options);
         assert.ifError(mockFailure);
         assert.deepEqual(toolData(auditResult), auditFixture);
+        for (const fixture of queryFixtures) {
+          const result = await client.callTool(consolidated
+            ? { name: fixture.tool, arguments: { action: fixture.consolidated, ...fixture.args } }
+            : { name: fixture.standard, arguments: fixture.args }, undefined, options);
+          assert.ifError(mockFailure);
+          assert.deepEqual(toolData(result), { filters: fixture.args });
+        }
         if (mode === 'http') {
           await deadline(transport.terminateSession(), `${label} session termination`);
         }
-        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.12.4, audit filters OK`);
+        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.12.4, audit and list filters OK`);
       } catch (error) {
         throw new Error(`${label}: ${error.message}\n${diagnostics}`);
       } finally {
@@ -237,7 +271,7 @@ async function main() {
       for (const consolidated of [false, true]) await smoke(mode, consolidated);
     }
     assert.ifError(mockFailure);
-    assert.deepEqual(calls, { version: 4, audit: 4 });
+    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 12 });
   } finally {
     try {
       if (mock?.listening) {
