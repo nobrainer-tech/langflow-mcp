@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-967%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-974%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -17,7 +17,7 @@ langflow-mcp-server serves as a bridge between Langflow's workflow automation pl
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
 
-The **2026-10-03** API review reconfirmed [Langflow 1.12.4](https://github.com/langflow-ai/langflow/releases/tag/v1.12.4) as the latest stable release. Audit-log queries support credential actors and include/exclude event filters in both MCP modes. Langflow 1.12.4 also changes the knowledge-base chunk-preview default separator to an empty string and applies fallback separators to keep chunks within the requested size. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
+The **2026-10-05** source review reconfirmed [Langflow 1.12.4](https://github.com/langflow-ai/langflow/releases/tag/v1.12.4) as the latest stable release. Audit-log queries support credential actors and include/exclude event filters in both MCP modes. Enabled-provider, enabled-model, and store list filters use repeated query keys, as required by Langflow's list parameters. Regression tests check the actual HTTP requests, including requests from an installed npm tarball in both MCP modes. This evidence covers source contracts and local HTTP fixtures, not an end-to-end run against every Langflow deployment. Langflow 1.12.4 also changes the knowledge-base chunk-preview default separator to an empty string and applies fallback separators to keep chunks within the requested size. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
 
 ### Consolidated Tools Mode
 
