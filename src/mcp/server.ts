@@ -1043,7 +1043,8 @@ export class LangflowMCPServer {
 
           case 'get_monitor_session_messages': {
             const validated = GetMonitorSessionMessagesSchema.parse(args);
-            const result = await this.client.getMonitorSessionMessages(validated.session_id);
+            const { session_id, ...params } = validated;
+            const result = await this.client.getMonitorSessionMessages(session_id, params);
             return this.formatSuccessResponse(result);
           }
 
@@ -1511,7 +1512,7 @@ export class LangflowMCPServer {
 
           case 'get_shared_sessions': {
             const validated = GetSharedSessionsSchema.parse(args);
-            const result = await this.client.getSharedSessions(validated.source_flow_id);
+            const result = await this.client.getSharedSessions(validated.source_flow_id, validated.limit);
             return this.formatSuccessResponse(result);
           }
 

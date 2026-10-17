@@ -502,7 +502,10 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
     session_id: z.string().optional(),
     sender: z.string().optional(),
     sender_name: z.string().optional(),
-    order_by: z.string().optional()
+    order_by: z.string().optional(),
+    limit: z.number().int().nonnegative().optional(),
+    offset: z.number().int().nonnegative().optional(),
+    order: z.enum(['ASC', 'DESC']).optional()
   }),
   z.object({ action: z.literal('get_message'), message_id: uuidSchema('message ID') }),
   z.object({
@@ -512,11 +515,14 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('get_sessions'),
     flow_id: uuidSchema('flow ID').optional(),
-    ...paginationSchema
+    limit: z.number().int().nonnegative().optional()
   }),
   z.object({
     action: z.literal('get_session_messages'),
-    session_id: z.string().min(1)
+    session_id: z.string().min(1),
+    limit: z.number().int().nonnegative().optional(),
+    offset: z.number().int().nonnegative().optional(),
+    order: z.enum(['ASC', 'DESC']).optional()
   }),
   z.object({
     action: z.literal('migrate_session'),
@@ -550,11 +556,15 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
     action: z.literal('get_shared'),
     source_flow_id: z.string().min(1),
     session_id: z.string().optional(),
-    order_by: z.string().optional()
+    order_by: z.string().optional(),
+    limit: z.number().int().nonnegative().optional(),
+    offset: z.number().int().nonnegative().optional(),
+    order: z.enum(['ASC', 'DESC']).optional()
   }),
   z.object({
     action: z.literal('get_shared_sessions'),
-    source_flow_id: z.string().min(1)
+    source_flow_id: z.string().min(1),
+    limit: z.number().int().nonnegative().optional()
   }),
   z.object({
     action: z.literal('update_shared'),

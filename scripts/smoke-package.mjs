@@ -15,7 +15,7 @@ const REQUEST_TIMEOUT_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 120_000;
 const fixtureApiKey = 'package-smoke-fixture-api-key';
 const fixtureHttpToken = 'package-smoke-fixture-http-token';
-const versionFixture = { version: '1.12.4' };
+const versionFixture = { version: '1.12.6' };
 const auditFilters = {
   actor_type: 'api_key',
   actor_id: '22345678-1234-4234-a234-123456789012',
@@ -44,6 +44,30 @@ const queryFixtures = [
     path: '/api/v1/store/components/',
     args: { tags: ['rag', 'tag & category=private + 日本語'], search: 'chat & name=x' },
     standard: 'list_store_components', consolidated: 'list_store', tool: 'store',
+  },
+  {
+    path: '/api/v1/monitor/messages/sessions',
+    args: { limit: 0 },
+    standard: 'get_monitor_sessions', consolidated: 'get_sessions', tool: 'monitor',
+    response: ['latest-session'],
+  },
+  {
+    path: '/api/v1/monitor/messages/shared/sessions',
+    args: { source_flow_id: '12345678-1234-4234-a234-123456789012', limit: 200 },
+    standard: 'get_shared_sessions', consolidated: 'get_shared_sessions', tool: 'monitor',
+    response: ['shared-session'],
+  },
+  {
+    path: '/api/v1/monitor/messages',
+    args: { session_id: 'older-session', limit: 200, offset: 200, order: 'DESC' },
+    standard: 'get_monitor_session_messages', consolidated: 'get_session_messages', tool: 'monitor',
+    response: [{ id: 'older-message', session_id: 'older-session', text: 'History window' }],
+  },
+  {
+    path: '/api/v1/monitor/messages/shared',
+    args: { source_flow_id: '12345678-1234-4234-a234-123456789012', limit: 0, offset: 200, order: 'ASC' },
+    standard: 'get_shared_messages', consolidated: 'get_shared', tool: 'monitor',
+    response: [{ id: 'shared-message', text: 'Shared history window' }],
   },
 ];
 const interrupted = new AbortController();
@@ -156,10 +180,10 @@ async function main() {
             'List filters must use repeated keys, never bracket suffixes');
           assert.deepEqual([...new Set(url.searchParams.keys())].sort(), Object.keys(fixture.args).sort());
           for (const [key, value] of Object.entries(fixture.args)) {
-            assert.deepEqual(url.searchParams.getAll(key), Array.isArray(value) ? value : [value], key);
+            assert.deepEqual(url.searchParams.getAll(key), Array.isArray(value) ? value : [String(value)], key);
           }
           calls.listFilters += 1;
-          response.end(JSON.stringify({ filters: fixture.args }));
+          response.end(JSON.stringify(fixture.response ?? { filters: fixture.args }));
         } else {
           assert.equal(url.pathname, '/api/v1/authz/audit');
           assert.ok([...url.searchParams.keys()].every((key) => !/[\[\]]/.test(key)),
@@ -242,16 +266,22 @@ async function main() {
         assert.ifError(mockFailure);
         assert.deepEqual(toolData(auditResult), auditFixture);
         for (const fixture of queryFixtures) {
+          const advertised = tools.find(tool => tool.name === (consolidated ? fixture.tool : fixture.standard));
+          assert.ok(advertised, `Missing tool definition: ${fixture.standard}`);
+          for (const key of Object.keys(fixture.args)) {
+            assert.ok(Object.hasOwn(advertised.inputSchema.properties ?? {}, key),
+              `${label} must advertise ${key} for ${fixture.standard}`);
+          }
           const result = await client.callTool(consolidated
             ? { name: fixture.tool, arguments: { action: fixture.consolidated, ...fixture.args } }
             : { name: fixture.standard, arguments: fixture.args }, undefined, options);
           assert.ifError(mockFailure);
-          assert.deepEqual(toolData(result), { filters: fixture.args });
+          assert.deepEqual(toolData(result), fixture.response ?? { filters: fixture.args });
         }
         if (mode === 'http') {
           await deadline(transport.terminateSession(), `${label} session termination`);
         }
-        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.12.4, audit and list filters OK`);
+        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.12.6 fixture, audit and history/list filters OK`);
       } catch (error) {
         throw new Error(`${label}: ${error.message}\n${diagnostics}`);
       } finally {
@@ -271,7 +301,7 @@ async function main() {
       for (const consolidated of [false, true]) await smoke(mode, consolidated);
     }
     assert.ifError(mockFailure);
-    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 12 });
+    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 28 });
   } finally {
     try {
       if (mock?.listening) {

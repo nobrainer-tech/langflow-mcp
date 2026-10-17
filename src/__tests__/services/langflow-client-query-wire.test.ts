@@ -7,12 +7,14 @@ describe('Langflow list-query serialization over HTTP', () => {
   let client: LangflowClient;
   let baseUrl: string;
   let received: URL;
+  let responseBody: unknown;
 
   beforeEach(async () => {
+    responseBody = {};
     fixture = createServer((request, response) => {
       received = new URL(request.url!, baseUrl);
       response.setHeader('Content-Type', 'application/json');
-      response.end('{}');
+      response.end(JSON.stringify(responseBody));
     });
     await new Promise<void>((resolve) => fixture.listen(0, '127.0.0.1', resolve));
     const address = fixture.address();
@@ -23,6 +25,33 @@ describe('Langflow list-query serialization over HTTP', () => {
 
   afterEach(async () => {
     await new Promise<void>((resolve, reject) => fixture.close(error => error ? reject(error) : resolve()));
+  });
+
+  it.each([undefined, 0, 10, 200, 201])('serializes normal/shared session limit %s and retains string arrays', async limit => {
+    responseBody = ['session-z', 'session-a'];
+    const controls = limit === undefined ? {} : { limit };
+    expect(await client.getMonitorSessions(controls)).toEqual(responseBody);
+    expect(received.pathname).toBe('/api/v1/monitor/messages/sessions');
+    expect(Object.fromEntries(received.searchParams)).toEqual(limit === undefined ? {} : { limit: String(limit) });
+    expect(await client.getSharedSessions('flow & 日本語', limit)).toEqual(responseBody);
+    expect(received.pathname).toBe('/api/v1/monitor/messages/shared/sessions');
+    expect(Object.fromEntries(received.searchParams)).toEqual({ source_flow_id: 'flow & 日本語',
+      ...(limit === undefined ? {} : { limit: String(limit) }) });
+  });
+
+  it.each([0, 200, 201])('serializes message limit %s, explicit zero offset and order', async limit => {
+    responseBody = [{ id: 'message-a', text: 'unchanged' }];
+    const controls = { limit, offset: 0, order: 'DESC' as const };
+    const query = { limit: String(limit), offset: '0', order: 'DESC' };
+    expect(await client.getMonitorMessages(controls)).toEqual(responseBody);
+    expect(received.pathname).toBe('/api/v1/monitor/messages');
+    expect(Object.fromEntries(received.searchParams)).toEqual(query);
+    expect(await client.getSharedMessages({ source_flow_id: 'shared-flow', ...controls })).toEqual(responseBody);
+    expect(received.pathname).toBe('/api/v1/monitor/messages/shared');
+    expect(Object.fromEntries(received.searchParams)).toEqual({ source_flow_id: 'shared-flow', ...query });
+    expect(await client.getMonitorSessionMessages('session & 日本語', controls)).toEqual(responseBody);
+    expect(received.pathname).toBe('/api/v1/monitor/messages');
+    expect(Object.fromEntries(received.searchParams)).toEqual({ session_id: 'session & 日本語', ...query });
   });
 
   for (const values of [['OpenAI'], ['OpenAI', 'Provider & scope=configure + 日本語']]) {

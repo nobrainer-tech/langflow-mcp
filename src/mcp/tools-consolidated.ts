@@ -399,22 +399,24 @@ Examples:
 Actions:
 - get_builds: Get build history for a flow
 - delete_builds: Delete build history
-- get_messages: Get messages with filters
-- get_message: Get a specific message
+- get_messages: Get the newest message window with filters; default 100, maximum 200; use offset for older history
+- get_message: Find a message by scanning windows of 200 within the configured timeout (default 30 seconds); use get_messages filters for large histories
 - delete_messages: Delete messages
-- get_sessions: List sessions
-- get_session_messages: Get messages for a session
+- get_sessions: List newest sessions by latest message timestamp descending; default 100, maximum 200; no history paging
+- get_session_messages: Get the newest message window for a session; default 100, maximum 200; use offset for older history
 - migrate_session: Migrate session to new flow
 - get_transactions: Get transaction history
 - update_message: Update a monitor message
 - delete_session_messages: Delete all messages for a session
 - delete_sessions: Delete multiple sessions
-- get_shared: Get shared messages for a source flow
-- get_shared_sessions: List shared sessions for a source flow
+- get_shared: Get the newest shared-message window for a source flow; default 100, maximum 200; use offset for older history
+- get_shared_sessions: List newest shared sessions by latest message timestamp descending; default 100, maximum 200; no history paging
 - update_shared: Update a shared message
 - migrate_shared_session: Migrate a shared session id
 - delete_shared_session: Delete a shared session
 - job_queue: Get job-queue metrics snapshot (superuser; Langflow 1.10.0)
+
+For message and session lists, omitted limit or 0 uses 100; upstream clamps values above 200. Message order/order_by sort within the selected newest window, with ASC display order by default.
 
 Examples:
 - Get builds: { "action": "get_builds", "flow_id": "uuid" }
@@ -437,6 +439,9 @@ Examples:
         sender: { type: 'string', description: 'Filter by sender / message sender' },
         sender_name: { type: 'string', description: 'Filter by sender name / message sender name' },
         order_by: { type: 'string', description: 'Order by field' },
+        limit: { type: 'integer', minimum: 0, description: 'Message/session limit; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Messages to skip from newest history for get_messages, get_session_messages, get_shared (default: 0)' },
+        order: { type: 'string', enum: ['ASC', 'DESC'], description: 'Message display order within the selected window (default: ASC)' },
         new_session_id: { type: 'string', description: 'New session ID - for migrate, migrate_shared_session' },
         source_flow_id: { type: 'string', description: 'Source flow ID - for shared actions' },
         text: { type: 'string', description: 'Message text - for update_message, update_shared' },

@@ -156,21 +156,22 @@ test('a correct already-published release is idempotent on a workflow retry', as
   assert.deepEqual(run.waits, []);
 });
 
-test('retries only post-publish 404 propagation, without publishing again', async () => {
-  const run = fixture([response(404), response(404), response(404), response(200), response(200, attestationBundle())]);
+test('retries post-publish 404 propagation beyond the third readback, without publishing again', async () => {
+  const run = fixture([response(404), response(404), response(404), response(404), response(200), response(200, attestationBundle())]);
   assert.equal((await publishRelease(run.options)).published, true);
   assert.equal(run.publishCount(), 1);
-  assert.equal(run.requests.length, 5);
-  assert.equal(run.requests[4].url, ATTESTATION_URL);
-  assert.deepEqual(run.waits, [1000, 1000]);
+  assert.equal(run.requests.length, 6);
+  assert.equal(run.requests[5].url, ATTESTATION_URL);
+  assert.deepEqual(run.waits, [2000, 2000, 2000]);
 });
 
-test('fails after three post-publish readbacks still return 404', async () => {
-  const run = fixture([response(404), response(404), response(404), response(404)]);
-  await assert.rejects(publishRelease(run.options), /missing after 3 readback attempts/);
+test('fails after 30 post-publish 404 readbacks with exactly 29 sleeps', async () => {
+  const run = fixture(Array.from({ length: 31 }, () => response(404)));
+  await assert.rejects(publishRelease(run.options), /missing after 30 readback attempts/);
   assert.equal(run.publishCount(), 1);
-  assert.equal(run.requests.length, 4);
-  assert.deepEqual(run.waits, [1000, 1000]);
+  assert.equal(run.requests.length, 31);
+  assert.ok(run.requests.every(({ url }) => url === REGISTRY_URL));
+  assert.deepEqual(run.waits, Array(29).fill(2000));
 });
 
 for (const [label, body, error] of [

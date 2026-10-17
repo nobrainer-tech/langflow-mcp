@@ -7,8 +7,8 @@ import { pathToFileURL } from 'node:url';
 const PACKAGE_NAME = 'langflow-mcp-server';
 const REGISTRY = 'https://registry.npmjs.org';
 const REQUEST_TIMEOUT_MS = 10_000;
-const READBACK_ATTEMPTS = 3;
-const READBACK_DELAY_MS = 1000;
+const READBACK_ATTEMPTS = 30;
+const READBACK_DELAY_MS = 2000;
 const SOURCE_REPOSITORY = 'https://github.com/nobrainer-tech/langflow-mcp';
 const PROVENANCE_TYPE = 'https://slsa.dev/provenance/v1';
 
