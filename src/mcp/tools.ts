@@ -1911,7 +1911,7 @@ Related Tools:
   },
   {
     name: 'get_monitor_messages',
-    description: 'Query chat/message history with flexible filtering options. Retrieve messages filtered by flow ID, session, sender, or sender name. Supports custom ordering for chronological or reverse-chronological message retrieval. Essential for debugging chat flows, analyzing conversation patterns, and monitoring user interactions.',
+    description: 'Query a window of chat messages filtered by flow, session, sender, or sender name. Langflow selects the newest 100 by default (maximum 200; limit 0 uses the default). Use offset to page into older history; order and order_by sort within the selected window.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1934,6 +1934,11 @@ Related Tools:
         order_by: {
           type: 'string',
           description: 'Optional field to order results by (default: timestamp)'
+        },
+        limit: { type: 'integer', minimum: 0, description: 'Window size; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Messages to skip from newest history (default: 0)' },
+        order: {
+          type: 'string', enum: ['ASC', 'DESC'], description: 'Display order within the selected window (default: ASC)'
         }
       }
     },
@@ -1946,7 +1951,7 @@ Related Tools:
   },
   {
     name: 'get_monitor_message',
-    description: 'Get detailed information about a specific message by ID. Retrieves complete message data including sender, content, timestamp, and metadata. Useful for inspecting individual message details and debugging message-related issues.',
+    description: 'Find a message by ID by scanning history in windows of 200 within the configured request timeout (default: 30 seconds). A timeout is reported if the lookup budget expires. For large histories, use get_monitor_messages with flow or session filters and offset paging.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1967,14 +1972,15 @@ Related Tools:
   },
   {
     name: 'get_monitor_sessions',
-    description: 'List all chat session IDs, optionally filtered by flow. Returns array of session identifiers that can be used to query session-specific messages. Essential for discovering active sessions, monitoring concurrent users, and analyzing session patterns.',
+    description: 'List the newest chat session IDs, optionally filtered by flow. Langflow returns 100 by default, at most 200; limit 0 uses the default. Sessions are ordered by latest message timestamp descending. Older sessions beyond the cap are not returned.',
     inputSchema: {
       type: 'object',
       properties: {
         flow_id: {
           type: 'string',
           description: 'Optional flow ID (UUID) to filter sessions by flow'
-        }
+        },
+        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' }
       }
     },
     annotations: {
@@ -1986,14 +1992,17 @@ Related Tools:
   },
   {
     name: 'get_monitor_session_messages',
-    description: 'Get all messages for a specific session ID. Retrieves complete conversation history for a session in chronological order. Essential for reviewing full conversation context, debugging session-specific issues, and analyzing user interactions within a session.',
+    description: 'Get a window of messages for a session. Langflow selects the newest 100 by default (maximum 200; limit 0 uses the default), displayed in timestamp ASC order unless order is supplied. Use offset to page into older history.',
     inputSchema: {
       type: 'object',
       properties: {
         session_id: {
           type: 'string',
           description: 'Session ID to retrieve messages for'
-        }
+        },
+        limit: { type: 'integer', minimum: 0, description: 'Window size; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Messages to skip from newest session history (default: 0)' },
+        order: { type: 'string', enum: ['ASC', 'DESC'], description: 'Display order within the selected window (default: ASC)' }
       },
       required: ['session_id']
     },
@@ -3093,13 +3102,16 @@ Related Tools:
   },
   {
     name: 'get_shared_messages',
-    description: 'Get shared (playground) messages for a source flow, optionally filtered by session and ordered.',
+    description: 'Get a window of shared (playground) messages for a source flow, optionally filtered by session. Langflow selects the newest 100 by default (maximum 200; limit 0 uses the default). Use offset to page into older history; order and order_by sort within the selected window.',
     inputSchema: {
       type: 'object',
       properties: {
         source_flow_id: { type: 'string', description: 'Source flow ID' },
         session_id: { type: 'string', description: 'Optional session ID filter' },
-        order_by: { type: 'string', description: 'Optional order-by field' }
+        order_by: { type: 'string', description: 'Optional order-by field' },
+        limit: { type: 'integer', minimum: 0, description: 'Window size; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Messages to skip from newest history (default: 0)' },
+        order: { type: 'string', enum: ['ASC', 'DESC'], description: 'Display order within the selected window (default: ASC)' }
       },
       required: ['source_flow_id']
     },
@@ -3107,11 +3119,12 @@ Related Tools:
   },
   {
     name: 'get_shared_sessions',
-    description: 'Get the list of shared session IDs for a source flow.',
+    description: 'List the newest shared session IDs for a source flow, ordered by latest message timestamp descending. Langflow returns 100 by default, at most 200; limit 0 uses the default. Older sessions beyond the cap are not returned.',
     inputSchema: {
       type: 'object',
       properties: {
-        source_flow_id: { type: 'string', description: 'Source flow ID' }
+        source_flow_id: { type: 'string', description: 'Source flow ID' },
+        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' }
       },
       required: ['source_flow_id']
     },

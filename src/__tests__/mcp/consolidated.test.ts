@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { consolidatedTools } from '../../mcp/tools-consolidated';
 import { LangflowMCPServerConsolidated } from '../../mcp/server-consolidated';
+import { LangflowMCPServer } from '../../mcp/server';
 import {
   FlowToolSchema,
   FlowExecutionToolSchema,
@@ -252,6 +253,42 @@ describe('File Tool Schema', () => {
 });
 
 describe('Monitor Tool Schema', () => {
+  for (const action of ['get_sessions', 'get_shared_sessions']) {
+    const required = action === 'get_shared_sessions' ? { source_flow_id: 'shared-flow' } : {};
+    it.each([undefined, 0, 10, 200, 201])(`${action} retains optional limit %s`, limit => {
+      const input = { action, ...required, ...(limit === undefined ? {} : { limit }) };
+      expect(MonitorToolSchema.parse(input)).toEqual(input);
+    });
+    it.each([-1, 0.5])(`${action} rejects limit %s`, limit => {
+      expect(MonitorToolSchema.safeParse({ action, ...required, limit }).success).toBe(false);
+    });
+  }
+  for (const action of ['get_messages', 'get_shared', 'get_session_messages']) {
+    const required = action === 'get_shared' ? { source_flow_id: 'shared-flow' }
+      : action === 'get_session_messages' ? { session_id: 'session-a' } : {};
+    it(`${action} accepts omitted controls`, () => {
+      const input = { action, ...required };
+      expect(MonitorToolSchema.parse(input)).toEqual(input);
+    });
+    it(`${action} retains a positive integer offset`, () => {
+      const input = { action, ...required, offset: 200 };
+      expect(MonitorToolSchema.parse(input)).toEqual(input);
+    });
+    for (const order of ['ASC', 'DESC']) {
+      it.each([0, 10, 200, 201])(`${action} retains limit %s, zero offset and ${order}`, limit => {
+        const input = { action, ...required, limit, offset: 0, order };
+        expect(MonitorToolSchema.parse(input)).toEqual(input);
+      });
+    }
+    for (const field of ['limit', 'offset']) {
+      it.each([-1, 0.5])(`${action} rejects ${field} %s`, value => {
+        expect(MonitorToolSchema.safeParse({ action, ...required, [field]: value }).success).toBe(false);
+      });
+    }
+    it(`${action} rejects invalid order`, () => {
+      expect(MonitorToolSchema.safeParse({ action, ...required, order: 'newest' }).success).toBe(false);
+    });
+  }
   it('should validate get_builds action', () => {
     const result = MonitorToolSchema.safeParse({ action: 'get_builds', flow_id: VALID_UUID });
     expect(result.success).toBe(true);
@@ -786,6 +823,59 @@ describe('Consolidated handler dispatch', () => {
   it('monitor.update_message dispatches to updateMonitorMessage', async () => {
     await server.handleMonitorTool({ action: 'update_message', message_id: VALID_UUID, text: 'hi' });
     expect(client.updateMonitorMessage).toHaveBeenCalledWith(VALID_UUID, { text: 'hi' });
+  });
+
+  it.each([undefined, 0, 200, 201])('monitor forwards shared session limit %s', async limit => {
+    await server.handleMonitorTool({ action: 'get_shared_sessions', source_flow_id: 'f1', limit });
+    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit);
+  });
+
+  it.each([undefined, 0, 200, 201])('monitor forwards normal session limit %s', async limit => {
+    const params = limit === undefined ? {} : { limit };
+    await server.handleMonitorTool({ action: 'get_sessions', ...params });
+    expect(client.getMonitorSessions).toHaveBeenCalledWith(params);
+  });
+
+  it('monitor forwards message controls to all list methods', async () => {
+    const controls = { limit: 0, offset: 0, order: 'DESC' };
+    await server.handleMonitorTool({ action: 'get_messages', ...controls });
+    expect(client.getMonitorMessages).toHaveBeenCalledWith(controls);
+    await server.handleMonitorTool({ action: 'get_shared', source_flow_id: 'f1', ...controls });
+    expect(client.getSharedMessages).toHaveBeenCalledWith({ source_flow_id: 'f1', ...controls });
+    await server.handleMonitorTool({ action: 'get_session_messages', session_id: 's1', ...controls });
+    expect(client.getMonitorSessionMessages).toHaveBeenCalledWith('s1', controls);
+  });
+
+  it.each([undefined, 0, 200, 201])('granular dispatch forwards shared session limit %s', async limit => {
+    const granular: any = new LangflowMCPServer();
+    granular.client = server.client;
+    const handler = granular.server._requestHandlers.get('tools/call');
+    expect(handler).toBeTypeOf('function');
+    const result = await handler({ method: 'tools/call', params: {
+      name: 'get_shared_sessions', arguments: { source_flow_id: 'f1', ...(limit === undefined ? {} : { limit }) }
+    } }, {});
+    expect(result.isError).not.toBe(true);
+    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit);
+  });
+
+  it('granular dispatch retains normal sessions and all message query controls', async () => {
+    const granular: any = new LangflowMCPServer();
+    granular.client = server.client;
+    const handler = granular.server._requestHandlers.get('tools/call');
+    const controls = { limit: 0, offset: 0, order: 'ASC' };
+    for (const [name, args] of [
+      ['get_monitor_sessions', { limit: 201 }],
+      ['get_monitor_messages', controls],
+      ['get_shared_messages', { source_flow_id: 'f1', ...controls }],
+      ['get_monitor_session_messages', { session_id: 's1', ...controls }]
+    ] as const) {
+      const result = await handler({ method: 'tools/call', params: { name, arguments: args } }, {});
+      expect(result.isError).not.toBe(true);
+    }
+    expect(client.getMonitorSessions).toHaveBeenCalledWith({ limit: 201 });
+    expect(client.getMonitorMessages).toHaveBeenCalledWith(controls);
+    expect(client.getSharedMessages).toHaveBeenCalledWith({ source_flow_id: 'f1', ...controls });
+    expect(client.getMonitorSessionMessages).toHaveBeenCalledWith('s1', controls);
   });
 
   it('monitor.delete_shared_session dispatches with source flow id', async () => {

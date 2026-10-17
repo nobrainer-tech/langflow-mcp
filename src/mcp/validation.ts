@@ -379,7 +379,10 @@ export const GetMonitorMessagesSchema = z.object({
   session_id: z.string().optional(),
   sender: z.string().optional(),
   sender_name: z.string().optional(),
-  order_by: z.string().optional()
+  order_by: z.string().optional(),
+  limit: z.number().int().nonnegative().optional(),
+  offset: z.number().int().nonnegative().optional(),
+  order: z.enum(['ASC', 'DESC']).optional()
 }).strict();
 
 export const GetMonitorMessageSchema = z.object({
@@ -387,11 +390,15 @@ export const GetMonitorMessageSchema = z.object({
 }).strict();
 
 export const GetMonitorSessionsSchema = z.object({
-  flow_id: z.string().uuid('Invalid flow ID format').optional()
+  flow_id: z.string().uuid('Invalid flow ID format').optional(),
+  limit: z.number().int().nonnegative().optional()
 }).strict();
 
 export const GetMonitorSessionMessagesSchema = z.object({
-  session_id: z.string().min(1, 'Session ID is required')
+  session_id: z.string().min(1, 'Session ID is required'),
+  limit: z.number().int().nonnegative().optional(),
+  offset: z.number().int().nonnegative().optional(),
+  order: z.enum(['ASC', 'DESC']).optional()
 }).strict();
 
 export const MigrateMonitorSessionSchema = z.object({
@@ -755,11 +762,15 @@ export const DeleteMonitorSessionsSchema = z.object({
 export const GetSharedMessagesSchema = z.object({
   source_flow_id: z.string().min(1, 'Source flow ID is required'),
   session_id: z.string().optional(),
-  order_by: z.string().optional()
+  order_by: z.string().optional(),
+  limit: z.number().int().nonnegative().optional(),
+  offset: z.number().int().nonnegative().optional(),
+  order: z.enum(['ASC', 'DESC']).optional()
 }).strict();
 
 export const GetSharedSessionsSchema = z.object({
-  source_flow_id: z.string().min(1, 'Source flow ID is required')
+  source_flow_id: z.string().min(1, 'Source flow ID is required'),
+  limit: z.number().int().nonnegative().optional()
 }).strict();
 
 export const UpdateSharedMessageSchema = z.object({

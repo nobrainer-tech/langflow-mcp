@@ -46,10 +46,61 @@ import {
   CancelPublicBuildSchema,
   RunFlowSessionSchema,
   GetRegistrationSchema,
-  RegisterUserSchema
+  RegisterUserSchema,
+  GetMonitorSessionsSchema,
+  GetSharedSessionsSchema,
+  GetMonitorMessagesSchema,
+  GetSharedMessagesSchema,
+  GetMonitorSessionMessagesSchema
 } from '../../mcp/validation';
 
 describe('Validation Schemas', () => {
+  describe('monitor list controls', () => {
+    for (const [name, schema, required] of [
+      ['normal sessions', GetMonitorSessionsSchema, {}],
+      ['shared sessions', GetSharedSessionsSchema, { source_flow_id: 'shared-flow' }]
+    ] as const) {
+      it.each([undefined, 0, 10, 200, 201])(`${name} retains optional limit %s`, limit => {
+        const input = { ...required, ...(limit === undefined ? {} : { limit }) };
+        expect(schema.parse(input)).toEqual(input);
+      });
+      it.each([-1, 0.5])(`${name} rejects limit %s`, limit => {
+        expect(schema.safeParse({ ...required, limit }).success).toBe(false);
+      });
+      it(`${name} remains strict`, () => {
+        expect(schema.safeParse({ ...required, unknown: true }).success).toBe(false);
+      });
+    }
+
+    for (const [name, schema, required] of [
+      ['normal messages', GetMonitorMessagesSchema, {}],
+      ['shared messages', GetSharedMessagesSchema, { source_flow_id: 'shared-flow' }],
+      ['session messages', GetMonitorSessionMessagesSchema, { session_id: 'session-a' }]
+    ] as const) {
+      it(`${name} accepts omitted controls`, () => {
+        expect(schema.parse(required)).toEqual(required);
+      });
+      it(`${name} retains a positive integer offset`, () => {
+        const input = { ...required, offset: 200 };
+        expect(schema.parse(input)).toEqual(input);
+      });
+      for (const order of ['ASC', 'DESC']) {
+        it.each([0, 10, 200, 201])(`${name} retains limit %s, zero offset and ${order}`, limit => {
+          const input = { ...required, limit, offset: 0, order };
+          expect(schema.parse(input)).toEqual(input);
+        });
+      }
+      for (const field of ['limit', 'offset']) {
+        it.each([-1, 0.5])(`${name} rejects ${field} %s`, value => {
+          expect(schema.safeParse({ ...required, [field]: value }).success).toBe(false);
+        });
+      }
+      it(`${name} rejects invalid order`, () => {
+        expect(schema.safeParse({ ...required, order: 'newest' }).success).toBe(false);
+      });
+    }
+  });
+
   describe('CreateFlowSchema', () => {
     it('should validate valid flow creation data', () => {
       const validData = {

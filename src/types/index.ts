@@ -352,6 +352,9 @@ export interface MonitorMessagesParams {
   sender?: string;
   sender_name?: string;
   order_by?: string;
+  limit?: number;
+  offset?: number;
+  order?: 'ASC' | 'DESC';
 }
 
 export interface MessageResponse {
@@ -367,6 +370,7 @@ export interface MessageResponse {
 
 export interface MonitorSessionsParams {
   flow_id?: string;
+  limit?: number;
 }
 
 export interface DeleteMonitorMessagesRequest {
@@ -637,6 +641,9 @@ export interface SharedMessagesParams {
   source_flow_id: string;
   session_id?: string;
   order_by?: string;
+  limit?: number;
+  offset?: number;
+  order?: 'ASC' | 'DESC';
 }
 
 export interface MigrateSharedSessionParams {

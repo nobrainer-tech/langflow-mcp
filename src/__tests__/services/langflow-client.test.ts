@@ -1579,6 +1579,89 @@ describe('LangflowClient', () => {
   });
 
   describe('getMonitorMessages', () => {
+    it('finds an older message on the second bounded page', async () => {
+      const firstPage = Array.from({ length: 200 }, (_, index) => ({ id: `recent-${index}` }));
+      const target = { ...mockMessageResponse, id: 'older-message' };
+      mock.onGet('/monitor/messages', { params: { limit: 200, offset: 0 } }).reply(200, firstPage);
+      mock.onGet('/monitor/messages', { params: { limit: 200, offset: 200 } }).reply(200, [target]);
+      expect(await client.getMonitorMessage('older-message')).toEqual(target);
+      expect(mock.history.get.map(request => request.params)).toEqual([
+        { limit: 200, offset: 0 }, { limit: 200, offset: 200 }
+      ]);
+    });
+
+    it('stops an absent-message lookup on a short page', async () => {
+      mock.onGet('/monitor/messages').reply(200, [{ ...mockMessageResponse, id: 'other-message' }]);
+      await expect(client.getMonitorMessage('absent')).rejects.toThrow(/not found/i);
+      expect(mock.history.get).toHaveLength(1);
+      expect(mock.history.get[0].params).toEqual({ limit: 200, offset: 0 });
+    });
+
+    it('propagates a backend failure during paginated lookup', async () => {
+      mock.onGet('/monitor/messages', { params: { limit: 200, offset: 0 } })
+        .reply(200, Array.from({ length: 200 }, (_, index) => ({ id: `recent-${index}` })));
+      mock.onGet('/monitor/messages', { params: { limit: 200, offset: 200 } })
+        .reply(503, { detail: 'History temporarily unavailable' });
+      await expect(client.getMonitorMessage('older-message')).rejects.toThrow(/503.*History temporarily unavailable/);
+      expect(mock.history.get).toHaveLength(2);
+    });
+
+    it('bounds the whole lookup by its deadline and reports timeout instead of absence', async () => {
+      const now = vi.spyOn(Date, 'now');
+      let clock = 1_000;
+      now.mockImplementation(() => clock);
+      try {
+        mock.onGet('/monitor/messages').reply(() => {
+          clock += 30_001;
+          return [200, Array.from({ length: 200 }, (_, index) => ({ id: `recent-${index}` }))];
+        });
+        await expect(client.getMonitorMessage('older-message')).rejects.toThrow(/tim(?:e[ -]?out|ed out)/i);
+        expect(mock.history.get).toHaveLength(1);
+        expect(mock.history.get[0].timeout).toBeGreaterThan(0);
+        expect(mock.history.get[0].timeout).toBeLessThanOrEqual(30_000);
+      } finally {
+        now.mockRestore();
+      }
+    });
+
+    it('uses only the remaining lookup timeout for later pages', async () => {
+      let clock = 1_000;
+      const now = vi.spyOn(Date, 'now').mockImplementation(() => clock);
+      const target = { ...mockMessageResponse, id: 'older-message' };
+      try {
+        mock.onGet('/monitor/messages', { params: { limit: 200, offset: 0 } }).reply(() => {
+          clock += 5_000;
+          return [200, Array.from({ length: 200 }, (_, index) => ({ id: `recent-${index}` }))];
+        });
+        mock.onGet('/monitor/messages', { params: { limit: 200, offset: 200 } }).reply(200, [target]);
+        expect(await client.getMonitorMessage('older-message')).toEqual(target);
+        expect(mock.history.get.map(request => request.timeout)).toEqual([30_000, 25_000]);
+      } finally {
+        now.mockRestore();
+      }
+    });
+
+    it.each(['normal', 'shared'] as const)('propagates %s attachment 400 without changing files', async mode => {
+      const body = { files: ['../foreign/private.txt'] };
+      const path = mode === 'normal' ? '/monitor/messages/message-a' : '/monitor/messages/shared/message-a';
+      mock.onPut(path).reply(400, { detail: 'Attachment outside authorized upload scope' });
+      const request = mode === 'normal' ? client.updateMonitorMessage('message-a', body)
+        : client.updateSharedMessage('message-a', 'source-flow', body);
+      await expect(request).rejects.toThrow(/400.*Attachment outside authorized upload scope/);
+      expect(JSON.parse(mock.history.put[0].data)).toEqual(body);
+      if (mode === 'shared') expect(mock.history.put[0].params).toEqual({ source_flow_id: 'source-flow' });
+    });
+
+    it('preserves an A2A JSON-RPC error returned over HTTP 200', async () => {
+      const body = { jsonrpc: '2.0' as const, id: 'request-a', method: 'message/send', params: {} };
+      const payload = { jsonrpc: '2.0', id: 'request-a', error: {
+        code: -32000, message: 'Execution policy rejected flow', data: { reason: 'administrator-only' }
+      } };
+      mock.onPost('/a2a/flow-a/jsonrpc').reply(200, payload);
+      expect(await client.invokeA2aJsonrpc('flow-a', body)).toEqual(payload);
+      expect(JSON.parse(mock.history.post[0].data)).toEqual(body);
+    });
+
     it('should retrieve messages with flow_id filter', async () => {
       const params = { flow_id: mockMonitorMessage.flow_id };
       mock.onGet('/monitor/messages').reply(200, [mockMonitorMessage]);
@@ -3870,6 +3953,33 @@ describe('LangflowClient', () => {
   });
 
   describe('mcp v2 servers', () => {
+    it('preserves masked config responses and POST/PATCH request bodies', async () => {
+      const config = { command: 'node', args: ['server.js', '--headers', 'Authorization', '********'],
+        env: { API_KEY: '********', EMPTY: '' }, headers: { Authorization: '********' } };
+      const response = { name: 'srv1', ...config };
+      mock.onGet('/api/v2/mcp/servers/srv1').reply(200, response);
+      mock.onPost('/api/v2/mcp/servers/srv1').reply(201, response);
+      mock.onPatch('/api/v2/mcp/servers/srv1').reply(200, response);
+      expect(await client.getMcpServer('srv1')).toEqual(response);
+      expect(await client.createMcpServer('srv1', config)).toEqual(response);
+      expect(await client.updateMcpServer('srv1', config)).toEqual(response);
+      expect(JSON.parse(mock.history.post[0].data)).toEqual(config);
+      expect(JSON.parse(mock.history.patch[0].data)).toEqual(config);
+    });
+
+    it.each(['create', 'update'] as const)('surfaces %s config mask validation 422', async method => {
+      mock.onPost('/api/v2/mcp/servers/srv1').reply(422, { detail: 'Unknown masked credential' });
+      mock.onPatch('/api/v2/mcp/servers/srv1').reply(422, { detail: 'Unknown masked credential' });
+      const request = method === 'create' ? client.createMcpServer('srv1', { env: { KEY: '********' } })
+        : client.updateMcpServer('srv1', { env: { KEY: '********' } });
+      await expect(request).rejects.toThrow(/422.*Unknown masked credential/);
+    });
+
+    it('surfaces counted discovery 429', async () => {
+      mock.onGet('/api/v2/mcp/servers').reply(429, { detail: 'MCP discovery busy' }, { 'Retry-After': '1' });
+      await expect(client.listMcpServers({ action_count: true })).rejects.toThrow(/429.*MCP discovery busy/);
+      expect(mock.history.get[0].params).toEqual({ action_count: true });
+    });
     it('listMcpServers should GET with action_count param', async () => {
       mock.onGet('/api/v2/mcp/servers').reply(200, { servers: [] });
 

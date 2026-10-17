@@ -807,7 +807,8 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'get_session_messages': {
-        const result = await this.client!.getMonitorSessionMessages(validated.session_id);
+        const { action: _, session_id, ...params } = validated;
+        const result = await this.client!.getMonitorSessionMessages(session_id, params);
         return this.formatSuccessResponse(result);
       }
       case 'migrate_session': {
@@ -841,7 +842,7 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'get_shared_sessions': {
-        const result = await this.client!.getSharedSessions(validated.source_flow_id);
+        const result = await this.client!.getSharedSessions(validated.source_flow_id, validated.limit);
         return this.formatSuccessResponse(result);
       }
       case 'update_shared': {

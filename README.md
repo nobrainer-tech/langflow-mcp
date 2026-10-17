@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-974%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://img.shields.io/badge/tests-1128%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -13,11 +13,13 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and supports Langflow API version **1.12.4** in the 1.12.x family. The latest stable upstream release check on **2026-09-30** found `v1.12.4` (published **2026-09-29**). The `v1.12.3` to `v1.12.4` comparison of the client-relevant API found no new, removed, or renamed routes and no fields added to or removed from the request and response models this server uses. The patch is a security-hardening release that tightens access and validation rules, so Langflow may now reject calls it used to accept (for example `globals` or `tweaks` from a non-owner on a flow that stores the owner's credentials, unknown audit-log `result` or `actor_type` filters, unsafe file names, or a second role in the same assignment scope); the client surfaces those errors through its normal error handling. Workflow runs expose the optional `expose_graph_state` control added in 1.12.3: omitted or `null` uses the protocol default (conversation-only for AG-UI, graph events for Langflow); synchronous runs ignore it, and stream or background runs by a non-owner of a shared flow always run with it off. Existing client methods pass MCP project responses through and surface the MCP server endpoint's 404 through normal error handling. Memory Base creation exposes the optional `embedding_provider` added in 1.12.1. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
+**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and targets Langflow API version **1.12.6** in the 1.12.x family. The latest stable upstream release check on **2026-10-17** found [v1.12.6](https://github.com/langflow-ai/langflow/releases/tag/v1.12.6), published **2026-10-13**. The [v1.12.4 to v1.12.6 source comparison](https://github.com/langflow-ai/langflow/compare/v1.12.4...v1.12.6) found changed history limits, credential masking, and execution/attachment policies, without a required client route migration. The client preserves upstream authorization and validation errors. Workflow runs expose the optional `expose_graph_state` control added in 1.12.3: omitted or `null` uses the protocol default (conversation-only for AG-UI, graph events for Langflow); synchronous runs ignore it, and stream or background runs by a non-owner of a shared flow always run with it off. Memory Base creation exposes the optional `embedding_provider` added in 1.12.1. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
 
-The **2026-10-05** source review reconfirmed [Langflow 1.12.4](https://github.com/langflow-ai/langflow/releases/tag/v1.12.4) as the latest stable release. Audit-log queries support credential actors and include/exclude event filters in both MCP modes. Enabled-provider, enabled-model, and store list filters use repeated query keys, as required by Langflow's list parameters. Regression tests check the actual HTTP requests, including requests from an installed npm tarball in both MCP modes. This evidence covers source contracts and local HTTP fixtures, not an end-to-end run against every Langflow deployment. Langflow 1.12.4 also changes the knowledge-base chunk-preview default separator to an empty string and applies fallback separators to keep chunks within the requested size. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
+Langflow 1.12.6 returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. Both MCP modes expose `limit` for normal/shared sessions and messages, plus `offset` and display `order` for message history. Session lists have no upstream offset or cursor, so they cannot enumerate older sessions beyond the cap. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
+
+Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, masked configuration responses and upstream errors; installed-tarball smoke tests exercise both MCP modes over stdio and HTTP with local fixtures. This evidence covers source contracts and local requests, not a live end-to-end run against Langflow 1.12.6. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
 
 ### Consolidated Tools Mode
 
@@ -442,11 +444,11 @@ Once connected, Claude can use:
 
 ### Monitoring & Analytics (12 tools)
 - **`get_monitor_builds`** - Get build execution history for a flow
-- **`get_monitor_messages`** - Query chat/message history with filtering
-- **`get_monitor_message`** - Get details of a specific message
+- **`get_monitor_messages`** - Query a message-history window with filtering, `limit`, `offset`, and display `order`
+- **`get_monitor_message`** - Look up a message across history pages within the configured timeout
 - **`update_monitor_message`** - Update a stored message
-- **`get_monitor_sessions`** - List all chat session IDs
-- **`get_monitor_session_messages`** - Get all messages for a session
+- **`get_monitor_sessions`** - List the newest session IDs (`limit`: default 100, maximum 200)
+- **`get_monitor_session_messages`** - Query a session's message-history window with `limit`, `offset`, and display `order`
 - **`migrate_monitor_session`** - Migrate messages between sessions
 - **`get_monitor_transactions`** - List transaction logs for a flow
 - **`delete_monitor_builds`** - Delete build history for a flow
@@ -461,8 +463,8 @@ Once connected, Claude can use:
 - **`delete_traces`** - Delete all traces for a flow
 
 ### Shared Messages (5 tools)
-- **`get_shared_messages`** - Get shared messages
-- **`get_shared_sessions`** - Get shared sessions
+- **`get_shared_messages`** - Query a shared message-history window with `limit`, `offset`, and display `order`
+- **`get_shared_sessions`** - List the newest shared session IDs (`limit`: default 100, maximum 200)
 - **`update_shared_message`** - Update a shared message
 - **`migrate_shared_session`** - Migrate a shared session
 - **`delete_shared_session`** - Delete a shared session

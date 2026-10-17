@@ -798,14 +798,30 @@ export class LangflowClient {
   }
 
   async getMonitorMessage(messageId: string): Promise<MessageResponse> {
+    const deadline = Date.now() + (this.config.timeout || 30000);
     try {
-      const response = await this.client.get<MessageResponse[]>('/monitor/messages');
-      const message = response.data.find(m => m.id === messageId);
-      if (!message) {
-        throw new Error(`Monitor message ${messageId} not found`);
+      for (let offset = 0; ; offset += 200) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          throw new Error(`Monitor message ${messageId} lookup timeout`);
+        }
+        const response = await this.client.get<MessageResponse[]>('/monitor/messages', {
+          params: { limit: 200, offset },
+          timeout: remaining
+        });
+        if (Date.now() >= deadline) {
+          throw new Error(`Monitor message ${messageId} lookup timeout`);
+        }
+        const message = response.data.find(m => m.id === messageId);
+        if (message) return message;
+        if (response.data.length < 200) {
+          throw new Error(`Monitor message ${messageId} not found`);
+        }
       }
-      return message;
     } catch (error) {
+      if (axios.isAxiosError(error) && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT')) {
+        throw new Error(`Monitor message ${messageId} lookup timeout`);
+      }
       throw this.handleError(error, `Failed to get monitor message ${messageId}`);
     }
   }
@@ -819,10 +835,13 @@ export class LangflowClient {
     }
   }
 
-  async getMonitorSessionMessages(sessionId: string): Promise<MessageResponse[]> {
+  async getMonitorSessionMessages(
+    sessionId: string,
+    params?: Pick<MonitorMessagesParams, 'limit' | 'offset' | 'order'>
+  ): Promise<MessageResponse[]> {
     try {
       const response = await this.client.get<MessageResponse[]>('/monitor/messages', {
-        params: { session_id: sessionId }
+        params: { session_id: sessionId, ...params }
       });
       return response.data;
     } catch (error) {
@@ -1680,10 +1699,10 @@ export class LangflowClient {
     }
   }
 
-  async getSharedSessions(sourceFlowId: string): Promise<string[]> {
+  async getSharedSessions(sourceFlowId: string, limit?: number): Promise<string[]> {
     try {
       const response = await this.client.get<string[]>('/monitor/messages/shared/sessions', {
-        params: { source_flow_id: sourceFlowId }
+        params: { source_flow_id: sourceFlowId, ...(limit !== undefined ? { limit } : {}) }
       });
       return response.data;
     } catch (error) {
