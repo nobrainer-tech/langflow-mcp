@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
 
     steps:
       - name: Checkout code
@@ -39,11 +39,11 @@ jobs:
         run: node --test scripts/publish-release.node-test.mjs
 
       - name: Run tests with coverage
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:coverage
 
       - name: Upload coverage to Codecov
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/coverage-final.json
@@ -52,18 +52,22 @@ jobs:
           fail_ci_if_error: false
 
   build:
-    name: Build
+    name: Package on Node.js ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     needs: test
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup Node.js
+      - name: Setup build toolchain
         uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
@@ -71,6 +75,11 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Setup runtime Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - name: Smoke test packaged MCP transports
         run: node scripts/smoke-package.mjs
@@ -98,7 +107,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Run npm audit

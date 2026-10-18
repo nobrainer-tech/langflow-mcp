@@ -1,6 +1,6 @@
 {
   "name": "langflow-mcp-server",
-  "version": "4.12.3",
+  "version": "4.12.4",
   "description": "Integration for Langflow API 1.12.6 via Model Context Protocol (MCP)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -66,12 +66,12 @@
   ],
   "devDependencies": {
     "@types/node": "^26.6.4",
-    "@vitest/coverage-v8": "^4.1.11",
-    "@vitest/ui": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/ui": "^5.0.5",
     "axios-mock-adapter": "^2.1.0",
     "tsx": "4.23.15",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

@@ -718,6 +718,8 @@ list_components()
 
 ## Development
 
+Use Node.js 22.12 or newer in the 22.x line, or Node.js 24.x, for the Vitest 5 toolchain. The published server still supports Node.js 20 and newer. CI tests the toolchain on Node.js 22/24 and the installed package on Node.js 20/22/24.
+
 ```bash
 # Build
 npm run build
