@@ -128,6 +128,8 @@ describe('LangflowClient - Langflow 1.12.x endpoints', () => {
       blocked_component_keys: [],
       blocked_template_keys: [],
       blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       content_hash: 'hash',
       created_at: null,
       created_by: null,
@@ -141,6 +143,8 @@ describe('LangflowClient - Langflow 1.12.x endpoints', () => {
       blocked_component_keys: [],
       blocked_template_keys: [],
       blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       reason: 'test'
     };
     mock.onGet('/policy-bundle').reply(200, bundle);

@@ -97,6 +97,8 @@ describe('Langflow 1.12.x full-mode tools dispatch', () => {
       blocked_component_keys: [],
       blocked_template_keys: [],
       blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       reason: 'test'
     });
     await callTool(server, 'list_policy_bundle_history', { limit: 10, before_revision: 3 });
@@ -117,6 +119,8 @@ describe('Langflow 1.12.x full-mode tools dispatch', () => {
       blocked_component_keys: [],
       blocked_template_keys: [],
       blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       reason: 'test'
     });
     expect(clientMock.listPolicyBundleHistory).toHaveBeenCalledWith({ limit: 10, before_revision: 3 });

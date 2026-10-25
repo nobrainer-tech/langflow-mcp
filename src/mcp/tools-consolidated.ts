@@ -309,7 +309,7 @@ Examples:
 - List: { "action": "list" }
 - Upload: { "action": "upload", "kb_name": "existing-kb", "file_content": "base64...", "file_name": "doc.pdf" }
 - Create: { "action": "create", "name": "kb", "embedding_provider": "openai", "embedding_model": "text-embedding-3-small" }
-- Test connection: { "action": "test_connection", "backend_type": "chroma" }
+- Test connection: { "action": "test_connection", "backend_type": "sqlite" }
 - Ingest folder: { "action": "ingest_folder", "kb_name": "kb", "path": "/data/docs" }
 - List runs: { "action": "list_runs", "kb_name": "kb" }`,
     inputSchema: {
@@ -332,7 +332,7 @@ Examples:
         limit: { type: 'number', description: 'Limit - for list_chunks, list_runs' },
         search: { type: 'string', description: 'Search query - for list_chunks' },
         params: { type: 'object', description: 'Optional chunk/ingest params - for ingest, preview_chunks' },
-        backend_type: { type: 'string', description: 'Vector backend type (e.g. chroma, opensearch) - for test_connection' },
+        backend_type: { type: 'string', description: 'Vector backend type (e.g. sqlite, opensearch) - for test_connection' },
         backend_config: { type: 'object', description: 'Backend configuration - for test_connection' },
         path: { type: 'string', description: 'Server-side folder path - for ingest_folder' },
         recursive: { type: 'boolean', description: 'Recurse into subfolders - for ingest_folder' },
@@ -465,7 +465,7 @@ Actions:
 - list: List all users (admin)
 - get_current: Get current authenticated user
 - update: Update user profile
-- reset_password: Reset user password (admin)
+- reset_password: Unsupported with API-key authentication in Langflow 1.13; returns interactive_login_required without sending the password. Sign in interactively to change your password.
 - create: Create a new user (admin)
 
 Examples:
@@ -1198,7 +1198,7 @@ Examples:
         team_name: { type: 'string', description: 'Team display name - for create/update team' },
         adom_name: { type: 'string', description: 'Team unique slug - for create/update team' },
         is_active: { type: 'boolean', description: 'Active flag - for create/update team; filter for list_teams' },
-        source: { type: 'string', enum: ['manual', 'sso'], description: 'Member source - for add_team_member' },
+        source: { type: 'string', enum: ['manual'], description: 'Manual membership only - for add_team_member' },
         resource_type: { type: 'string', description: 'Resource type - for shares and my_permissions' },
         resource_id: { type: 'string', description: 'Resource ID - for create_share; filter for list_shares' },
         resource_ids: { type: 'array', items: { type: 'string' }, description: 'Resource IDs - for my_permissions' },
@@ -1318,7 +1318,7 @@ Examples:
   },
   {
     name: 'governance',
-    description: `Manage Langflow 1.12.x governance policies (superuser-only endpoints).
+    description: `Manage Langflow 1.13 governance policies (superuser-only endpoints).
 
 Actions:
 - get_model_provider_policy / replace_model_provider_policy
@@ -1329,7 +1329,9 @@ Actions:
 - list_policy_bundle_history / rollback_policy_bundle
 
 Policy replacements are complete-set operations. Read the current revision before
-using replace or rollback so optimistic concurrency conflicts are visible.`,
+using replace or rollback so optimistic concurrency conflicts are visible.
+replace_policy_bundle requires all six policy lists, including models and integrations;
+empty lists explicitly clear those policies.`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -1353,6 +1355,8 @@ using replace or rollback so optimistic concurrency conflicts are visible.`,
         blocked_component_keys: { type: 'array', items: { type: 'string' } },
         blocked_template_keys: { type: 'array', items: { type: 'string' } },
         blocked_model_keys: { type: 'array', items: { type: 'string' } },
+        approved_integration_provider_ids: { type: 'array', items: { type: 'string' } },
+        blocked_integration_action_keys: { type: 'array', items: { type: 'string' } },
         reason: { type: ['string', 'null'], description: 'Optional policy change reason' },
         revision: { type: 'number', description: 'Target revision - for rollback' },
         before_revision: { type: ['number', 'null'], description: 'History cursor' }

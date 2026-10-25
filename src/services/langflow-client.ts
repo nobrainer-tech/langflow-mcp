@@ -59,6 +59,7 @@ import {
   StreamVertexBuildParams,
   VersionResponse,
   UserRead,
+  UserDeletionResponse,
   UserCreate,
   UserUpdate,
   ListUsersParams,
@@ -950,15 +951,8 @@ export class LangflowClient {
     }
   }
 
-  async resetUserPassword(userId: string, newPassword: string): Promise<UserRead> {
-    try {
-      const response = await this.client.patch<UserRead>(`/users/${userId}/reset-password`, {
-        password: newPassword
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to reset password for user ${userId}`);
-    }
+  async resetUserPassword(_userId: string, _newPassword: string): Promise<never> {
+    throw new Error('interactive_login_required: Password reset is unsupported with API-key authentication. Sign in to Langflow interactively to change your password.');
   }
 
   async listApiKeys(): Promise<ApiKeyRead[]> {
@@ -1153,9 +1147,10 @@ export class LangflowClient {
     }
   }
 
-  async deleteUser(userId: string): Promise<void> {
+  async deleteUser(userId: string): Promise<UserDeletionResponse> {
     try {
-      await this.client.delete(`/users/${encodeURIComponent(userId)}`);
+      const response = await this.client.delete<UserDeletionResponse>(`/users/${encodeURIComponent(userId)}`);
+      return response.data;
     } catch (error) {
       throw this.handleError(error, `Failed to delete user ${userId}`);
     }
@@ -1981,6 +1976,13 @@ export class LangflowClient {
 
   async replacePolicyBundle(body: PolicyBundleWrite): Promise<PolicyBundleRead> {
     try {
+      const completeSets = [
+        'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys',
+        'blocked_model_keys', 'approved_integration_provider_ids', 'blocked_integration_action_keys'
+      ] as const;
+      if (completeSets.some(field => !Array.isArray(body?.[field]))) {
+        throw new Error('Policy replacement requires explicit arrays for every policy set; read the current bundle before replacing it.');
+      }
       const response = await this.client.put<PolicyBundleRead>('/policy-bundle', body);
       return response.data;
     } catch (error) {

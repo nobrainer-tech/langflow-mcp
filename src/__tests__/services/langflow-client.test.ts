@@ -2547,14 +2547,11 @@ describe('LangflowClient', () => {
   });
 
   describe('deleteUser', () => {
-    it('should delete user successfully', async () => {
+    it('returns the asynchronous deletion acceptance and request ID', async () => {
       const userId = mockUser.id;
-      mock.onDelete(`/users/${userId}`).reply(200);
-
-      await client.deleteUser(userId);
-
-      // deleteUser returns void, so we just check it doesn't throw
-      expect(true).toBe(true);
+      const accepted = { detail: 'User deletion started', request_id: '12345678-1234-4234-a234-123456789012' };
+      mock.onDelete(`/users/${userId}`).reply(202, accepted);
+      await expect(client.deleteUser(userId)).resolves.toEqual(accepted);
     });
 
     it('should handle 404 Not Found for non-existent user', async () => {
@@ -2571,9 +2568,15 @@ describe('LangflowClient', () => {
       await expect(client.deleteUser(userId)).rejects.toThrow('Failed to delete user');
     });
 
-    it('should handle 403 Forbidden for self-deletion or insufficient permissions', async () => {
+    it('should handle 400 Bad Request for self-deletion', async () => {
       const userId = mockUser.id;
-      mock.onDelete(`/users/${userId}`).reply(403, { detail: 'Cannot delete own account' });
+      mock.onDelete(`/users/${userId}`).reply(400, { detail: "You can't delete your own user account" });
+      await expect(client.deleteUser(userId)).rejects.toThrow('HTTP 400');
+    });
+
+    it('should handle 403 Forbidden for insufficient permissions', async () => {
+      const userId = mockUser.id;
+      mock.onDelete(`/users/${userId}`).reply(403, { detail: 'Permission denied' });
 
       await expect(client.deleteUser(userId)).rejects.toThrow('Failed to delete user');
     });

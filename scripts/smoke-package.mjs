@@ -15,7 +15,14 @@ const REQUEST_TIMEOUT_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 120_000;
 const fixtureApiKey = 'package-smoke-fixture-api-key';
 const fixtureHttpToken = 'package-smoke-fixture-http-token';
-const versionFixture = { version: '1.12.6' };
+const versionFixture = { version: '1.13.0' };
+const policyLists = {
+  approved_provider_ids: ['openai'], blocked_component_keys: ['UnsafeComponent'],
+  blocked_template_keys: ['UnsafeTemplate'], blocked_model_keys: ['unsafe-model'],
+  approved_integration_provider_ids: ['Google.Workspace'],
+  blocked_integration_action_keys: ['gmail.send_email'],
+};
+const policyFixture = { revision: 4, ...policyLists };
 const auditFilters = {
   actor_type: 'api_key',
   actor_id: '22345678-1234-4234-a234-123456789012',
@@ -117,7 +124,7 @@ async function main() {
   let tempDir;
   let mock;
   let mockFailure;
-  const calls = { version: 0, audit: 0, listFilters: 0 };
+  const calls = { version: 0, audit: 0, listFilters: 0, policyReads: 0, policyWrites: 0 };
   try {
     tempDir = await mkdtemp(join(tmpdir(), 'langflow-mcp-smoke-'));
     tempDir = await realpath(tempDir);
@@ -164,12 +171,27 @@ async function main() {
     const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
     const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
 
-    mock = createServer((request, response) => {
+    mock = createServer(async (request, response) => {
       response.setHeader('Content-Type', 'application/json');
       try {
-        assert.equal(request.method, 'GET');
         assert.equal(request.headers['x-api-key'], fixtureApiKey);
         const url = new URL(request.url, 'http://127.0.0.1');
+        if (url.pathname === '/api/v1/policy-bundle') {
+          assert.equal(url.search, '');
+          if (request.method === 'PUT') {
+            let body = '';
+            for await (const chunk of request) body += chunk;
+            assert.deepEqual(JSON.parse(body), { expected_revision: 4, ...policyLists });
+            calls.policyWrites += 1;
+            response.end(JSON.stringify({ ...policyFixture, revision: 5 }));
+          } else {
+            assert.equal(request.method, 'GET');
+            calls.policyReads += 1;
+            response.end(JSON.stringify(policyFixture));
+          }
+          return;
+        }
+        assert.equal(request.method, 'GET');
         if (url.pathname === '/api/v1/version') {
           assert.equal(url.search, '');
           calls.version += 1;
@@ -265,6 +287,21 @@ async function main() {
           : { name: 'get_authz_audit', arguments: auditFilters }, undefined, options);
         assert.ifError(mockFailure);
         assert.deepEqual(toolData(auditResult), auditFixture);
+        const policyResult = await client.callTool(consolidated
+          ? { name: 'governance', arguments: { action: 'get_policy_bundle' } }
+          : { name: 'get_policy_bundle', arguments: {} }, undefined, options);
+        const { revision, ...lists } = toolData(policyResult);
+        assert.deepEqual({ revision, ...lists }, policyFixture);
+        const replacement = { expected_revision: revision, ...lists };
+        const replace = (body) => client.callTool(consolidated
+          ? { name: 'governance', arguments: { action: 'replace_policy_bundle', ...body } }
+          : { name: 'replace_policy_bundle', arguments: body }, undefined, options);
+        assert.deepEqual(toolData(await replace(replacement)), { ...policyFixture, revision: 5 });
+        const { approved_integration_provider_ids, ...incomplete } = replacement;
+        const writesBefore = calls.policyWrites;
+        assert.equal((await replace(incomplete)).isError, true, 'Incomplete policy replacement must fail');
+        assert.equal(calls.policyWrites, writesBefore, 'Rejected input must not reach the API');
+        assert.ifError(mockFailure);
         for (const fixture of queryFixtures) {
           const advertised = tools.find(tool => tool.name === (consolidated ? fixture.tool : fixture.standard));
           assert.ok(advertised, `Missing tool definition: ${fixture.standard}`);
@@ -281,7 +318,7 @@ async function main() {
         if (mode === 'http') {
           await deadline(transport.terminateSession(), `${label} session termination`);
         }
-        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.12.6 fixture, audit and history/list filters OK`);
+        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.13.0 fixture, policy preservation, audit and history/list filters OK`);
       } catch (error) {
         throw new Error(`${label}: ${error.message}\n${diagnostics}`);
       } finally {
@@ -301,7 +338,7 @@ async function main() {
       for (const consolidated of [false, true]) await smoke(mode, consolidated);
     }
     assert.ifError(mockFailure);
-    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 28 });
+    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 28, policyReads: 4, policyWrites: 4 });
   } finally {
     try {
       if (mock?.listening) {

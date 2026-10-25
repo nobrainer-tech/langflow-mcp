@@ -29,7 +29,7 @@ function sanitizeTag(tagName) {
 
 function getSupportedVersionFromReadme() {
   const readme = fs.readFileSync('README.md', 'utf8');
-  const match = readme.match(/supports Langflow API version \*\*([0-9]+\.[0-9]+\.[0-9]+)\*\*/i);
+  const match = readme.match(/targets Langflow API version \*\*([0-9]+\.[0-9]+\.[0-9]+)\*\*/i);
   if (!match) {
     throw new Error('Could not find supported Langflow API version in README.md');
   }

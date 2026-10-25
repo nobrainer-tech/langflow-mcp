@@ -2249,7 +2249,7 @@ Related Tools:
   },
   {
     name: 'reset_user_password',
-    description: 'Reset password for a specific user. Admin-only endpoint. Requires user ID and new password (minimum 8 characters). Returns updated user object.',
+    description: 'Unsupported with API-key authentication in Langflow 1.13. This tool returns interactive_login_required without sending the password. Sign in to Langflow interactively to change your password.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3862,7 +3862,7 @@ Related Tools:
       properties: {
         team_id: { type: 'string', description: 'Team ID' },
         user_id: { type: 'string', description: 'User ID to add' },
-        source: { type: 'string', description: 'Membership source: manual or sso' }
+        source: { type: 'string', enum: ['manual'], description: 'Manual membership only; directory-managed memberships cannot be created here' }
       },
       required: ['team_id', 'user_id']
     },
@@ -4489,7 +4489,7 @@ Related Tools:
   },
   {
     name: 'replace_policy_bundle',
-    description: 'Atomically replace the provider-and-catalog policy bundle using an expected revision (Langflow 1.12.x).',
+    description: 'Atomically replace the complete provider, catalog, model and integration policy bundle using an expected revision (Langflow 1.13). Read the current bundle and supply every list; empty lists explicitly clear that policy.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4498,9 +4498,12 @@ Related Tools:
         blocked_component_keys: { type: 'array', items: { type: 'string' } },
         blocked_template_keys: { type: 'array', items: { type: 'string' } },
         blocked_model_keys: { type: 'array', items: { type: 'string' } },
+        approved_integration_provider_ids: { type: 'array', items: { type: 'string' } },
+        blocked_integration_action_keys: { type: 'array', items: { type: 'string' } },
         reason: { type: ['string', 'null'], description: 'Optional change reason, max 1024 characters' }
       },
-      required: ['expected_revision', 'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys']
+      required: ['expected_revision', 'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys',
+        'blocked_model_keys', 'approved_integration_provider_ids', 'blocked_integration_action_keys']
     },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
   },
