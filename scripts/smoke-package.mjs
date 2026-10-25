@@ -19,8 +19,8 @@ const versionFixture = { version: '1.13.0' };
 const policyLists = {
   approved_provider_ids: ['openai'], blocked_component_keys: ['UnsafeComponent'],
   blocked_template_keys: ['UnsafeTemplate'], blocked_model_keys: ['unsafe-model'],
-  approved_integration_provider_ids: ['Google.Workspace'],
-  blocked_integration_action_keys: ['gmail.send_email'],
+  approved_integration_provider_ids: ['google'],
+  blocked_integration_action_keys: ['integrations.google.drive.delete'],
 };
 const policyFixture = { revision: 4, ...policyLists };
 const auditFilters = {

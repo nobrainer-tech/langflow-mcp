@@ -1356,7 +1356,7 @@ empty lists explicitly clear those policies.`,
         blocked_template_keys: { type: 'array', items: { type: 'string' } },
         blocked_model_keys: { type: 'array', items: { type: 'string' } },
         approved_integration_provider_ids: { type: 'array', items: { type: 'string' } },
-        blocked_integration_action_keys: { type: 'array', items: { type: 'string' } },
+        blocked_integration_action_keys: { type: 'array', items: { type: 'string' }, description: 'Action policy keys from loaded integration capabilities, in integrations.<provider_id>.<action> format' },
         reason: { type: ['string', 'null'], description: 'Optional policy change reason' },
         revision: { type: 'number', description: 'Target revision - for rollback' },
         before_revision: { type: ['number', 'null'], description: 'History cursor' }

@@ -14,8 +14,8 @@ const policy = {
   blocked_component_keys: ['UnsafeComponent'],
   blocked_template_keys: ['UnsafeTemplate'],
   blocked_model_keys: ['unsafe-model'],
-  approved_integration_provider_ids: ['Google.Workspace'],
-  blocked_integration_action_keys: ['gmail.send_email'],
+  approved_integration_provider_ids: ['google'],
+  blocked_integration_action_keys: ['integrations.google.drive.delete'],
 };
 const sets = Object.keys(policy).filter(key => key !== 'expected_revision');
 const uuid = '12345678-1234-4234-a234-123456789012';
@@ -83,6 +83,14 @@ describe('Langflow 1.13 policy replacement safety', () => {
       expect(mock.history.put).toHaveLength(1);
     });
 
+    it.each(['gmail.send_email', 'integrations.google', 'integrations..delete',
+      'integrations.google..delete', 'integrations.google.send/email'])(
+      `${mode} rejects malformed action key %s before writing`, async key => {
+        mock.onPut('/policy-bundle').reply(200, {});
+        expect((await server()({ ...policy, blocked_integration_action_keys: [key] })).isError).toBe(true);
+        expect(mock.history.put).toHaveLength(0);
+      });
+
     it(`${mode} refuses password reset locally without leaking or sending the password`, async () => {
       const instance = mode === 'standard' ? new LangflowMCPServer() : new LangflowMCPServerConsolidated();
       (instance as any).client = client;
@@ -149,6 +157,16 @@ describe('Langflow 1.13 policy replacement safety', () => {
     const body = { ...policy, approved_integration_provider_ids: [provider] };
     expect(ReplacePolicyBundleSchema.safeParse(body).success).toBe(false);
     expect(GovernanceToolSchema.safeParse({ action: 'replace_policy_bundle', ...body }).success).toBe(false);
+  });
+
+  it.each(['integrations.google.drive.delete', ' integrations.Google.Drive.Delete ',
+    'integrations.future-provider.action_1'])('accepts action grammar %s in both schemas', key => {
+    const body = { ...policy, approved_integration_provider_ids: ['Google.Workspace'],
+      blocked_integration_action_keys: [key] };
+    expect(ReplacePolicyBundleSchema.parse(body).blocked_integration_action_keys).toEqual([key.trim()]);
+    expect(GovernanceToolSchema.parse({ action: 'replace_policy_bundle', ...body })).toMatchObject({
+      blocked_integration_action_keys: [key.trim()],
+    });
   });
 
   it('allows only manual membership sources in both modes', () => {

@@ -1579,6 +1579,9 @@ const policyBundleProviderIdsSchema = z.array(providerIdSchema).max(1000);
 const integrationProviderIdsSchema = z.array(
   z.string().trim().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/).max(120)
 ).max(1000);
+const integrationActionKeysSchema = z.array(
+  z.string().trim().max(255).regex(/^integrations\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)+$/i)
+).max(1000);
 
 export const GetPolicyBundleSchema = z.object({}).strict();
 export const ReplacePolicyBundleSchema = z.object({
@@ -1588,7 +1591,7 @@ export const ReplacePolicyBundleSchema = z.object({
   blocked_template_keys: catalogPolicyKeysSchema,
   blocked_model_keys: catalogPolicyKeysSchema,
   approved_integration_provider_ids: integrationProviderIdsSchema,
-  blocked_integration_action_keys: catalogPolicyKeysSchema,
+  blocked_integration_action_keys: integrationActionKeysSchema,
   reason: policyBundleReasonSchema
 }).strict();
 export const ListPolicyBundleHistorySchema = z.object({
