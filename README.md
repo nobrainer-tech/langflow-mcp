@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/langflow-mcp-server.svg)](https://www.npmjs.com/package/langflow-mcp-server)
 [![GitHub release](https://img.shields.io/github/v/release/nobrainer-tech/langflow-mcp)](https://github.com/nobrainer-tech/langflow-mcp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-1128%20passing-brightgreen.svg)](https://github.com/nobrainer-tech/langflow-mcp)
+[![Tests](https://github.com/nobrainer-tech/langflow-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nobrainer-tech/langflow-mcp/actions/workflows/ci.yml)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
 A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
@@ -13,13 +13,15 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server is built on the [Langflow API documentation](https://docs.langflow.org/api) and targets Langflow API version **1.12.6** in the 1.12.x family. The latest stable upstream release check on **2026-10-17** found [v1.12.6](https://github.com/langflow-ai/langflow/releases/tag/v1.12.6), published **2026-10-13**. The [v1.12.4 to v1.12.6 source comparison](https://github.com/langflow-ai/langflow/compare/v1.12.4...v1.12.6) found changed history limits, credential masking, and execution/attachment policies, without a required client route migration. The client preserves upstream authorization and validation errors. Workflow runs expose the optional `expose_graph_state` control added in 1.12.3: omitted or `null` uses the protocol default (conversation-only for AG-UI, graph events for Langflow); synchronous runs ignore it, and stream or background runs by a non-owner of a shared flow always run with it off. Memory Base creation exposes the optional `embedding_provider` added in 1.12.1. The 1.12.x API family adds headless agentic execution, provider descriptors, project upsert, governance policy endpoints, and a Kubernetes-style readiness probe. Existing A2A, v2 workflow HITL/public execution, and public build lifecycle support remains available.
+**API Compatibility**: This server targets Langflow API version **1.13.0** for its existing tools, the latest stable release checked on **2026-10-25** ([released 2026-10-22](https://github.com/langflow-ai/langflow/releases/tag/v1.13.0), source commit `63082cf9a9c0e5bbeda12bba0aa9e0b05ffffe6a`). Review of the [1.12.6 to 1.13.0 changes](https://github.com/langflow-ai/langflow/compare/v1.12.6...v1.13.0) identified required policy, team-membership and user-management updates. This is a bounded source-contract review, supported by local regression and installed-package tests; a live end-to-end run against Langflow 1.13.0 has not been performed. New upstream connection, trigger, migration-administration and deployment-snapshot APIs are not exposed as tools.
 
-**Versioning**: From `4.10.0` onward, the npm minor version mirrors the supported Langflow minor - `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (so `4.12.x` targets Langflow `1.12.x`, `4.11.x` targets Langflow `1.11.x`). The patch component is used for fixes within the same Langflow minor.
+Policy replacement requires the current revision and all six policy lists, including `approved_integration_provider_ids` and `blocked_integration_action_keys`. Read the current bundle before replacing it; an explicit empty list clears that policy set. Manual team-membership creation accepts only `source: "manual"` or an omitted source. Password reset requires an interactive Langflow login and is unavailable through this client's API-key authentication; its retained tool returns an actionable error without sending the password. The exported `deleteUser` method returns the deletion-started response and `request_id`; acceptance does not mean deletion has completed. Upstream authorization, policy, storage-unavailability and migration-pause errors remain errors.
 
-Langflow 1.12.6 returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. Both MCP modes expose `limit` for normal/shared sessions and messages, plus `offset` and display `order` for message history. Session lists have no upstream offset or cursor, so they cannot enumerate older sessions beyond the cap. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
+**Versioning**: From `4.10.0` onward, the npm minor version mirrors the targeted Langflow minor: `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (for example, `4.13.x` targets Langflow `1.13.x`). The patch component is used for fixes within the same Langflow minor.
 
-Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, masked configuration responses and upstream errors; installed-tarball smoke tests exercise both MCP modes over stdio and HTTP with local fixtures. This evidence covers source contracts and local requests, not a live end-to-end run against Langflow 1.12.6. Development builds of Langflow 1.13 are not covered by the compatibility claim above.
+Langflow 1.13.0 returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. Both MCP modes expose `limit` for normal/shared sessions and messages, plus `offset` and display `order` for message history. Upstream now supports session-list offsets, but these MCP tools do not yet expose them, so session enumeration remains limited to the first page. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
+
+Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, policy replacement, changed user/team contracts and upstream errors. Installed-tarball smoke tests exercise both MCP modes over stdio and HTTP with local fixtures, including preservation of nonempty integration policies.
 
 ### Consolidated Tools Mode
 
@@ -488,7 +490,7 @@ Once connected, Claude can use:
 - **`list_users`** - List all users (admin only)
 - **`get_current_user`** - Get current authenticated user info
 - **`update_user`** - Update user profile information
-- **`reset_user_password`** - Reset password for a user (admin only)
+- **`reset_user_password`** - Returns an interactive-login requirement; password changes are unavailable with API-key authentication
 - **`create_user`** - Create a new user (admin only)
 
 ### API Key Management (3 tools)
@@ -717,6 +719,8 @@ list_components()
 ```
 
 ## Development
+
+Use Node.js 22.12 or newer in the 22.x line, or Node.js 24.x, for the Vitest 5 toolchain. The published server still supports Node.js 20 and newer. CI tests the toolchain on Node.js 22/24 and the installed package on Node.js 20/22/24.
 
 ```bash
 # Build

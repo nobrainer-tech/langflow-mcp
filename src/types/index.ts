@@ -427,6 +427,11 @@ export interface UserRead {
   [key: string]: any;
 }
 
+export interface UserDeletionResponse {
+  detail: string;
+  request_id: string;
+}
+
 export interface UserCreate {
   username: string;
   password: string;
@@ -887,7 +892,7 @@ export interface ListAuthzTeamMembersParams {
 
 export interface AuthzTeamMemberCreate {
   user_id: string;
-  source?: 'manual' | 'sso';
+  source?: 'manual';
 }
 
 // authz: shares
@@ -1112,6 +1117,8 @@ export interface PolicyBundleRead {
   blocked_component_keys: string[];
   blocked_template_keys: string[];
   blocked_model_keys: string[];
+  approved_integration_provider_ids: string[];
+  blocked_integration_action_keys: string[];
   content_hash: string;
   created_at: string | null;
   created_by: string | null;
@@ -1125,7 +1132,9 @@ export interface PolicyBundleWrite {
   approved_provider_ids: string[];
   blocked_component_keys: string[];
   blocked_template_keys: string[];
-  blocked_model_keys?: string[];
+  blocked_model_keys: string[];
+  approved_integration_provider_ids: string[];
+  blocked_integration_action_keys: string[];
   reason?: string | null;
 }
 

@@ -862,6 +862,10 @@ export const A2aToolSchema = z.discriminatedUnion('action', [
 
 // Langflow 1.12.x governance tool schema
 const governanceProviderId = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/).max(255);
+const governanceIntegrationProviderId = z.string().trim().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/).max(120);
+const governanceIntegrationActionKeys = z.array(
+  z.string().trim().max(255).regex(/^integrations\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)+$/i)
+).max(1000);
 const governancePolicyKey = z.string().trim().min(1).max(255);
 const governancePolicyKeys = z.array(governancePolicyKey).max(1000);
 const governancePolicyReason = z.string().max(1024).nullable().optional();
@@ -889,7 +893,9 @@ export const GovernanceToolSchema = z.discriminatedUnion('action', [
     approved_provider_ids: z.array(governanceProviderId).max(1000),
     blocked_component_keys: governancePolicyKeys,
     blocked_template_keys: governancePolicyKeys,
-    blocked_model_keys: governancePolicyKeys.optional(),
+    blocked_model_keys: governancePolicyKeys,
+    approved_integration_provider_ids: z.array(governanceIntegrationProviderId).max(1000),
+    blocked_integration_action_keys: governanceIntegrationActionKeys,
     reason: governancePolicyReason
   }),
   z.object({
@@ -1065,7 +1071,7 @@ export const AuthzToolSchema = z.discriminatedUnion('action', [
     action: z.literal('add_team_member'),
     team_id: uuidSchema('team ID'),
     user_id: uuidSchema('user ID'),
-    source: z.enum(['manual', 'sso']).optional()
+    source: z.literal('manual').optional()
   }),
   z.object({
     action: z.literal('remove_team_member'),

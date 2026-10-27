@@ -162,7 +162,33 @@ test('retries post-publish 404 propagation beyond the third readback, without pu
   assert.equal(run.publishCount(), 1);
   assert.equal(run.requests.length, 6);
   assert.equal(run.requests[5].url, ATTESTATION_URL);
-  assert.deepEqual(run.waits, [2000, 2000, 2000]);
+  assert.deepEqual(run.waits, [5000, 5000, 5000]);
+});
+
+test('verifies visibility at 145 seconds, beyond the old 58-second window, with exactly one publish', async () => {
+  let elapsedMs = 0;
+  const responses = [];
+  const run = fixture(responses);
+  const fetch = run.options.fetch;
+  const sleep = run.options.sleep;
+  run.options.fetch = (url, settings) => {
+    responses.push(url === ATTESTATION_URL
+      ? response(200, attestationBundle())
+      : response(elapsedMs >= 145_000 ? 200 : 404));
+    return fetch(url, settings);
+  };
+  run.options.sleep = async (ms) => {
+    elapsedMs += ms;
+    await sleep(ms);
+  };
+
+  assert.deepEqual(await publishRelease(run.options), { version: VERSION, sha: SHA, published: true });
+  assert.equal(elapsedMs, 145_000);
+  assert.equal(run.publishCount(), 1);
+  assert.equal(run.requests.length, 32);
+  assert.ok(run.requests.slice(0, -1).every(({ url }) => url === REGISTRY_URL));
+  assert.equal(run.requests.at(-1).url, ATTESTATION_URL);
+  assert.deepEqual(run.waits, Array(29).fill(5000));
 });
 
 test('fails after 30 post-publish 404 readbacks with exactly 29 sleeps', async () => {
@@ -171,7 +197,7 @@ test('fails after 30 post-publish 404 readbacks with exactly 29 sleeps', async (
   assert.equal(run.publishCount(), 1);
   assert.equal(run.requests.length, 31);
   assert.ok(run.requests.every(({ url }) => url === REGISTRY_URL));
-  assert.deepEqual(run.waits, Array(29).fill(2000));
+  assert.deepEqual(run.waits, Array(29).fill(5000));
 });
 
 for (const [label, body, error] of [

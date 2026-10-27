@@ -703,7 +703,10 @@ describe('Langflow 1.12.x Tool Schemas', () => {
       expected_revision: 1,
       approved_provider_ids: ['openai'],
       blocked_component_keys: [],
-      blocked_template_keys: []
+      blocked_template_keys: [],
+      blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: []
     }).success).toBe(true);
     expect(GovernanceToolSchema.safeParse({
       action: 'rollback_policy_bundle', revision: 0, expected_revision: 1
@@ -934,6 +937,9 @@ describe('Consolidated handler dispatch', () => {
       approved_provider_ids: [],
       blocked_component_keys: [],
       blocked_template_keys: [],
+      blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       reason: 'test'
     });
 
@@ -945,6 +951,9 @@ describe('Consolidated handler dispatch', () => {
       approved_provider_ids: [],
       blocked_component_keys: [],
       blocked_template_keys: [],
+      blocked_model_keys: [],
+      approved_integration_provider_ids: [],
+      blocked_integration_action_keys: [],
       reason: 'test'
     });
   });
