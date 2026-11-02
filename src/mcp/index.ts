@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { getToolMode } from './discovery';
 import { LangflowMCPServer } from './server';
 import { LangflowMCPServerConsolidated } from './server-consolidated';
 import { LangflowMCPHttpServer } from './http';
@@ -31,7 +32,8 @@ process.on('unhandledRejection', (reason, promise) => {
 async function main() {
   try {
     const mode = process.env.MCP_MODE || 'stdio';
-    const useConsolidated = process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true';
+    const toolMode = getToolMode();
+    const useConsolidated = toolMode === 'consolidated';
 
     if (!['stdio', 'http'].includes(mode)) {
       throw new Error(`Unsupported MCP_MODE: ${mode}. Use "stdio" or "http".`);
@@ -41,7 +43,7 @@ async function main() {
       const httpServer = new LangflowMCPHttpServer({
         createMcpServer: () => useConsolidated
           ? new LangflowMCPServerConsolidated()
-          : new LangflowMCPServer()
+          : new LangflowMCPServer({ discovery: toolMode === 'discovery' })
       });
 
       let isShuttingDown = false;
@@ -73,10 +75,9 @@ async function main() {
       return;
     }
 
-    // Use consolidated tools or granular tools.
     const server = useConsolidated
       ? new LangflowMCPServerConsolidated()
-      : new LangflowMCPServer();
+      : new LangflowMCPServer({ discovery: toolMode === 'discovery' });
 
     if (useConsolidated) {
       logger.info('Using consolidated tools mode');

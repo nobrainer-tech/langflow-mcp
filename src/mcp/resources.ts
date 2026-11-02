@@ -1,4 +1,5 @@
-import { langflowMCPTools } from './tools';
+import { discoveryTools, getToolMode, ToolMode } from './discovery';
+import { getAvailableTools } from './tools';
 import { consolidatedTools } from './tools-consolidated';
 
 export interface McpResource {
@@ -29,7 +30,7 @@ export const langflowResources: McpResource[] = [
   },
 ];
 
-export function getResourceContent(uri: string): {
+export function getResourceContent(uri: string, toolMode: ToolMode = getToolMode()): {
   uri: string;
   mimeType: string;
   text: string;
@@ -40,7 +41,8 @@ export function getResourceContent(uri: string): {
         base_url: process.env.LANGFLOW_BASE_URL || 'not configured',
         timeout: parseInt(process.env.LANGFLOW_TIMEOUT || '30000', 10),
         mode: process.env.MCP_MODE || 'stdio',
-        consolidated_tools: process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true',
+        tool_mode: toolMode,
+        consolidated_tools: toolMode === 'consolidated',
         deprecated_tools_enabled: process.env.ENABLE_DEPRECATED_TOOLS !== 'false',
         log_level: process.env.LOG_LEVEL || 'info',
         api_key_configured: !!process.env.LANGFLOW_API_KEY,
@@ -57,7 +59,9 @@ export function getResourceContent(uri: string): {
         uri,
         mimeType: 'application/json',
         text: JSON.stringify({
-          info: 'Use the health_check tool to get live health status from the Langflow instance.',
+          info: toolMode === 'discovery'
+            ? 'Use call_tool with name health_check and empty arguments for live Langflow health.'
+            : 'Use the health_check operation (system action health_check in consolidated mode) for live Langflow health.',
           base_url: process.env.LANGFLOW_BASE_URL || 'not configured',
           api_key_configured: !!process.env.LANGFLOW_API_KEY,
         }, null, 2),
@@ -65,18 +69,10 @@ export function getResourceContent(uri: string): {
     }
 
     case 'langflow://tools': {
-      const isConsolidated = process.env.LANGFLOW_CONSOLIDATED_TOOLS === 'true';
-      const summary = isConsolidated
-        ? {
-            mode: 'consolidated',
-            tool_count: consolidatedTools.length,
-            tools: consolidatedTools.map(tool => tool.name),
-          }
-        : {
-            mode: 'standard',
-            tool_count: langflowMCPTools.length,
-            tools: langflowMCPTools.map(tool => tool.name),
-          };
+      const tools = toolMode === 'discovery' ? discoveryTools : toolMode === 'consolidated' ? consolidatedTools : getAvailableTools();
+      const summary = { mode: toolMode, tool_count: tools.length, tools: tools.map(tool => tool.name),
+        ...(toolMode === 'discovery' ? { operation_count: getAvailableTools().length, discovery: 'Use search_tools, get_tool_schema and call_tool. Live API operations are available through get_api_schema and request_api.' } : {}),
+      };
       return {
         uri,
         mimeType: 'application/json',

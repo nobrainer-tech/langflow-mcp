@@ -183,8 +183,8 @@ describe('MCP Tools Definitions', () => {
 
   describe('Tool Count', () => {
     it('should have expected total number of tools', () => {
-      // Expected: 233 active + 3 deprecated = 236 total
-      expect(langflowMCPTools.length).toBe(236);
+      // Existing 236 operations plus live API schema and request access.
+      expect(langflowMCPTools.length).toBe(238);
     });
 
     it('should maintain consistent tool count', () => {

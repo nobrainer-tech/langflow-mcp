@@ -15,7 +15,7 @@ describe('MCP tools resource', () => {
   });
 
   it('reports the live standard tool registry', () => {
-    delete process.env.LANGFLOW_CONSOLIDATED_TOOLS;
+    process.env.LANGFLOW_CONSOLIDATED_TOOLS = 'false';
     const summary = JSON.parse(getResourceContent('langflow://tools').text);
 
     expect(summary.tool_count).toBe(langflowMCPTools.length);
