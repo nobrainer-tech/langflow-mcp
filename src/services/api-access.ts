@@ -28,6 +28,14 @@ function object(value: unknown): value is JsonObject {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function throwApiError(error: unknown): never {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    throw new Error(status ? `Langflow API request failed: HTTP ${status}` : 'Langflow API request failed: network, timeout or size limit');
+  }
+  throw error;
+}
+
 function validatePath(path: string): void {
   if (!path.startsWith('/api/') && !['/health', '/health_check', '/healthz'].includes(path)) {
     throw new Error('Use an absolute Langflow API path such as /api/v1/flows/');
@@ -41,7 +49,12 @@ function validatePath(path: string): void {
 
 export async function readApiSchema(client: AxiosInstance, baseURL: string, raw: ApiSchemaInput = {}) {
   const input = apiSchemaInput.parse(raw);
-  const { data: document } = await client.get('/openapi.json', { baseURL, maxRedirects: 0, maxContentLength: MAX_BYTES });
+  let document: unknown;
+  try {
+    ({ data: document } = await client.get('/openapi.json', { baseURL, maxRedirects: 0, maxContentLength: MAX_BYTES }));
+  } catch (error) {
+    throwApiError(error);
+  }
   if (!object(document) || !object(document.paths)) throw new Error('Langflow returned an invalid OpenAPI document');
   if (input.path !== undefined) {
     const item = document.paths[input.path];
@@ -64,6 +77,8 @@ export async function readApiSchema(client: AxiosInstance, baseURL: string, raw:
       for (const child of Object.values(value)) pending.push(child);
       const ref = (value as JsonObject).$ref;
       if (typeof ref !== 'string' || seen.has(ref)) continue;
+      // Inline definitions are already included in their enclosing schema.
+      if (ref.startsWith('#/$defs/')) continue;
       if (!/^#\/components\/[^/]+\/[^/]+$/.test(ref)) throw new Error('Only local OpenAPI component references are supported');
       seen.add(ref);
       const [, , section, encodedName] = ref.split('/');
@@ -145,10 +160,6 @@ export async function requestApi(client: AxiosInstance, baseURL: string, raw: Ap
     return { status: response.status, content_type: response.headers['content-type'],
       encoding: input.response_format, body };
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      throw new Error(status ? `Langflow API request failed: HTTP ${status}` : 'Langflow API request failed: network, timeout or size limit');
-    }
-    throw error;
+    throwApiError(error);
   }
 }

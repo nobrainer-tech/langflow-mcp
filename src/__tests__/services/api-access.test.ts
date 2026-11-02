@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import MockAdapter from 'axios-mock-adapter';
 import { LangflowClient } from '../../services/langflow-client';
+import { logger, setLogLevel } from '../../utils/logger';
 
 // Shapes from Langflow v1.13.0 (63082cf9), docs/openapi/openapi.json.
 const spec = {
@@ -80,4 +82,33 @@ it('rejects malformed base64 and header injection before HTTP', async () => {
   await expect(client.requestApi({ method: 'POST', path: '/api/v2/files/', encoding: 'multipart', files: [{ field: 'file', name: 'f', content_base64: 'invalid!' }] })).rejects.toThrow('base64');
   await expect(client.requestApi({ method: 'POST', path: '/api/v1/run/id', headers: { Accept: 'text/plain\r\nHost: outside.example' } })).rejects.toThrow();
   expect(mock.history).toHaveLength(0);
+});
+
+it.each(['http', 'timeout'])('does not expose credentials in nested logs after a schema %s failure', async failure => {
+  if (failure === 'http') mock.onGet('/openapi.json').reply(403, { detail: 'private-response' });
+  else mock.onGet('/openapi.json').timeout();
+  const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+  setLogLevel('error');
+  try {
+    const error = await client.getApiSchema().catch(error => error);
+    expect(error).toBeInstanceOf(Error);
+    logger.error('Schema fetch failed', { error });
+    expect(stderr).toHaveBeenCalledOnce();
+    expect(JSON.stringify(stderr.mock.calls)).not.toContain('fixture-only-key');
+    expect(JSON.stringify(error)).not.toContain('private-response');
+    expect(error.message).toContain(failure === 'http' ? 'HTTP 403' : 'network, timeout or size limit');
+  } finally {
+    stderr.mockRestore();
+    setLogLevel(process.env.LOG_LEVEL || 'info');
+  }
+});
+
+it.each(['GET', 'POST'] as const)('preserves inline definitions in the upstream %s workflows contract', async method => {
+  const upstream = JSON.parse(readFileSync('full_openapi_1.9.5.json', 'utf8'));
+  const path = '/api/v2/workflows';
+  mock.onGet('/openapi.json').reply(200, upstream);
+  const result = await client.getApiSchema({ path, method });
+  if (Array.isArray(result.operations)) throw new Error('Expected an operation contract');
+  expect(result.operations[method.toLowerCase()]).toEqual(upstream.paths[path][method.toLowerCase()]);
+  expect(JSON.stringify(result.operations)).toContain('#/$defs/JobStatus');
 });
