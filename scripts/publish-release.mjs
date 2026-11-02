@@ -12,7 +12,7 @@ const READBACK_DELAY_MS = 5000;
 const SOURCE_REPOSITORY = 'https://github.com/nobrainer-tech/langflow-mcp';
 const PROVENANCE_TYPE = 'https://slsa.dev/provenance/v1';
 
-async function verifyMetadata(metadata, version, sha, readRegistry) {
+async function verifyMetadata(metadata, version, sha, readRegistry, wait) {
   if (metadata?.name !== PACKAGE_NAME) {
     throw new Error('npm metadata belongs to a different package');
   }
@@ -33,7 +33,12 @@ async function verifyMetadata(metadata, version, sha, readRegistry) {
     throw new Error('npm tarball integrity is missing or invalid');
   }
 
-  const response = await readRegistry(provenanceUrl);
+  let response;
+  for (let attempt = 1; attempt <= READBACK_ATTEMPTS; attempt += 1) {
+    response = await readRegistry(provenanceUrl);
+    if (response.status !== 404 || attempt === READBACK_ATTEMPTS) break;
+    await wait(READBACK_DELAY_MS);
+  }
   if (response.status !== 200) {
     throw new Error(`npm provenance attestation request returned HTTP ${response.status}`);
   }
@@ -141,7 +146,7 @@ export async function publishRelease({
 
   const existing = await readRegistry(url);
   if (existing.status === 200) {
-    await verifyMetadata(existing.data, version, sha, readRegistry);
+    await verifyMetadata(existing.data, version, sha, readRegistry, wait);
     return { version, sha, published: false };
   }
   if (existing.status !== 404) {
@@ -160,7 +165,7 @@ export async function publishRelease({
   for (let attempt = 1; attempt <= READBACK_ATTEMPTS; attempt += 1) {
     const readback = await readRegistry(url);
     if (readback.status === 200) {
-      await verifyMetadata(readback.data, version, sha, readRegistry);
+      await verifyMetadata(readback.data, version, sha, readRegistry, wait);
       return { version, sha, published: true };
     }
     if (readback.status !== 404) {

@@ -200,6 +200,30 @@ test('fails after 30 post-publish 404 readbacks with exactly 29 sleeps', async (
   assert.deepEqual(run.waits, Array(29).fill(5000));
 });
 
+for (const published of [false, true]) {
+  test(`${published ? 'post-publish' : 'existing version'} retries a temporarily missing attestation without another publish`, async () => {
+    const run = fixture([
+      ...(published ? [response(404)] : []), response(200),
+      response(404), response(404), response(200, attestationBundle()),
+    ]);
+    assert.deepEqual(await publishRelease(run.options), { version: VERSION, sha: SHA, published });
+    assert.equal(run.publishCount(), Number(published));
+    assert.deepEqual(run.waits, [5000, 5000]);
+    assert.equal(run.requests.filter(({ url }) => url === ATTESTATION_URL).length, 3);
+  });
+
+  test(`${published ? 'post-publish' : 'existing version'} fails closed after 30 missing attestations`, async () => {
+    const run = fixture([
+      ...(published ? [response(404)] : []), response(200),
+      ...Array.from({ length: 30 }, () => response(404)),
+    ]);
+    await assert.rejects(publishRelease(run.options), /attestation request returned HTTP 404/);
+    assert.equal(run.publishCount(), Number(published));
+    assert.equal(run.requests.filter(({ url }) => url === ATTESTATION_URL).length, 30);
+    assert.deepEqual(run.waits, Array(29).fill(5000));
+  });
+}
+
 for (const [label, body, error] of [
   ['different commit', metadata({ gitHead: 'b'.repeat(40) }), /different commit/],
   ['missing commit', metadata({ gitHead: undefined }), /different commit/],
@@ -319,7 +343,7 @@ for (const published of [false, true]) {
   }
 
   for (const [label, result, error] of [
-    ...[201, 302, 404, 401, 403, 429, 500].map((status) => [`HTTP ${status}`, () => response(status), new RegExp(`HTTP ${status}`)]),
+    ...[201, 302, 401, 403, 429, 500].map((status) => [`HTTP ${status}`, () => response(status), new RegExp(`HTTP ${status}`)]),
     ['network failure', () => new Error('private-auth-data'), /registry request or JSON read failed/],
     ['timeout', () => new DOMException('private-auth-data', 'TimeoutError'), /registry request or JSON read failed/],
     ['invalid bundle JSON', () => new Response('private-auth-data', { status: 200 }), /registry request or JSON read failed/],
