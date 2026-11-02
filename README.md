@@ -57,7 +57,7 @@ Discover `get_api_schema` to search the running instance's `/openapi.json`. Supp
 
 `request_api` accepts JSON, URL-encoded forms and multipart files supplied as base64. Responses can be JSON, text or base64. Use an exact API path, including its trailing slash, and keep query parameters separate. Calls stay on the configured instance; redirects, credential-header overrides and local file reads are rejected. The configured timeout and 10 MiB transfer limit apply. Writes are never retried automatically. Policy replacement still requires all policy lists, and password reset still requires an interactive login.
 
-This provides REST access within the server's permissions, not an interactive browser session or an unlimited streaming proxy. Finite event streams can be read as text before the timeout; indefinite streams, WebSockets and login-only operations require a suitable Langflow client. OpenAPI may omit private or feature-specific routes; no undocumented route is claimed as tested. Prefer the typed operations where available.
+This provides REST access within the server's permissions, not an interactive browser session or an unlimited streaming proxy. Finite event streams can be read as text before the timeout; indefinite streams, WebSockets and login-only operations require a suitable Langflow client. OpenAPI discovery supports inline path items, local component references and inline `$defs`; path-item `$ref` indirection and external schema references are unsupported. OpenAPI may omit private or feature-specific routes; no undocumented route is claimed as tested. Prefer the typed operations where available.
 
 ### Consolidated Tools Mode
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LangflowMCPServer } from '../../mcp/server';
 import { langflowMCPTools } from '../../mcp/tools';
 
@@ -12,6 +12,7 @@ function handlers() {
   };
 }
 const data = (result: any) => JSON.parse(result.content[0].text);
+beforeEach(() => vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 describe('discovery tool surface', () => {
