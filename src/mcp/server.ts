@@ -411,7 +411,8 @@ export class LangflowMCPServer {
    */
   private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
     const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
-    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
+    // Log the stack only: serializing the error object would include e.g. Axios request config headers.
+    logger.error(`Error executing tool ${toolName}:`, { args: sanitized }, error instanceof Error ? error : String(error));
 
     let errorMessage: string;
     let errorDetails: Record<string, any> = {};
