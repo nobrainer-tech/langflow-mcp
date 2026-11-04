@@ -1,6 +1,8 @@
+import { apiTools } from './tools-api';
 import { ToolDefinition } from '../types';
 
 export const consolidatedTools: ToolDefinition[] = [
+  ...apiTools,
   {
     name: 'flow',
     description: `Manage Langflow workflows - create, read, update, delete, and organize flows.
@@ -402,7 +404,7 @@ Actions:
 - get_messages: Get the newest message window with filters; default 100, maximum 200; use offset for older history
 - get_message: Find a message by scanning windows of 200 within the configured timeout (default 30 seconds); use get_messages filters for large histories
 - delete_messages: Delete messages
-- get_sessions: List newest sessions by latest message timestamp descending; default 100, maximum 200; no history paging
+- get_sessions: List newest sessions by latest message timestamp descending; default 100, maximum 200; use offset for subsequent pages
 - get_session_messages: Get the newest message window for a session; default 100, maximum 200; use offset for older history
 - migrate_session: Migrate session to new flow
 - get_transactions: Get transaction history
@@ -410,7 +412,7 @@ Actions:
 - delete_session_messages: Delete all messages for a session
 - delete_sessions: Delete multiple sessions
 - get_shared: Get the newest shared-message window for a source flow; default 100, maximum 200; use offset for older history
-- get_shared_sessions: List newest shared sessions by latest message timestamp descending; default 100, maximum 200; no history paging
+- get_shared_sessions: List newest shared sessions by latest message timestamp descending; default 100, maximum 200; use offset for subsequent pages
 - update_shared: Update a shared message
 - migrate_shared_session: Migrate a shared session id
 - delete_shared_session: Delete a shared session
@@ -440,7 +442,7 @@ Examples:
         sender_name: { type: 'string', description: 'Filter by sender name / message sender name' },
         order_by: { type: 'string', description: 'Order by field' },
         limit: { type: 'integer', minimum: 0, description: 'Message/session limit; omitted or 0 uses 100, upstream clamps values above 200' },
-        offset: { type: 'integer', minimum: 0, description: 'Messages to skip from newest history for get_messages, get_session_messages, get_shared (default: 0)' },
+        offset: { type: 'integer', minimum: 0, description: 'Messages or sessions to skip from newest history (default: 0)' },
         order: { type: 'string', enum: ['ASC', 'DESC'], description: 'Message display order within the selected window (default: ASC)' },
         new_session_id: { type: 'string', description: 'New session ID - for migrate, migrate_shared_session' },
         source_flow_id: { type: 'string', description: 'Source flow ID - for shared actions' },

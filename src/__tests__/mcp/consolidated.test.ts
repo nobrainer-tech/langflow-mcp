@@ -38,8 +38,8 @@ import {
 const VALID_UUID = '12345678-1234-4234-a234-123456789012';
 
 describe('Consolidated Tools', () => {
-  it('should have exactly 29 tools', () => {
-    expect(consolidatedTools).toHaveLength(29);
+  it('should have 29 grouped tools and two API tools', () => {
+    expect(consolidatedTools).toHaveLength(31);
   });
 
   it('should have all expected tool names', () => {
@@ -82,7 +82,9 @@ describe('Consolidated Tools', () => {
       expect(tool).toHaveProperty('inputSchema');
       expect(tool.inputSchema).toHaveProperty('type', 'object');
       expect(tool.inputSchema).toHaveProperty('properties');
-      expect(tool.inputSchema.properties).toHaveProperty('action');
+      if (!['get_api_schema', 'request_api'].includes(tool.name)) {
+        expect(tool.inputSchema.properties).toHaveProperty('action');
+      }
     }
   });
 
@@ -830,7 +832,7 @@ describe('Consolidated handler dispatch', () => {
 
   it.each([undefined, 0, 200, 201])('monitor forwards shared session limit %s', async limit => {
     await server.handleMonitorTool({ action: 'get_shared_sessions', source_flow_id: 'f1', limit });
-    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit);
+    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit, undefined);
   });
 
   it.each([undefined, 0, 200, 201])('monitor forwards normal session limit %s', async limit => {
@@ -858,7 +860,7 @@ describe('Consolidated handler dispatch', () => {
       name: 'get_shared_sessions', arguments: { source_flow_id: 'f1', ...(limit === undefined ? {} : { limit }) }
     } }, {});
     expect(result.isError).not.toBe(true);
-    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit);
+    expect(client.getSharedSessions).toHaveBeenCalledWith('f1', limit, undefined);
   });
 
   it('granular dispatch retains normal sessions and all message query controls', async () => {

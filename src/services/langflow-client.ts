@@ -1,3 +1,4 @@
+import { ApiSchemaInput, ApiRequestInput, apiRequestInput, readApiSchema, requestApi } from './api-access';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import FormData from 'form-data';
 import {
@@ -174,6 +175,22 @@ export class LangflowClient {
         'x-api-key': config.apiKey
       }
     });
+  }
+
+  async getApiSchema(input: ApiSchemaInput = {}) {
+    return readApiSchema(this.client, this.config.baseUrl, input);
+  }
+
+  async requestApi(input: ApiRequestInput) {
+    const parsed = apiRequestInput.parse(input);
+    const path = decodeURIComponent(parsed.path).replace(/\/+$/, '');
+    if (parsed.method === 'PUT' && path === '/api/v1/policy-bundle') {
+      this.assertCompletePolicyBundle(parsed.body);
+    }
+    if (parsed.method === 'PATCH' && /^\/api\/v1\/users\/[^/]+\/reset-password$/.test(path)) {
+      return this.resetUserPassword('', '');
+    }
+    return requestApi(this.client, this.config.baseUrl, parsed);
   }
 
   async createFlow(flow: FlowCreate): Promise<FlowRead> {
@@ -1694,10 +1711,10 @@ export class LangflowClient {
     }
   }
 
-  async getSharedSessions(sourceFlowId: string, limit?: number): Promise<string[]> {
+  async getSharedSessions(sourceFlowId: string, limit?: number, offset?: number): Promise<string[]> {
     try {
       const response = await this.client.get<string[]>('/monitor/messages/shared/sessions', {
-        params: { source_flow_id: sourceFlowId, ...(limit !== undefined ? { limit } : {}) }
+        params: { source_flow_id: sourceFlowId, ...(limit !== undefined ? { limit } : {}), ...(offset !== undefined ? { offset } : {}) }
       });
       return response.data;
     } catch (error) {
@@ -1974,15 +1991,19 @@ export class LangflowClient {
     }
   }
 
+  private assertCompletePolicyBundle(body: unknown): void {
+    const completeSets = [
+      'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys',
+      'blocked_model_keys', 'approved_integration_provider_ids', 'blocked_integration_action_keys'
+    ] as const;
+    if (!body || typeof body !== 'object' || completeSets.some(field => !Array.isArray((body as Record<string, unknown>)[field]))) {
+      throw new Error('Policy replacement requires explicit arrays for every policy set; read the current bundle before replacing it.');
+    }
+  }
+
   async replacePolicyBundle(body: PolicyBundleWrite): Promise<PolicyBundleRead> {
     try {
-      const completeSets = [
-        'approved_provider_ids', 'blocked_component_keys', 'blocked_template_keys',
-        'blocked_model_keys', 'approved_integration_provider_ids', 'blocked_integration_action_keys'
-      ] as const;
-      if (completeSets.some(field => !Array.isArray(body?.[field]))) {
-        throw new Error('Policy replacement requires explicit arrays for every policy set; read the current bundle before replacing it.');
-      }
+      this.assertCompletePolicyBundle(body);
       const response = await this.client.put<PolicyBundleRead>('/policy-bundle', body);
       return response.data;
     } catch (error) {

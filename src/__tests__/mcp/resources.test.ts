@@ -1,21 +1,17 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { consolidatedTools } from '../../mcp/tools-consolidated';
 import { getResourceContent } from '../../mcp/resources';
 import { langflowMCPTools } from '../../mcp/tools';
 
 describe('MCP tools resource', () => {
-  const originalMode = process.env.LANGFLOW_CONSOLIDATED_TOOLS;
-
-  afterEach(() => {
-    if (originalMode === undefined) {
-      delete process.env.LANGFLOW_CONSOLIDATED_TOOLS;
-    } else {
-      process.env.LANGFLOW_CONSOLIDATED_TOOLS = originalMode;
-    }
+  beforeEach(() => {
+    vi.stubEnv('LANGFLOW_TOOL_MODE', undefined);
+    vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'true');
   });
+  afterEach(() => vi.unstubAllEnvs());
 
   it('reports the live standard tool registry', () => {
-    delete process.env.LANGFLOW_CONSOLIDATED_TOOLS;
+    vi.stubEnv('LANGFLOW_CONSOLIDATED_TOOLS', 'false');
     const summary = JSON.parse(getResourceContent('langflow://tools').text);
 
     expect(summary.tool_count).toBe(langflowMCPTools.length);
@@ -24,7 +20,7 @@ describe('MCP tools resource', () => {
   });
 
   it('reports the live consolidated tool registry', () => {
-    process.env.LANGFLOW_CONSOLIDATED_TOOLS = 'true';
+    vi.stubEnv('LANGFLOW_CONSOLIDATED_TOOLS', 'true');
     const summary = JSON.parse(getResourceContent('langflow://tools').text);
 
     expect(summary.tool_count).toBe(consolidatedTools.length);

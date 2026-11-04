@@ -1,3 +1,5 @@
+import { discoveryTools, searchTools, getToolSchema, callToolSchema } from './discovery';
+import { apiRequestInput } from '../services/api-access';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
@@ -10,7 +12,7 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { ZodError } from 'zod';
-import { langflowMCPTools } from './tools';
+import { getAvailableTools } from './tools';
 import { logger } from '../utils/logger';
 import { LangflowClient } from '../services/langflow-client';
 import { LangflowConfig } from '../types';
@@ -257,7 +259,7 @@ export class LangflowMCPServer {
   private server: Server;
   private client: LangflowClient | null = null;
 
-  constructor() {
+  constructor(private readonly options: { discovery?: boolean } = {}) {
     const baseUrl = process.env.LANGFLOW_BASE_URL;
     const apiKey = process.env.LANGFLOW_API_KEY;
 
@@ -355,7 +357,8 @@ export class LangflowMCPServer {
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
       'private_key', 'secret', 'credentials', 'api-key',
-      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction'
+      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction',
+      'body', 'headers', 'query', 'files', 'content_base64'
     ]);
 
     // Prevent infinite recursion
@@ -408,7 +411,8 @@ export class LangflowMCPServer {
    */
   private formatErrorResponse(error: unknown, toolName: string, args?: Record<string, unknown>): any {
     const sanitized = args ? this.sanitizeSensitiveData(args) : undefined;
-    logger.error(`Error executing tool ${toolName}:`, { args: sanitized, error });
+    // Log the stack only: serializing the error object would include e.g. Axios request config headers.
+    logger.error(`Error executing tool ${toolName}:`, { args: sanitized }, error instanceof Error ? error : String(error));
 
     let errorMessage: string;
     let errorDetails: Record<string, any> = {};
@@ -487,20 +491,9 @@ export class LangflowMCPServer {
 
   private setupHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      const deprecatedTools = ['build_vertices', 'get_vertex', 'stream_vertex_build', 'get_task_status'];
-      const enableDeprecated = process.env.ENABLE_DEPRECATED_TOOLS !== 'false';
-
-      const toolsToShow = enableDeprecated
-        ? langflowMCPTools
-        : langflowMCPTools.filter(tool => !deprecatedTools.includes(tool.name));
-
-      return {
-        tools: toolsToShow.map(tool => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        })),
-      };
+      return { tools: (this.options.discovery ? discoveryTools : getAvailableTools()).map(tool => ({
+        name: tool.name, description: tool.description, inputSchema: tool.inputSchema, annotations: tool.annotations,
+      })) };
     });
 
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
@@ -539,16 +532,12 @@ export class LangflowMCPServer {
         throw new Error(`Unknown resource: ${uri}`);
       }
       return {
-        contents: [getResourceContent(uri)],
+        contents: [getResourceContent(uri, this.options.discovery ? 'discovery' : 'standard')],
       };
     });
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      if (!this.client) {
-        throw new Error('Langflow client not initialized. Set LANGFLOW_BASE_URL and LANGFLOW_API_KEY environment variables.');
-      }
-
-      const { name, arguments: rawArgs } = request.params;
+      let { name, arguments: rawArgs } = request.params;
 
       // Validate args type before casting (security check)
       if (rawArgs !== undefined && rawArgs !== null) {
@@ -557,10 +546,25 @@ export class LangflowMCPServer {
         }
       }
 
-      const args = (rawArgs ?? {}) as Record<string, unknown>;
+      let args = (rawArgs ?? {}) as Record<string, unknown>;
 
       try {
+        if (this.options.discovery) {
+          if (name === 'search_tools') return this.formatSuccessResponse(searchTools(getAvailableTools(), args));
+          if (name === 'get_tool_schema') return this.formatSuccessResponse(getToolSchema(getAvailableTools(), args));
+          if (name === 'call_tool') {
+            const call = callToolSchema.parse(args);
+            getToolSchema(getAvailableTools(), { name: call.name });
+            name = call.name;
+            args = call.arguments;
+          }
+        }
+        if (!this.client) throw new Error('Langflow client not initialized. Set LANGFLOW_BASE_URL and LANGFLOW_API_KEY environment variables.');
         switch (name) {
+          case 'get_api_schema':
+            return this.formatSuccessResponse(await this.client.getApiSchema(args));
+          case 'request_api':
+            return this.formatSuccessResponse(await this.client.requestApi(apiRequestInput.parse(args)));
           case 'create_flow': {
             const validated = CreateFlowSchema.parse(args);
             const created = await this.client.createFlow(validated);
@@ -1512,7 +1516,7 @@ export class LangflowMCPServer {
 
           case 'get_shared_sessions': {
             const validated = GetSharedSessionsSchema.parse(args);
-            const result = await this.client.getSharedSessions(validated.source_flow_id, validated.limit);
+            const result = await this.client.getSharedSessions(validated.source_flow_id, validated.limit, validated.offset);
             return this.formatSuccessResponse(result);
           }
 

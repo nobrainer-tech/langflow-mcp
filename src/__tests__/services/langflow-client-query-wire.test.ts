@@ -39,6 +39,14 @@ describe('Langflow list-query serialization over HTTP', () => {
       ...(limit === undefined ? {} : { limit: String(limit) }) });
   });
 
+  it.each([0, 200])('preserves session pagination offset %s on the wire', async offset => {
+    responseBody = ['older-session'];
+    expect(await client.getMonitorSessions({ limit: 200, offset })).toEqual(responseBody);
+    expect(received.searchParams.get('offset')).toBe(String(offset));
+    expect(await client.getSharedSessions('shared-flow', 200, offset)).toEqual(responseBody);
+    expect(received.searchParams.get('offset')).toBe(String(offset));
+  });
+
   it.each([0, 200, 201])('serializes message limit %s, explicit zero offset and order', async limit => {
     responseBody = [{ id: 'message-a', text: 'unchanged' }];
     const controls = { limit, offset: 0, order: 'DESC' as const };

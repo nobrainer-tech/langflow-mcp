@@ -371,6 +371,7 @@ export interface MessageResponse {
 export interface MonitorSessionsParams {
   flow_id?: string;
   limit?: number;
+  offset?: number;
 }
 
 export interface DeleteMonitorMessagesRequest {

@@ -391,7 +391,8 @@ export const GetMonitorMessageSchema = z.object({
 
 export const GetMonitorSessionsSchema = z.object({
   flow_id: z.string().uuid('Invalid flow ID format').optional(),
-  limit: z.number().int().nonnegative().optional()
+  limit: z.number().int().nonnegative().optional(),
+  offset: z.number().int().nonnegative().optional()
 }).strict();
 
 export const GetMonitorSessionMessagesSchema = z.object({
@@ -770,7 +771,8 @@ export const GetSharedMessagesSchema = z.object({
 
 export const GetSharedSessionsSchema = z.object({
   source_flow_id: z.string().min(1, 'Source flow ID is required'),
-  limit: z.number().int().nonnegative().optional()
+  limit: z.number().int().nonnegative().optional(),
+  offset: z.number().int().nonnegative().optional()
 }).strict();
 
 export const UpdateSharedMessageSchema = z.object({

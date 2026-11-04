@@ -1,6 +1,8 @@
+import { apiTools } from './tools-api';
 import { ToolDefinition } from '../types';
 
 export const langflowMCPTools: ToolDefinition[] = [
+  ...apiTools,
   {
     name: 'create_flow',
     description: `Create a new Langflow workflow with optional configuration and organization.
@@ -1972,7 +1974,7 @@ Related Tools:
   },
   {
     name: 'get_monitor_sessions',
-    description: 'List the newest chat session IDs, optionally filtered by flow. Langflow returns 100 by default, at most 200; limit 0 uses the default. Sessions are ordered by latest message timestamp descending. Older sessions beyond the cap are not returned.',
+    description: 'List the newest chat session IDs, optionally filtered by flow. Langflow returns 100 by default, at most 200; limit 0 uses the default. Sessions are ordered by latest message timestamp descending. Use offset to retrieve subsequent pages.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1980,7 +1982,8 @@ Related Tools:
           type: 'string',
           description: 'Optional flow ID (UUID) to filter sessions by flow'
         },
-        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' }
+        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Sessions to skip from newest history (default: 0)' }
       }
     },
     annotations: {
@@ -3119,12 +3122,13 @@ Related Tools:
   },
   {
     name: 'get_shared_sessions',
-    description: 'List the newest shared session IDs for a source flow, ordered by latest message timestamp descending. Langflow returns 100 by default, at most 200; limit 0 uses the default. Older sessions beyond the cap are not returned.',
+    description: 'List the newest shared session IDs for a source flow, ordered by latest message timestamp descending. Langflow returns 100 by default, at most 200; limit 0 uses the default. Use offset to retrieve subsequent pages.',
     inputSchema: {
       type: 'object',
       properties: {
         source_flow_id: { type: 'string', description: 'Source flow ID' },
-        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' }
+        limit: { type: 'integer', minimum: 0, description: 'Session limit; omitted or 0 uses 100, upstream clamps values above 200' },
+        offset: { type: 'integer', minimum: 0, description: 'Sessions to skip from newest history (default: 0)' }
       },
       required: ['source_flow_id']
     },
@@ -4567,3 +4571,9 @@ Related Tools:
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
   }
 ];
+
+export function getAvailableTools(): ToolDefinition[] {
+  const deprecated = ['build_vertices', 'stream_vertex_build', 'get_task_status'];
+  return process.env.ENABLE_DEPRECATED_TOOLS === 'false'
+    ? langflowMCPTools.filter(tool => !deprecated.includes(tool.name)) : langflowMCPTools;
+}

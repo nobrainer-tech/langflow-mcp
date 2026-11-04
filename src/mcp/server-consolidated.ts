@@ -1,3 +1,4 @@
+import { apiRequestInput } from '../services/api-access';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
@@ -129,7 +130,8 @@ export class LangflowMCPServerConsolidated {
       'x-api-key', 'x-store-api-key', 'set-cookie',
       'bearer', 'session', 'session_id', 'cookie',
       'private_key', 'secret', 'credentials', 'api-key',
-      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction'
+      'file_content', 'file', 'content', 'payload', 'data', 'auth_settings', 'input_value', 'instruction',
+      'body', 'headers', 'query', 'files', 'content_base64'
     ]);
 
     if (depth > MAX_DEPTH) return { __error: 'max depth exceeded' };
@@ -242,6 +244,7 @@ export class LangflowMCPServerConsolidated {
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
+        annotations: tool.annotations,
       })),
     }));
 
@@ -281,7 +284,7 @@ export class LangflowMCPServerConsolidated {
         throw new Error(`Unknown resource: ${uri}`);
       }
       return {
-        contents: [getResourceContent(uri)],
+        contents: [getResourceContent(uri, 'consolidated')],
       };
     });
 
@@ -302,6 +305,10 @@ export class LangflowMCPServerConsolidated {
 
       try {
         switch (name) {
+          case 'get_api_schema':
+            return this.formatSuccessResponse(await this.client.getApiSchema(args));
+          case 'request_api':
+            return this.formatSuccessResponse(await this.client.requestApi(apiRequestInput.parse(args)));
           case 'flow':
             return await this.handleFlowTool(args);
           case 'flow_execution':
@@ -842,7 +849,7 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'get_shared_sessions': {
-        const result = await this.client!.getSharedSessions(validated.source_flow_id, validated.limit);
+        const result = await this.client!.getSharedSessions(validated.source_flow_id, validated.limit, validated.offset);
         return this.formatSuccessResponse(result);
       }
       case 'update_shared': {

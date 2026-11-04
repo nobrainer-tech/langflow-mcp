@@ -515,7 +515,8 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('get_sessions'),
     flow_id: uuidSchema('flow ID').optional(),
-    limit: z.number().int().nonnegative().optional()
+    limit: z.number().int().nonnegative().optional(),
+    offset: z.number().int().nonnegative().optional()
   }),
   z.object({
     action: z.literal('get_session_messages'),
@@ -564,7 +565,8 @@ export const MonitorToolSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('get_shared_sessions'),
     source_flow_id: z.string().min(1),
-    limit: z.number().int().nonnegative().optional()
+    limit: z.number().int().nonnegative().optional(),
+    offset: z.number().int().nonnegative().optional()
   }),
   z.object({
     action: z.literal('update_shared'),

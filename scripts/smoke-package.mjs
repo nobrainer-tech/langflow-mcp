@@ -54,13 +54,13 @@ const queryFixtures = [
   },
   {
     path: '/api/v1/monitor/messages/sessions',
-    args: { limit: 0 },
+    args: { limit: 0, offset: 200 },
     standard: 'get_monitor_sessions', consolidated: 'get_sessions', tool: 'monitor',
     response: ['latest-session'],
   },
   {
     path: '/api/v1/monitor/messages/shared/sessions',
-    args: { source_flow_id: '12345678-1234-4234-a234-123456789012', limit: 200 },
+    args: { source_flow_id: '12345678-1234-4234-a234-123456789012', limit: 200, offset: 200 },
     standard: 'get_shared_sessions', consolidated: 'get_shared_sessions', tool: 'monitor',
     response: ['shared-session'],
   },
@@ -191,6 +191,18 @@ async function main() {
           }
           return;
         }
+        if (url.pathname === '/openapi.json') {
+          assert.equal(request.method, 'GET');
+          response.end(JSON.stringify({ openapi: '3.1.0', info: { version: '1.13.0' }, paths: {
+            '/api/v1/triggers/{trigger_id}/enable': { post: { summary: 'Enable Trigger' } },
+          } }));
+          return;
+        }
+        if (url.pathname === '/api/v1/triggers/fixture/enable') {
+          assert.equal(request.method, 'POST');
+          response.end(JSON.stringify({ enabled: true }));
+          return;
+        }
         assert.equal(request.method, 'GET');
         if (url.pathname === '/api/v1/version') {
           assert.equal(url.search, '');
@@ -227,14 +239,16 @@ async function main() {
     await deadline(once(mock, 'listening'), 'Mock Langflow startup');
     const mockUrl = `http://127.0.0.1:${mock.address().port}`;
 
-    async function smoke(mode, consolidated) {
-      const label = `${mode}/${consolidated ? 'consolidated' : 'standard'}`;
+    async function smoke(mode, toolMode) {
+      const consolidated = toolMode === 'consolidated';
+      const discovery = toolMode === 'discovery';
+      const label = `${mode}/${toolMode}`;
       const client = new Client({ name: 'package-smoke', version: pkg.version });
       const options = { timeout: REQUEST_TIMEOUT_MS, maxTotalTimeout: REQUEST_TIMEOUT_MS,
         signal: interrupted.signal };
       const env = {
         ...baseEnv,
-        MCP_MODE: mode, LANGFLOW_CONSOLIDATED_TOOLS: String(consolidated),
+        MCP_MODE: mode, ...(discovery ? {} : { LANGFLOW_TOOL_MODE: toolMode }),
         LANGFLOW_BASE_URL: mockUrl, LANGFLOW_API_KEY: fixtureApiKey,
         LANGFLOW_TIMEOUT: String(REQUEST_TIMEOUT_MS), ENABLE_DEPRECATED_TOOLS: 'true',
         HOST: '127.0.0.1', PORT: '0', AUTH_TOKEN: fixtureHttpToken, LOG_LEVEL: 'info',
@@ -273,29 +287,36 @@ async function main() {
         assert.equal(client.getServerVersion()?.version, pkg.version, 'Handshake must report the package version');
         const { tools, nextCursor } = await client.listTools({}, options);
         assert.equal(nextCursor, undefined, 'Expected the complete tool list');
-        assert.equal(tools.length, consolidated ? 29 : 236, 'Tool count must match README');
+        assert.equal(tools.length, discovery ? 3 : consolidated ? 31 : 238, 'Tool count must match README');
         assert.equal(new Set(tools.map((tool) => tool.name)).size, tools.length);
+        const invoke = (params) => client.callTool(discovery
+          ? { name: 'call_tool', arguments: { name: params.name, arguments: params.arguments } } : params, undefined, options);
+        if (discovery) {
+          const search = toolData(await client.callTool({ name: 'search_tools', arguments: { query: 'version' } }, undefined, options));
+          assert.ok(search.tools.some(tool => tool.name === 'get_version'));
+          assert.ok(JSON.stringify(tools).length < 3000, 'Discovery must keep its startup schema small');
+        }
         await client.ping(options);
-        const versionResult = await client.callTool(consolidated
+        const versionResult = await invoke(consolidated
           ? { name: 'system', arguments: { action: 'version' } }
-          : { name: 'get_version', arguments: {} }, undefined, options);
+          : { name: 'get_version', arguments: {} });
         assert.ifError(mockFailure);
         assert.deepEqual(toolData(versionResult), versionFixture);
         const { action, ...filters } = auditFilters;
-        const auditResult = await client.callTool(consolidated
+        const auditResult = await invoke(consolidated
           ? { name: 'authz', arguments: { action: 'audit', audit_action: action, ...filters } }
-          : { name: 'get_authz_audit', arguments: auditFilters }, undefined, options);
+          : { name: 'get_authz_audit', arguments: auditFilters });
         assert.ifError(mockFailure);
         assert.deepEqual(toolData(auditResult), auditFixture);
-        const policyResult = await client.callTool(consolidated
+        const policyResult = await invoke(consolidated
           ? { name: 'governance', arguments: { action: 'get_policy_bundle' } }
-          : { name: 'get_policy_bundle', arguments: {} }, undefined, options);
+          : { name: 'get_policy_bundle', arguments: {} });
         const { revision, ...lists } = toolData(policyResult);
         assert.deepEqual({ revision, ...lists }, policyFixture);
         const replacement = { expected_revision: revision, ...lists };
-        const replace = (body) => client.callTool(consolidated
+        const replace = (body) => invoke(consolidated
           ? { name: 'governance', arguments: { action: 'replace_policy_bundle', ...body } }
-          : { name: 'replace_policy_bundle', arguments: body }, undefined, options);
+          : { name: 'replace_policy_bundle', arguments: body });
         assert.deepEqual(toolData(await replace(replacement)), { ...policyFixture, revision: 5 });
         const { approved_integration_provider_ids, ...incomplete } = replacement;
         const writesBefore = calls.policyWrites;
@@ -303,18 +324,24 @@ async function main() {
         assert.equal(calls.policyWrites, writesBefore, 'Rejected input must not reach the API');
         assert.ifError(mockFailure);
         for (const fixture of queryFixtures) {
-          const advertised = tools.find(tool => tool.name === (consolidated ? fixture.tool : fixture.standard));
+          const advertised = discovery
+            ? toolData(await client.callTool({ name: 'get_tool_schema', arguments: { name: fixture.standard } }, undefined, options))
+            : tools.find(tool => tool.name === (consolidated ? fixture.tool : fixture.standard));
           assert.ok(advertised, `Missing tool definition: ${fixture.standard}`);
           for (const key of Object.keys(fixture.args)) {
             assert.ok(Object.hasOwn(advertised.inputSchema.properties ?? {}, key),
               `${label} must advertise ${key} for ${fixture.standard}`);
           }
-          const result = await client.callTool(consolidated
+          const result = await invoke(consolidated
             ? { name: fixture.tool, arguments: { action: fixture.consolidated, ...fixture.args } }
-            : { name: fixture.standard, arguments: fixture.args }, undefined, options);
+            : { name: fixture.standard, arguments: fixture.args });
           assert.ifError(mockFailure);
           assert.deepEqual(toolData(result), fixture.response ?? { filters: fixture.args });
         }
+        const apiSchema = toolData(await invoke({ name: 'get_api_schema', arguments: { query: 'trigger' } }));
+        assert.equal(apiSchema.operations[0].path, '/api/v1/triggers/{trigger_id}/enable');
+        const apiResult = toolData(await invoke({ name: 'request_api', arguments: { method: 'POST', path: '/api/v1/triggers/fixture/enable' } }));
+        assert.deepEqual(apiResult.body, { enabled: true });
         if (mode === 'http') {
           await deadline(transport.terminateSession(), `${label} session termination`);
         }
@@ -335,10 +362,10 @@ async function main() {
     }
 
     for (const mode of ['stdio', 'http']) {
-      for (const consolidated of [false, true]) await smoke(mode, consolidated);
+      for (const toolMode of ['discovery', 'standard', 'consolidated']) await smoke(mode, toolMode);
     }
     assert.ifError(mockFailure);
-    assert.deepEqual(calls, { version: 4, audit: 4, listFilters: 28, policyReads: 4, policyWrites: 4 });
+    assert.deepEqual(calls, { version: 6, audit: 6, listFilters: 42, policyReads: 6, policyWrites: 6 });
   } finally {
     try {
       if (mock?.listening) {
@@ -356,7 +383,7 @@ async function main() {
       }
     }
   }
-  console.log('Packaged MCP smoke passed (4 transport/mode combinations).');
+  console.log('Packaged MCP smoke passed (6 transport/mode combinations).');
 }
 
 main().catch((error) => {

@@ -13,29 +13,55 @@ A Model Context Protocol (MCP) server that provides AI assistants with comprehen
 
 langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
 
-**API Compatibility**: This server targets Langflow API version **1.13.0** for its existing tools, the latest stable release checked on **2026-10-25** ([released 2026-10-22](https://github.com/langflow-ai/langflow/releases/tag/v1.13.0), source commit `63082cf9a9c0e5bbeda12bba0aa9e0b05ffffe6a`). Review of the [1.12.6 to 1.13.0 changes](https://github.com/langflow-ai/langflow/compare/v1.12.6...v1.13.0) identified required policy, team-membership and user-management updates. This is a bounded source-contract review, supported by local regression and installed-package tests; a live end-to-end run against Langflow 1.13.0 has not been performed. New upstream connection, trigger, migration-administration and deployment-snapshot APIs are not exposed as tools.
+**API Compatibility**: This server targets Langflow API version **1.13.0** for its existing tools, the latest stable release checked on **2026-11-02** ([released 2026-10-22](https://github.com/langflow-ai/langflow/releases/tag/v1.13.0), source commit `63082cf9a9c0e5bbeda12bba0aa9e0b05ffffe6a`). Review of the [1.12.6 to 1.13.0 changes](https://github.com/langflow-ai/langflow/compare/v1.12.6...v1.13.0) identified required policy, team-membership and user-management updates. This is a bounded source-contract review, supported by local regression and installed-package tests; a live end-to-end run against Langflow 1.13.0 has not been performed. Additional REST operations, including connection, trigger and administrative APIs, can be discovered from the connected instance with `get_api_schema` and called with `request_api`. Availability depends on that instance, its enabled features and the API key permissions.
 
 Policy replacement requires the current revision and all six policy lists, including `approved_integration_provider_ids` and `blocked_integration_action_keys`. Read the current bundle before replacing it; an explicit empty list clears that policy set. Manual team-membership creation accepts only `source: "manual"` or an omitted source. Password reset requires an interactive Langflow login and is unavailable through this client's API-key authentication; its retained tool returns an actionable error without sending the password. The exported `deleteUser` method returns the deletion-started response and `request_id`; acceptance does not mean deletion has completed. Upstream authorization, policy, storage-unavailability and migration-pause errors remain errors.
 
 **Versioning**: From `4.10.0` onward, the npm minor version mirrors the targeted Langflow minor: `langflow-mcp-server@4.<langflow_minor>.x` targets Langflow `1.<langflow_minor>.x` (for example, `4.13.x` targets Langflow `1.13.x`). The patch component is used for fixes within the same Langflow minor.
 
-Langflow 1.13.0 returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. Both MCP modes expose `limit` for normal/shared sessions and messages, plus `offset` and display `order` for message history. Upstream now supports session-list offsets, but these MCP tools do not yet expose them, so session enumeration remains limited to the first page. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
+Langflow 1.13.0 returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. All tool modes expose `limit` and `offset` for normal/shared sessions and messages, plus display `order` for message history. Use `offset` to retrieve older sessions. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
 
-Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, policy replacement, changed user/team contracts and upstream errors. Installed-tarball smoke tests exercise both MCP modes over stdio and HTTP with local fixtures, including preservation of nonempty integration policies.
+Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, policy replacement, changed user/team contracts and upstream errors. Installed-tarball smoke tests exercise discovery, standard and consolidated modes over stdio and HTTP with local fixtures, including preservation of nonempty integration policies.
+
+### Tool discovery and context size
+
+The default **discovery mode** advertises three tools. It keeps all 238 registered operations available while loading their schemas only when needed:
+
+1. `search_tools` finds operations and returns short, paginated summaries.
+2. `get_tool_schema` returns one operation's complete input schema.
+3. `call_tool` runs that operation through its existing validation and handler.
+
+For example, search for `run flow`, request the `run_flow` schema, then call `call_tool` with `{"name":"run_flow","arguments":{...}}`. Search and schema lookup work before configuring Langflow credentials; execution needs a connected instance.
+
+| Mode | Advertised tools | Configuration |
+|------|------------------|---------------|
+| Discovery (default) | 3 | `LANGFLOW_TOOL_MODE=discovery` |
+| Standard | 238 | `LANGFLOW_TOOL_MODE=standard` |
+| Consolidated | 31 (29 groups + 2 API tools) | `LANGFLOW_TOOL_MODE=consolidated` |
+
+The serialized discovery catalog is approximately **1.5 KB**, compared with **150 KB** for the full catalog (about **99% smaller**). These are UTF-8 JSON byte measurements, not tokenizer counts or a guarantee about a particular client's total context. An operation schema costs additional context only when requested.
+
+An explicitly configured `LANGFLOW_CONSOLIDATED_TOOLS=true` or `false` retains consolidated or standard mode, respectively. `LANGFLOW_TOOL_MODE` takes precedence. Remove the old setting or select `discovery` to use the smaller catalog.
+
+### Access to the connected API
+
+Discover `get_api_schema` to search the running instance's `/openapi.json`. Supply a path and method to retrieve that operation's contract and its referenced components, without loading the whole document into the conversation. Then use `request_api` for endpoints without a dedicated typed operation:
+
+```json
+{"name":"call_tool","arguments":{"name":"get_api_schema","arguments":{"query":"connections"}}}
+```
+
+```json
+{"name":"call_tool","arguments":{"name":"request_api","arguments":{"method":"GET","path":"/api/v1/connections"}}}
+```
+
+`request_api` accepts JSON, URL-encoded forms and multipart files supplied as base64. Responses can be JSON, text or base64. Use an exact API path, including its trailing slash, and keep query parameters separate. Calls stay on the configured instance; redirects, credential-header overrides and local file reads are rejected. The configured timeout and 10 MiB transfer limit apply. Writes are never retried automatically. Policy replacement still requires all policy lists, and password reset still requires an interactive login.
+
+This provides REST access within the server's permissions, not an interactive browser session or an unlimited streaming proxy. Finite event streams can be read as text before the timeout; indefinite streams, WebSockets and login-only operations require a suitable Langflow client. OpenAPI discovery supports inline path items, local component references and inline `$defs`; path-item `$ref` indirection and external schema references are unsupported. OpenAPI may omit private or feature-specific routes; no undocumented route is claimed as tested. Prefer the typed operations where available.
 
 ### Consolidated Tools Mode
 
-**Consolidated Tools Mode** is an architecture that groups the 236 individual tools into **29 action-based meta-tools**. This significantly reduces token usage and improves AI assistant context management.
-
-| Mode | Tools | Best For |
-|------|-------|----------|
-| Standard | 236 tools | Full granular control |
-| Consolidated | 29 tools | Reduced token usage, better context |
-
-To enable consolidated mode:
-```bash
-LANGFLOW_CONSOLIDATED_TOOLS=true
-```
+The optional consolidated mode groups the original 236 operations into 29 tools, alongside `get_api_schema` and `request_api`.
 
 **Consolidated tools:**
 - `flow` - All flow operations (list, get, create, update, delete, download, upload, replace, expand, batch, public, note_translations)
@@ -136,7 +162,7 @@ Add to your Claude Desktop config file:
       "env": {
         "LANGFLOW_BASE_URL": "http://localhost:7860",
         "LANGFLOW_API_KEY": "your-api-key-here",
-        "LANGFLOW_CONSOLIDATED_TOOLS": "true",
+        "LANGFLOW_TOOL_MODE": "discovery",
         "MCP_MODE": "stdio",
         "LOG_LEVEL": "error"
       }
@@ -309,15 +335,18 @@ environment:
 
 ## Available MCP Tools
 
-Once connected, Claude can use:
-- **Standard mode**: 236 individual tools
-- **Consolidated mode**: 29 action-based tools (recommended for reduced token usage)
+Once connected, an MCP client can use:
 
-> **Note**: Raw Langflow transport endpoints (`/api/mcp/*`) and doc-rendering
-> endpoints (`/docs`, `/redoc`, `/openapi.json`) are intentionally **not** exposed as
-> tools — they are protocol/transport surfaces, not data operations.
+- **Discovery mode (default)**: 3 tools with schemas loaded on demand.
+- **Standard mode**: 238 individual tools.
+- **Consolidated mode**: 29 action-based groups and 2 API tools.
 
-### Standard Mode Tools (236 tools)
+`get_api_schema` reads OpenAPI for discovery. `request_api` is a bounded REST client; it does not implement Langflow's MCP transport or WebSocket protocols.
+
+### Standard Mode Tools (238 tools)
+
+- **`get_api_schema`** - Search connected API endpoints or retrieve one operation's contract.
+- **`request_api`** - Execute a REST request on the configured Langflow instance.
 
 ### Flow Management (13 tools)
 - **`create_flow`** - Create a new Langflow flow
