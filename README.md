@@ -7,11 +7,22 @@
 [![Tests](https://github.com/nobrainer-tech/langflow-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/nobrainer-tech/langflow-mcp/actions/workflows/ci.yml)
 [![MCP Badge](https://lobehub.com/badge/mcp/nobrainer-tech-langflow-mcp)](https://lobehub.com/mcp/nobrainer-tech-langflow-mcp)
 
-A Model Context Protocol (MCP) server that provides AI assistants with comprehensive access to Langflow workflow automation platform.
+Connect Claude Code, Codex, Claude Desktop or any other MCP client to your Langflow instance. Your agent can create, run, version and administer flows through 236 typed Langflow API operations, and reach other endpoints of that instance through a guarded `request_api` tool.
 
-## Overview
+- **Light on context.** The default discovery mode advertises three tools, about 1.5 KB of JSON instead of 150 KB, and loads an operation's schema only when the agent asks for it.
+- **In step with Langflow.** `4.13.x` targets Langflow `1.13.x`, and a weekly check in this repository flags each new Langflow release.
+- **Local or remote.** Run it over stdio next to your agent, or as a Streamable HTTP service behind bearer-token authentication.
 
-langflow-mcp-server serves as a bridge between Langflow's workflow automation platform and AI models, enabling them to understand and work with Langflow flows effectively.
+```bash
+claude mcp add langflow \
+  -e LANGFLOW_BASE_URL=http://localhost:7860 \
+  -e LANGFLOW_API_KEY=your-api-key-here \
+  -- npx -y langflow-mcp-server
+```
+
+Setup for Codex, Claude Desktop, remote HTTP and Docker is in [Quick Start](#quick-start).
+
+## Langflow compatibility
 
 **API Compatibility**: This server targets Langflow API version **1.13.1** for its existing tools, the latest stable release checked on **2026-11-09** ([released 2026-11-04](https://github.com/langflow-ai/langflow/releases/tag/v1.13.1), source commit `d125bea3847e5992e287550d0fb1a0926f49be2a`). Review of the [1.12.6 to 1.13.0 changes](https://github.com/langflow-ai/langflow/compare/v1.12.6...v1.13.0) identified required policy, team-membership and user-management updates; review of the [1.13.0 to 1.13.1 changes](https://github.com/langflow-ai/langflow/compare/v1.13.0...v1.13.1) found no route, request or response-shape changes for the endpoints this client calls. One returned value changed: the `file_path` from `upload_file` now starts with `flow-<flow_id>/` instead of `<flow_id>/`, and the `path` of v2 file records gained a typed scope prefix. This is a bounded source-contract review, supported by local regression and installed-package tests; a live end-to-end run against Langflow 1.13.1 has not been performed. Additional REST operations, including connection, trigger and administrative APIs, can be discovered from the connected instance with `get_api_schema` and called with `request_api`. Availability depends on that instance, its enabled features and the API key permissions.
 
@@ -22,6 +33,8 @@ Policy replacement requires the current revision and all six policy lists, inclu
 Langflow 1.13.x returns the newest **100 sessions or messages by default**, with a maximum of **200** per request; an omitted or zero `limit` selects the default. All tool modes expose `limit` and `offset` for normal/shared sessions and messages, plus display `order` for message history. Use `offset` to retrieve older sessions. Message-ID lookup scans history pages within the configured Langflow timeout. Concurrent history changes can shift offset-based pages; these reads are not snapshots. MCP server configuration responses mask stored credentials as `********`; these responses are not credential backups. Counted MCP discovery can return HTTP 429 when busy, and attachment/execution requests remain subject to upstream scope and policy checks.
 
 Audit-log event filters and provider/model/store list filters retain repeated query keys. Regression tests cover these requests, history controls, policy replacement, changed user/team contracts and upstream errors. Installed-tarball smoke tests exercise discovery, standard and consolidated modes over stdio and HTTP with local fixtures, including preservation of nonempty integration policies.
+
+## Tool modes and API access
 
 ### Tool discovery and context size
 
@@ -335,9 +348,14 @@ environment:
 
 ## From the makers
 
-langflow-mcp-server is maintained by NoBrainer.Tech ([project page](https://nobrainer.tech/langflow-mcp/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp)). If you use it from Claude Code, Codex or another coding agent, these may also be useful:
+langflow-mcp-server is maintained by NoBrainer.Tech ([project page](https://nobrainer.tech/langflow-mcp/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp)). We build and release it with [NoBrainer.Tech Flow](https://nobrainer.tech/flow/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp), our free, MIT-licensed workflow for coding agents. Flow scopes each change, brings in an independent reviewer where that pays off, and ends every task with a handoff you can check: what was delivered, which checks ran and with what result, and what was not checked.
 
-- [NoBrainer.Tech Flow](https://nobrainer.tech/flow/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): a free, open-source (MIT) workflow that takes a coding task from scope to verified result. This server is developed with it.
+Release 4.13.2 shows what that looks like. An audit of the server's HTTP session handling reproduced two cases in which it started answering new sessions or tool calls with HTTP 429, one of them until a restart. Each fix landed with a regression test that fails on 4.13.1, an independent review of the diff found no defects, and [the pull request](https://github.com/nobrainer-tech/langflow-mcp/pull/208) states what was not verified: a live run against Langflow 1.13.1.
+
+If you drive Langflow from Claude Code, Codex, Cursor or another coding agent, Flow works the same way in your own repositories. [Install it](https://github.com/nobrainer-tech/nobrainer-tech-flow#install-safely), or try it without installing anything through its free remote MCP server at `https://mcp.nobrainer.tech/mcp`.
+
+Also from NoBrainer.Tech:
+
 - [AI Engineering & Orchestration](https://nobrainer.tech/paths/ai-engineering/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): a paid guide with a skill and hands-on labs for developers, covering an agent-built change from written requirement to passing CI.
 - [Newsletter](https://nobrainer.tech/newsletter/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): practical AI workflows and worked examples, with clear ways to check the result.
 
@@ -798,12 +816,6 @@ langflow-mcp/
 └── README.md
 ```
 
-## Attribution
-
-Developed with [NoBrainer.Tech Flow](https://github.com/nobrainer-tech/nobrainer-tech-flow) for scoped implementation, independent reviews and release verification.
-
-This project is inspired by and follows the structure of [n8n-mcp](https://github.com/czlonkowski/n8n-mcp) by Romuald Czlonkowski. Special thanks to the n8n-mcp project for the excellent MCP server architecture and implementation patterns.
-
 ## License
 
 MIT License - see LICENSE for details.
@@ -818,9 +830,8 @@ Contributions are welcome! Please:
 
 ## Acknowledgments
 
-- [Langflow](https://github.com/logspace-ai/langflow) team for the workflow automation platform
+- [Langflow](https://github.com/langflow-ai/langflow) team for the workflow automation platform
 - [Anthropic](https://anthropic.com) for the Model Context Protocol
-- [czlonkowski/n8n-mcp](https://github.com/czlonkowski/n8n-mcp) for the inspiration and architecture
 
 ## Releasing
 
