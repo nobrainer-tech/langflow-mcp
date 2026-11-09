@@ -65,7 +65,7 @@ it('keeps disabled deprecated tools out of discovery and its resource summary', 
   expect(JSON.parse(summary.contents[0].text)).toMatchObject({ mode: 'discovery', tool_count: 3, operation_count: langflowMCPTools.length - 3 });
 });
 
-it('refuses to execute disabled deprecated tools in every tool mode', async () => {
+it('refuses to execute disabled deprecated tools in standard and discovery modes', async () => {
   vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'false');
   for (const discovery of [false, true]) {
     const server = new LangflowMCPServer({ discovery });
