@@ -333,6 +333,14 @@ environment:
   - MCP_ALLOWED_ORIGINS=https://your-client.example
 ```
 
+## From the makers
+
+langflow-mcp-server is maintained by NoBrainer.Tech ([project page](https://nobrainer.tech/langflow-mcp/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp)). If you use it from Claude Code, Codex or another coding agent, these may also be useful:
+
+- [NoBrainer.Tech Flow](https://nobrainer.tech/flow/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): a free, open-source (MIT) workflow that takes a coding task from scope to verified result. This server is developed with it.
+- [AI Engineering & Orchestration](https://nobrainer.tech/paths/ai-engineering/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): a paid guide with a skill and hands-on labs for developers, covering an agent-built change from written requirement to passing CI.
+- [Newsletter](https://nobrainer.tech/newsletter/?utm_source=github&utm_medium=readme&utm_campaign=langflow-mcp): practical AI workflows and worked examples, with clear ways to check the result.
+
 ## Available MCP Tools
 
 Once connected, an MCP client can use:
