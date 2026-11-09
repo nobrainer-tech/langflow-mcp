@@ -44,9 +44,9 @@ describe('discovery tool surface', () => {
     vi.stubEnv('LANGFLOW_BASE_URL', 'http://localhost:7860');
     vi.stubEnv('LANGFLOW_API_KEY', 'fixture-only-key');
     const h = handlers();
-    const getVersion = vi.fn().mockResolvedValue({ version: '1.13.0' });
+    const getVersion = vi.fn().mockResolvedValue({ version: '1.13.1' });
     (h.server as any).client = { getVersion };
-    expect(data(await h.call('call_tool', { name: 'get_version', arguments: {} }))).toEqual({ version: '1.13.0' });
+    expect(data(await h.call('call_tool', { name: 'get_version', arguments: {} }))).toEqual({ version: '1.13.1' });
     expect(getVersion).toHaveBeenCalledOnce();
     expect((await h.call('call_tool', { name: 'get_flow', arguments: { flow_id: 'invalid' } })).isError).toBe(true);
     expect((await h.call('call_tool', { name: 'call_tool', arguments: {} })).isError).toBe(true);
