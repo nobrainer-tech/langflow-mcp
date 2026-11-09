@@ -69,6 +69,9 @@ describe('API transport security and serialization', () => {
       await expect(client.requestApi({ method: 'PUT', path, body: { expected_revision: 1 } })).rejects.toThrow('explicit arrays');
     }
     await expect(client.requestApi({ method: 'PATCH', path: '/api/v1/users/id/reset-password', body: { new_password: 'fixture-only' } })).rejects.toThrow('interactive_login_required');
+    for (const path of ['/api/v1//policy-bundle', '/api//v1/policy-bundle', '/api/v1/users//id/reset-password']) {
+      await expect(client.requestApi({ method: 'PUT', path, body: { expected_revision: 1 } })).rejects.toThrow('Unsafe API path');
+    }
     expect(hits).toEqual([]);
   });
 });

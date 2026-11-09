@@ -40,8 +40,10 @@ function validatePath(path: string): void {
   if (!path.startsWith('/api/') && !['/health', '/health_check', '/healthz'].includes(path)) {
     throw new Error('Use an absolute Langflow API path such as /api/v1/flows/');
   }
-  // Reject encoded separators and dot segments before URL/proxy normalization.
-  if (/[\\?#\s\x00-\x1f\x7f]/.test(path) || /%(?:2e|2f|5c|25|3f|23|0[0-9a-f]|1[0-9a-f]|7f)/i.test(path) ||
+  // Reject encoded separators, empty and dot segments before URL/proxy normalization,
+  // so the client-side guards always see the path the upstream will route.
+  if (/[\\?#\s\x00-\x1f\x7f]/.test(path) || path.includes('//') ||
+      /%(?:2e|2f|5c|25|3f|23|0[0-9a-f]|1[0-9a-f]|7f)/i.test(path) ||
       path.split('/').some(segment => segment === '.' || segment === '..') || /%(?![0-9a-f]{2})/i.test(path)) {
     throw new Error('Unsafe API path; use query separately and no traversal or encoded separators');
   }
