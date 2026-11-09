@@ -559,6 +559,7 @@ export class LangflowMCPServer {
             args = call.arguments;
           }
         }
+        if (!getAvailableTools().some(tool => tool.name === name)) throw new Error(`Unknown tool: ${name}`);
         if (!this.client) throw new Error('Langflow client not initialized. Set LANGFLOW_BASE_URL and LANGFLOW_API_KEY environment variables.');
         switch (name) {
           case 'get_api_schema':

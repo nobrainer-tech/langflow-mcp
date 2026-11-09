@@ -64,3 +64,17 @@ it('keeps disabled deprecated tools out of discovery and its resource summary', 
   const summary = await handler({ method: 'resources/read', params: { uri: 'langflow://tools' } }, {});
   expect(JSON.parse(summary.contents[0].text)).toMatchObject({ mode: 'discovery', tool_count: 3, operation_count: langflowMCPTools.length - 3 });
 });
+
+it('refuses to execute disabled deprecated tools in every tool mode', async () => {
+  vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'false');
+  for (const discovery of [false, true]) {
+    const server = new LangflowMCPServer({ discovery });
+    const buildVertices = vi.fn().mockResolvedValue({ ids: [] });
+    (server as any).client = { buildVertices };
+    const call = (server as any).server._requestHandlers.get('tools/call');
+    const result = await call({ method: 'tools/call', params: { name: 'build_vertices', arguments: { flow_id: '00000000-0000-4000-8000-000000000000' } } }, {});
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Unknown tool');
+    expect(buildVertices).not.toHaveBeenCalled();
+  }
+});
