@@ -253,6 +253,93 @@ describe('LangflowMCPHttpServer', () => {
     }
   });
 
+  it('releases the session reservation when the transport rejects initialize', async () => {
+    let shutdowns = 0;
+    const limitedServer = new LangflowMCPHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      authToken: AUTH_TOKEN,
+      maxSessions: 1,
+      enableJsonResponse: true,
+      createMcpServer: () => {
+        const server = new LangflowMCPServer();
+        return {
+          connectTransport: transport => server.connectTransport(transport),
+          shutdown: async () => {
+            shutdowns += 1;
+            await server.shutdown();
+          }
+        };
+      }
+    });
+    await limitedServer.start();
+
+    try {
+      const address = limitedServer.getAddress();
+      if (!address) throw new Error('Limited server did not expose a listening address');
+      const url = `http://127.0.0.1:${address.port}/mcp`;
+      const initialize = (headers: Record<string, string>) => fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${AUTH_TOKEN}`, ...headers },
+        body: JSON.stringify(initializeRequest)
+      });
+
+      const notAcceptable = await initialize({ Accept: 'application/json', 'Content-Type': 'application/json' });
+      expect(notAcceptable.status).toBe(406);
+      const unsupportedType = await initialize({ Accept: 'application/json, text/event-stream', 'Content-Type': 'text/plain' });
+      expect(unsupportedType.status).toBe(415);
+      expect(shutdowns).toBe(2);
+
+      const accepted = await initialize({ Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' });
+      expect(accepted.status).toBe(200);
+      expect(accepted.headers.get('mcp-session-id')).toBeTruthy();
+    } finally {
+      await limitedServer.shutdown();
+    }
+  });
+
+  it('does not count an open standalone SSE stream against the request limit', async () => {
+    const limitedServer = new LangflowMCPHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      authToken: AUTH_TOKEN,
+      maxConcurrentRequests: 1,
+      enableJsonResponse: true,
+      createMcpServer: () => new LangflowMCPServer()
+    });
+    await limitedServer.start();
+    const streamController = new AbortController();
+
+    try {
+      const address = limitedServer.getAddress();
+      if (!address) throw new Error('Limited server did not expose a listening address');
+      baseUrl = `http://127.0.0.1:${address.port}`;
+
+      const initializeResponse = await post(initializeRequest);
+      const sessionId = initializeResponse.headers.get('mcp-session-id');
+      if (!sessionId) throw new Error('Initialize response did not include a session ID');
+      expect((await post({ jsonrpc: '2.0', method: 'notifications/initialized' }, sessionId)).status).toBe(202);
+
+      const stream = await fetch(`${baseUrl}/mcp`, {
+        method: 'GET',
+        headers: {
+          Accept: 'text/event-stream',
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+          'Mcp-Session-Id': sessionId
+        },
+        signal: streamController.signal
+      });
+      expect(stream.status).toBe(200);
+      expect(stream.headers.get('content-type')).toContain('text/event-stream');
+
+      const toolsResponse = await post({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }, sessionId);
+      expect(toolsResponse.status).toBe(200);
+    } finally {
+      streamController.abort();
+      await limitedServer.shutdown();
+    }
+  });
+
   it('rejects an unsafe aggregate body limit', () => {
     expect(() => new LangflowMCPHttpServer({
       host: '127.0.0.1',

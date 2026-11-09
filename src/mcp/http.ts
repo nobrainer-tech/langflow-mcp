@@ -18,6 +18,13 @@ interface McpServerInstance {
 
 type HttpLifecycle = 'created' | 'starting' | 'running' | 'stopping' | 'stopped';
 
+/**
+ * reserved: counted against maxSessions while initialize is in flight.
+ * open: initialized and addressable by its session ID.
+ * closing: shutting down; accepts no further requests.
+ */
+type SessionPhase = 'reserved' | 'open' | 'closing';
+
 export interface LangflowMCPHttpServerOptions {
   host?: string;
   port?: number;
@@ -38,8 +45,7 @@ interface McpSession {
   transport: StreamableHTTPServerTransport;
   lastActivityAt: number;
   activeRequests: number;
-  closing: boolean;
-  closeInitiated: boolean;
+  phase: SessionPhase;
   closePromise?: Promise<void>;
 }
 
@@ -140,9 +146,10 @@ export class LangflowMCPHttpServer {
   private readonly httpServer: NodeHttpServer;
   private readonly sockets = new Set<Socket>();
   private readonly sessions = new Map<string, McpSession>();
+  private readonly reservedSessions = new Set<McpSession>();
   private readonly activeRequests = new Set<ActiveHttpRequest>();
+  private activeStreams = 0;
   private activeBodyBytes = 0;
-  private pendingSessions = 0;
   private lifecycle: HttpLifecycle = 'created';
   private sessionSweep?: NodeJS.Timeout;
   private startPromise?: Promise<void>;
@@ -284,7 +291,7 @@ export class LangflowMCPHttpServer {
       return;
     }
 
-    if (this.activeRequests.size >= this.maxConcurrentRequests) {
+    if (this.activeRequests.size - this.activeStreams >= this.maxConcurrentRequests) {
       request.resume();
       this.sendError(response, 429, -32000, 'Too many concurrent MCP requests', { 'Retry-After': '1' });
       return;
@@ -315,10 +322,7 @@ export class LangflowMCPHttpServer {
       await this.waitForCompletion(this.startPromise);
     }
 
-    const sessions = Array.from(this.sessions.values());
-    this.sessions.clear();
-    for (const session of sessions) session.closing = true;
-
+    const sessions = [...this.sessions.values(), ...this.reservedSessions];
     const sessionCleanup = Promise.allSettled(sessions.map(session => this.closeSession(session)));
     await this.waitForCompletion(sessionCleanup);
 
@@ -481,6 +485,8 @@ export class LangflowMCPHttpServer {
       await this.closeSession(session);
       throw error;
     }
+    // The transport answered without initializing a session (for example 406 or 415).
+    if (session.phase === 'reserved') await this.closeSession(session);
   }
 
   private async handleSessionRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -500,86 +506,79 @@ export class LangflowMCPHttpServer {
   }
 
   private async createSession(): Promise<McpSession> {
-    if (this.sessions.size + this.pendingSessions >= this.maxSessions) {
+    if (this.sessions.size + this.reservedSessions.size >= this.maxSessions) {
       throw new HttpRequestError(429, -32000, 'Maximum MCP session limit reached', { 'Retry-After': '1' });
     }
 
-    this.pendingSessions += 1;
-    let reservationReleased = false;
-    const releaseReservation = () => {
-      if (reservationReleased) return;
-      reservationReleased = true;
-      this.pendingSessions -= 1;
+    const server = this.createMcpServer();
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      enableJsonResponse: this.enableJsonResponse,
+      allowedOrigins: this.allowedOrigins.length > 0 ? this.allowedOrigins : undefined,
+      enableDnsRebindingProtection: this.allowedOrigins.length > 0,
+      onsessioninitialized: sessionId => {
+        if (this.lifecycle === 'running') this.setSessionPhase(session, 'open', sessionId);
+      }
+    });
+    const session: McpSession = {
+      server,
+      transport,
+      lastActivityAt: Date.now(),
+      activeRequests: 0,
+      phase: 'reserved'
     };
-    let server: McpServerInstance | undefined;
-    let session: McpSession | undefined;
+    this.reservedSessions.add(session);
+
+    transport.onclose = () => {
+      if (!this.setSessionPhase(session, 'closing')) return;
+      session.closePromise = Promise.resolve()
+        .then(() => server.shutdown())
+        .catch(error => {
+          logger.error('MCP session shutdown failed:', error);
+        });
+    };
 
     try {
-      server = this.createMcpServer();
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        enableJsonResponse: this.enableJsonResponse,
-        allowedOrigins: this.allowedOrigins.length > 0 ? this.allowedOrigins : undefined,
-        enableDnsRebindingProtection: this.allowedOrigins.length > 0,
-        onsessioninitialized: sessionId => {
-          releaseReservation();
-          if (session && this.lifecycle === 'running' && !session.closing) {
-            this.sessions.set(sessionId, session);
-            session.lastActivityAt = Date.now();
-          }
-        }
-      });
-
-      session = {
-        server,
-        transport,
-        lastActivityAt: Date.now(),
-        activeRequests: 0,
-        closing: false,
-        closeInitiated: false
-      };
-      transport.onclose = () => {
-        releaseReservation();
-        const sessionId = transport.sessionId;
-        if (sessionId && this.sessions.get(sessionId) === session) {
-          this.sessions.delete(sessionId);
-        }
-        if (!session || session.closeInitiated) return;
-        const currentSession = session;
-        currentSession.closeInitiated = true;
-        currentSession.closing = true;
-        const shutdownPromise = Promise.resolve()
-          .then(() => currentSession.server.shutdown())
-          .catch(error => {
-            logger.error('MCP session shutdown failed:', error);
-          });
-        currentSession.closePromise = shutdownPromise;
-      };
-
       await server.connectTransport(transport);
-      if (this.lifecycle !== 'running') {
-        await this.closeSession(session);
-        throw new HttpRequestError(503, -32000, 'MCP server is shutting down');
-      }
-      return session;
     } catch (error) {
-      if (session) await this.closeSession(session);
-      releaseReservation();
+      await this.closeSession(session);
       throw error;
     }
+    if (this.lifecycle !== 'running') {
+      await this.closeSession(session);
+      throw new HttpRequestError(503, -32000, 'MCP server is shutting down');
+    }
+    return session;
+  }
+
+  /**
+   * The only place that changes a session's phase and the collections that index it.
+   * Allowed: reserved -> open, reserved -> closing, open -> closing.
+   */
+  private setSessionPhase(session: McpSession, next: 'open', sessionId: string): boolean;
+  private setSessionPhase(session: McpSession, next: 'closing'): boolean;
+  private setSessionPhase(session: McpSession, next: 'open' | 'closing', sessionId?: string): boolean {
+    if (session.phase === 'closing' || session.phase === next) return false;
+
+    if (session.phase === 'reserved') {
+      this.reservedSessions.delete(session);
+    } else {
+      const openId = session.transport.sessionId;
+      if (openId && this.sessions.get(openId) === session) this.sessions.delete(openId);
+    }
+
+    session.phase = next;
+    if (next === 'open' && sessionId) {
+      this.sessions.set(sessionId, session);
+      session.lastActivityAt = Date.now();
+    }
+    return true;
   }
 
   private async closeSession(session: McpSession): Promise<void> {
-    if (session.closePromise) {
+    if (!this.setSessionPhase(session, 'closing')) {
       await session.closePromise;
       return;
-    }
-
-    session.closing = true;
-    session.closeInitiated = true;
-    const sessionId = session.transport.sessionId;
-    if (sessionId && this.sessions.get(sessionId) === session) {
-      this.sessions.delete(sessionId);
     }
 
     const closePromise = (async () => {
@@ -673,15 +672,20 @@ export class LangflowMCPHttpServer {
     response: ServerResponse,
     body?: unknown
   ): Promise<void> {
-    if (session.closing || this.lifecycle !== 'running') {
+    if (session.phase === 'closing' || this.lifecycle !== 'running') {
       throw new HttpRequestError(503, -32000, 'MCP session is closing');
     }
 
+    // A standalone GET stream stays open for the session's lifetime (one per session),
+    // so it must not hold a slot in the request pool.
+    const isStream = request.method === 'GET';
     session.activeRequests += 1;
     session.lastActivityAt = Date.now();
+    if (isStream) this.activeStreams += 1;
     try {
       await session.transport.handleRequest(request, response, body);
     } finally {
+      if (isStream) this.activeStreams -= 1;
       session.activeRequests -= 1;
       session.lastActivityAt = Date.now();
     }
@@ -692,7 +696,7 @@ export class LangflowMCPHttpServer {
     this.sessionSweep = setInterval(() => {
       const cutoff = Date.now() - this.sessionIdleTimeoutMs;
       for (const session of this.sessions.values()) {
-        if (!session.closing && session.activeRequests === 0 && session.lastActivityAt <= cutoff) {
+        if (session.phase === 'open' && session.activeRequests === 0 && session.lastActivityAt <= cutoff) {
           void this.closeSession(session).catch(error => {
             logger.error('Idle MCP session cleanup failed:', error);
           });

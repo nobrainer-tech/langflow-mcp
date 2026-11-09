@@ -44,9 +44,9 @@ describe('discovery tool surface', () => {
     vi.stubEnv('LANGFLOW_BASE_URL', 'http://localhost:7860');
     vi.stubEnv('LANGFLOW_API_KEY', 'fixture-only-key');
     const h = handlers();
-    const getVersion = vi.fn().mockResolvedValue({ version: '1.13.0' });
+    const getVersion = vi.fn().mockResolvedValue({ version: '1.13.1' });
     (h.server as any).client = { getVersion };
-    expect(data(await h.call('call_tool', { name: 'get_version', arguments: {} }))).toEqual({ version: '1.13.0' });
+    expect(data(await h.call('call_tool', { name: 'get_version', arguments: {} }))).toEqual({ version: '1.13.1' });
     expect(getVersion).toHaveBeenCalledOnce();
     expect((await h.call('call_tool', { name: 'get_flow', arguments: { flow_id: 'invalid' } })).isError).toBe(true);
     expect((await h.call('call_tool', { name: 'call_tool', arguments: {} })).isError).toBe(true);
@@ -63,4 +63,18 @@ it('keeps disabled deprecated tools out of discovery and its resource summary', 
   const handler = (h.server as any).server._requestHandlers.get('resources/read');
   const summary = await handler({ method: 'resources/read', params: { uri: 'langflow://tools' } }, {});
   expect(JSON.parse(summary.contents[0].text)).toMatchObject({ mode: 'discovery', tool_count: 3, operation_count: langflowMCPTools.length - 3 });
+});
+
+it('refuses to execute disabled deprecated tools in standard and discovery modes', async () => {
+  vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'false');
+  for (const discovery of [false, true]) {
+    const server = new LangflowMCPServer({ discovery });
+    const buildVertices = vi.fn().mockResolvedValue({ ids: [] });
+    (server as any).client = { buildVertices };
+    const call = (server as any).server._requestHandlers.get('tools/call');
+    const result = await call({ method: 'tools/call', params: { name: 'build_vertices', arguments: { flow_id: '00000000-0000-4000-8000-000000000000' } } }, {});
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Unknown tool');
+    expect(buildVertices).not.toHaveBeenCalled();
+  }
 });
