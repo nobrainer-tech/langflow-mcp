@@ -62,11 +62,12 @@ async function fetchLatestLangflowRelease() {
   return sanitizeTag(json.tag_name);
 }
 
-async function openPrExists(repoOwner, repoName, branchName, baseBranch, githubToken) {
+async function upgradePrExists(repoOwner, repoName, branchName, baseBranch, githubToken) {
   if (!githubToken) return false;
 
   const params = new URLSearchParams({
-    state: 'open',
+    // A closed or merged kickoff PR also counts: the version was already announced.
+    state: 'all',
     head: `${repoOwner}:${branchName}`,
     base: baseBranch
   });
@@ -100,7 +101,7 @@ async function main() {
 
   let prAlreadyOpen = false;
   if (hasUpdate && repoOwner && repoName) {
-    prAlreadyOpen = await openPrExists(
+    prAlreadyOpen = await upgradePrExists(
       repoOwner,
       repoName,
       upgradeBranch,
