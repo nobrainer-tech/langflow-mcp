@@ -164,6 +164,7 @@ import {
 
 const LOG_STREAM_WINDOW_MS = 5000;
 const LOG_STREAM_MAX_BYTES = 1024 * 1024;
+const LOG_STREAM_ERROR_BYTES = 4096;
 
 export class LangflowClient {
   private client: AxiosInstance;
@@ -1178,25 +1179,35 @@ export class LangflowClient {
 
       const response = await this.client.get<Readable>('/logs-stream', {
         baseURL: this.config.baseUrl,
-        responseType: 'stream'
+        responseType: 'stream',
+        validateStatus: () => true
       });
+      const failed = response.status < 200 || response.status >= 300;
+      const maxBytes = failed ? LOG_STREAM_ERROR_BYTES : LOG_STREAM_MAX_BYTES;
       const source = response.data;
       const chunks: Buffer[] = [];
       let bytes = 0;
-      const timer = setTimeout(() => source.destroy(), windowMs);
+      let windowElapsed = false;
+      const timer = setTimeout(() => {
+        windowElapsed = true;
+        source.destroy();
+      }, windowMs);
       try {
         for await (const chunk of source) {
           chunks.push(Buffer.from(chunk));
           bytes += chunk.length;
-          if (bytes >= LOG_STREAM_MAX_BYTES) break;
+          if (bytes >= maxBytes) break;
         }
       } catch (error) {
-        if (!source.destroyed) throw error;
+        // Only the window timer may cut the stream short; anything else is a real failure.
+        if (!windowElapsed) throw error;
       } finally {
         clearTimeout(timer);
         source.destroy();
       }
-      return { window_ms: windowMs, truncated: bytes >= LOG_STREAM_MAX_BYTES, events: Buffer.concat(chunks).toString('utf8') };
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (failed) throw new Error(`HTTP ${response.status} - ${text.slice(0, LOG_STREAM_ERROR_BYTES)}`);
+      return { window_ms: windowMs, truncated: bytes >= maxBytes, events: text };
     } catch (error) {
       throw this.handleError(error, 'Failed to get logs');
     }
@@ -2870,6 +2881,9 @@ export class LangflowClient {
         if (Buffer.isBuffer(val) || val instanceof ArrayBuffer || ArrayBuffer.isView(val)) {
           return '[binary data]';
         }
+
+        // A stream response carries the raw request, including its credential headers.
+        if (typeof val.pipe === 'function') return '[stream]';
 
         // Circular reference detection
         if (seen.has(val)) return '[circular reference]';
