@@ -692,7 +692,7 @@ Examples:
         },
         folder_name: { type: 'string', description: 'Folder name - for get_picture' },
         file_name: { type: 'string', description: 'File name - for get_picture' },
-        stream: { type: 'boolean', description: 'Stream logs' },
+        stream: { type: 'boolean', description: 'Read the live log event stream for 5 seconds' },
         flow_id_or_name: { type: 'string', description: 'Flow ID or name - for webhook_events' },
         user_id: { type: 'string', description: 'User ID filter - for webhook_events' }
       },

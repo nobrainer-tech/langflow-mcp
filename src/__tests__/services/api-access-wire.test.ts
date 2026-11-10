@@ -18,6 +18,8 @@ beforeEach(async () => {
     else if (req.url?.endsWith('/binary')) { res.setHeader('Content-Type', 'application/octet-stream'); res.end(Buffer.from([0, 255])); }
     else if (req.url?.endsWith('/events')) { res.setHeader('Content-Type', 'text/event-stream'); res.end('data: {"done":true}\n\n'); }
     else if (req.url?.endsWith('/empty')) { res.writeHead(204); res.end(); }
+    else if (req.url?.endsWith('/plain')) { res.writeHead(201, { 'Content-Type': 'text/plain' }); res.end('created'); }
+    else if (req.url?.endsWith('/logs-stream')) { res.setHeader('Content-Type', 'text/event-stream'); res.write('data: {"line":1}\n\n'); }
     else { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ accepted: true })); }
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -62,6 +64,18 @@ describe('API transport security and serialization', () => {
     expect(await client.requestApi({ method: 'GET', path: '/api/v1/binary', response_format: 'base64' })).toMatchObject({ body: 'AP8=', encoding: 'base64' });
     expect(await client.requestApi({ method: 'GET', path: '/api/v1/events', response_format: 'text' })).toMatchObject({ body: 'data: {"done":true}\n\n', encoding: 'text' });
     expect(await client.requestApi({ method: 'DELETE', path: '/api/v1/empty' })).toMatchObject({ status: 204, body: null });
+  });
+
+  it('reports a successful non-JSON response as text instead of failing after the write', async () => {
+    expect(await client.requestApi({ method: 'POST', path: '/api/v1/plain', body: { value: 1 } }))
+      .toMatchObject({ status: 201, encoding: 'text', body: 'created' });
+    expect(hits).toHaveLength(1);
+  });
+
+  it('returns a bounded window of the log stream and closes the upstream connection', async () => {
+    const closed = new Promise<void>(resolve => server.once('request', (_req, res) => res.on('close', () => resolve())));
+    expect(await client.getLogs(true, 100)).toEqual({ window_ms: 100, truncated: false, events: 'data: {"line":1}\n\n' });
+    await closed;
   });
 
   it('keeps policy replacement and interactive password-reset guards on raw API calls', async () => {

@@ -19,6 +19,13 @@ describe('MCP tools resource', () => {
     expect(summary.tools).toContain('build_public_flow');
   });
 
+  it('reports the timeout the servers actually use', () => {
+    vi.stubEnv('LANGFLOW_TIMEOUT', '400000');
+    expect(JSON.parse(getResourceContent('langflow://config').text).timeout).toBe(30000);
+    vi.stubEnv('LANGFLOW_TIMEOUT', '60000');
+    expect(JSON.parse(getResourceContent('langflow://config').text).timeout).toBe(60000);
+  });
+
   it('reports the live consolidated tool registry', () => {
     vi.stubEnv('LANGFLOW_CONSOLIDATED_TOOLS', 'true');
     const summary = JSON.parse(getResourceContent('langflow://tools').text);

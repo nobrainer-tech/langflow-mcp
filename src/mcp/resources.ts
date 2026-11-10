@@ -1,5 +1,6 @@
 import { discoveryTools, getToolMode, ToolMode } from './discovery';
 import { getAvailableTools } from './tools';
+import { resolveLangflowTimeout } from '../utils/timeout';
 import { consolidatedTools } from './tools-consolidated';
 
 export interface McpResource {
@@ -39,7 +40,7 @@ export function getResourceContent(uri: string, toolMode: ToolMode = getToolMode
     case 'langflow://config': {
       const config = {
         base_url: process.env.LANGFLOW_BASE_URL || 'not configured',
-        timeout: parseInt(process.env.LANGFLOW_TIMEOUT || '30000', 10),
+        timeout: resolveLangflowTimeout(),
         mode: process.env.MCP_MODE || 'stdio',
         tool_mode: toolMode,
         consolidated_tools: toolMode === 'consolidated',

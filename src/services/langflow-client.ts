@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import { ApiSchemaInput, ApiRequestInput, apiRequestInput, readApiSchema, requestApi } from './api-access';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import FormData from 'form-data';
@@ -161,9 +162,13 @@ import {
   PublicWorkflowRunRequest
 } from '../types';
 
+const LOG_STREAM_WINDOW_MS = 5000;
+const LOG_STREAM_MAX_BYTES = 1024 * 1024;
+
 export class LangflowClient {
   private client: AxiosInstance;
   private config: LangflowConfig;
+  private readonly lifetime = new AbortController();
 
   constructor(config: LangflowConfig) {
     this.config = config;
@@ -175,6 +180,15 @@ export class LangflowClient {
         'x-api-key': config.apiKey
       }
     });
+    this.client.interceptors.request.use(request => {
+      request.signal ??= this.lifetime.signal;
+      return request;
+    });
+  }
+
+  /** Aborts every request still in flight; the client is unusable afterwards. */
+  close(): void {
+    this.lifetime.abort();
   }
 
   async getApiSchema(input: ApiSchemaInput = {}) {
@@ -1151,14 +1165,38 @@ export class LangflowClient {
     }
   }
 
-  async getLogs(stream: boolean = false): Promise<any> {
+  /**
+   * With `stream`, reads the log event stream for `windowMs` (or up to 1 MiB), then closes it:
+   * an MCP tool result cannot stay open, and the upstream stream never ends on its own.
+   */
+  async getLogs(stream: boolean = false, windowMs: number = LOG_STREAM_WINDOW_MS): Promise<any> {
     try {
-      const endpoint = stream ? '/logs-stream' : '/logs';
-      const response = await this.client.get(endpoint, {
+      if (!stream) {
+        const response = await this.client.get('/logs', { baseURL: this.config.baseUrl });
+        return response.data;
+      }
+
+      const response = await this.client.get<Readable>('/logs-stream', {
         baseURL: this.config.baseUrl,
-        responseType: stream ? 'stream' : 'json'
+        responseType: 'stream'
       });
-      return response.data;
+      const source = response.data;
+      const chunks: Buffer[] = [];
+      let bytes = 0;
+      const timer = setTimeout(() => source.destroy(), windowMs);
+      try {
+        for await (const chunk of source) {
+          chunks.push(Buffer.from(chunk));
+          bytes += chunk.length;
+          if (bytes >= LOG_STREAM_MAX_BYTES) break;
+        }
+      } catch (error) {
+        if (!source.destroyed) throw error;
+      } finally {
+        clearTimeout(timer);
+        source.destroy();
+      }
+      return { window_ms: windowMs, truncated: bytes >= LOG_STREAM_MAX_BYTES, events: Buffer.concat(chunks).toString('utf8') };
     } catch (error) {
       throw this.handleError(error, 'Failed to get logs');
     }

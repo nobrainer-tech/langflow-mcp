@@ -2625,13 +2625,13 @@ Related Tools:
   },
   {
     name: 'get_logs',
-    description: 'Retrieve system logs. Supports both regular and streaming modes. Use stream parameter to enable real-time log streaming.',
+    description: 'Retrieve system logs. With stream: true, returns the log events received during a 5-second window instead of the stored logs.',
     inputSchema: {
       type: 'object',
       properties: {
         stream: {
           type: 'boolean',
-          description: 'Enable streaming mode for real-time logs (default: false)'
+          description: 'Read the live log event stream for 5 seconds (default: false)'
         }
       }
     },
