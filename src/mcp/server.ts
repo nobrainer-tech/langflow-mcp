@@ -14,6 +14,7 @@ import {
 import { ZodError } from 'zod';
 import { getAvailableTools } from './tools';
 import { logger } from '../utils/logger';
+import { DEFAULT_LANGFLOW_TIMEOUT_MS, resolveLangflowTimeout } from '../utils/timeout';
 import { LangflowClient } from '../services/langflow-client';
 import { LangflowConfig } from '../types';
 import { langflowPrompts, getPromptMessages } from './prompts';
@@ -281,17 +282,9 @@ export class LangflowMCPServer {
       if (apiKey.length < 10) {
         throw new Error('LANGFLOW_API_KEY appears to be invalid (too short)');
       }
-
-      const DEFAULT_TIMEOUT = 30000;
-      const MIN_TIMEOUT = 1000;
-      const MAX_TIMEOUT = 300000;
-
-      const timeoutStr = process.env.LANGFLOW_TIMEOUT || String(DEFAULT_TIMEOUT);
-      let timeout = parseInt(timeoutStr, 10);
-
-      if (isNaN(timeout) || timeout < MIN_TIMEOUT || timeout > MAX_TIMEOUT) {
-        logger.warn(`Invalid LANGFLOW_TIMEOUT: ${timeoutStr}, using default: ${DEFAULT_TIMEOUT}`);
-        timeout = DEFAULT_TIMEOUT;
+      const timeout = resolveLangflowTimeout();
+      if (process.env.LANGFLOW_TIMEOUT && parseInt(process.env.LANGFLOW_TIMEOUT, 10) !== timeout) {
+        logger.warn(`Invalid LANGFLOW_TIMEOUT: ${process.env.LANGFLOW_TIMEOUT}, using default: ${DEFAULT_LANGFLOW_TIMEOUT_MS}`);
       }
 
       const config: LangflowConfig = {
@@ -2247,6 +2240,7 @@ export class LangflowMCPServer {
 
   async shutdown(): Promise<void> {
     logger.info('Shutting down Langflow MCP server');
+    this.client?.close();
     await this.server.close();
   }
 }

@@ -6,9 +6,11 @@ let server: Server;
 let client: LangflowClient;
 let baseUrl: string;
 let hits: string[];
+let logStream: 'open' | 'disabled' | 'reset';
 let received: { method?: string; headers: Record<string, unknown>; body: string; url: string };
 beforeEach(async () => {
   hits = [];
+  logStream = 'open';
   server = createServer(async (req, res) => {
     hits.push(req.url!);
     let body = '';
@@ -18,6 +20,12 @@ beforeEach(async () => {
     else if (req.url?.endsWith('/binary')) { res.setHeader('Content-Type', 'application/octet-stream'); res.end(Buffer.from([0, 255])); }
     else if (req.url?.endsWith('/events')) { res.setHeader('Content-Type', 'text/event-stream'); res.end('data: {"done":true}\n\n'); }
     else if (req.url?.endsWith('/empty')) { res.writeHead(204); res.end(); }
+    else if (req.url?.endsWith('/plain')) { res.writeHead(201, { 'Content-Type': 'text/plain' }); res.end('created'); }
+    else if (req.url?.endsWith('/logs-stream') && logStream === 'disabled') { res.writeHead(501, { 'Content-Type': 'application/json' }); res.end('{"detail":"Log retrieval is disabled"}'); }
+    else if (req.url?.endsWith('/logs-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream'); res.write('data: {"line":1}\n\n');
+      if (logStream === 'reset') setTimeout(() => res.destroy(), 30);
+    }
     else { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ accepted: true })); }
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -62,6 +70,38 @@ describe('API transport security and serialization', () => {
     expect(await client.requestApi({ method: 'GET', path: '/api/v1/binary', response_format: 'base64' })).toMatchObject({ body: 'AP8=', encoding: 'base64' });
     expect(await client.requestApi({ method: 'GET', path: '/api/v1/events', response_format: 'text' })).toMatchObject({ body: 'data: {"done":true}\n\n', encoding: 'text' });
     expect(await client.requestApi({ method: 'DELETE', path: '/api/v1/empty' })).toMatchObject({ status: 204, body: null });
+  });
+
+  it('reports a successful non-JSON response as text instead of failing after the write', async () => {
+    expect(await client.requestApi({ method: 'POST', path: '/api/v1/plain', body: { value: 1 } }))
+      .toMatchObject({ status: 201, encoding: 'text', body: 'created' });
+    expect(hits).toHaveLength(1);
+  });
+
+  it('returns a bounded window of the log stream and closes the upstream connection', async () => {
+    const closed = new Promise<void>(resolve => server.once('request', (_req, res) => res.on('close', () => resolve())));
+    expect(await client.getLogs(true, 100)).toEqual({ window_ms: 100, truncated: false, events: 'data: {"line":1}\n\n' });
+    await closed;
+  });
+
+  it('reports a failed log stream without leaking request internals or the API key', async () => {
+    logStream = 'disabled';
+    const error = await client.getLogs(true, 100).catch(e => e as Error);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe('Failed to get logs: HTTP 501 - {"detail":"Log retrieval is disabled"}');
+    expect(error.message).not.toContain('wire-fixture-only');
+  });
+
+  it('never serializes a stream response into an error message', async () => {
+    logStream = 'disabled';
+    const raw = await (client as any).client.get('/logs-stream', { baseURL: `${baseUrl}/prefix`, responseType: 'stream' }).catch((e: unknown) => e);
+    const message = (client as any).handleError(raw, 'Failed').message;
+    expect(message).toBe('Failed: HTTP 501 - "[stream]"');
+  });
+
+  it('fails when the log stream breaks before the window ends', async () => {
+    logStream = 'reset';
+    await expect(client.getLogs(true, 2000)).rejects.toThrow('Failed to get logs');
   });
 
   it('keeps policy replacement and interactive password-reset guards on raw API calls', async () => {

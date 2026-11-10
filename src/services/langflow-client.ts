@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import { ApiSchemaInput, ApiRequestInput, apiRequestInput, readApiSchema, requestApi } from './api-access';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import FormData from 'form-data';
@@ -161,9 +162,14 @@ import {
   PublicWorkflowRunRequest
 } from '../types';
 
+const LOG_STREAM_WINDOW_MS = 5000;
+const LOG_STREAM_MAX_BYTES = 1024 * 1024;
+const LOG_STREAM_ERROR_BYTES = 4096;
+
 export class LangflowClient {
   private client: AxiosInstance;
   private config: LangflowConfig;
+  private readonly lifetime = new AbortController();
 
   constructor(config: LangflowConfig) {
     this.config = config;
@@ -175,6 +181,15 @@ export class LangflowClient {
         'x-api-key': config.apiKey
       }
     });
+    this.client.interceptors.request.use(request => {
+      request.signal ??= this.lifetime.signal;
+      return request;
+    });
+  }
+
+  /** Aborts every request still in flight; the client is unusable afterwards. */
+  close(): void {
+    this.lifetime.abort();
   }
 
   async getApiSchema(input: ApiSchemaInput = {}) {
@@ -1151,14 +1166,48 @@ export class LangflowClient {
     }
   }
 
-  async getLogs(stream: boolean = false): Promise<any> {
+  /**
+   * With `stream`, reads the log event stream for `windowMs` (or up to 1 MiB), then closes it:
+   * an MCP tool result cannot stay open, and the upstream stream never ends on its own.
+   */
+  async getLogs(stream: boolean = false, windowMs: number = LOG_STREAM_WINDOW_MS): Promise<any> {
     try {
-      const endpoint = stream ? '/logs-stream' : '/logs';
-      const response = await this.client.get(endpoint, {
+      if (!stream) {
+        const response = await this.client.get('/logs', { baseURL: this.config.baseUrl });
+        return response.data;
+      }
+
+      const response = await this.client.get<Readable>('/logs-stream', {
         baseURL: this.config.baseUrl,
-        responseType: stream ? 'stream' : 'json'
+        responseType: 'stream',
+        validateStatus: () => true
       });
-      return response.data;
+      const failed = response.status < 200 || response.status >= 300;
+      const maxBytes = failed ? LOG_STREAM_ERROR_BYTES : LOG_STREAM_MAX_BYTES;
+      const source = response.data;
+      const chunks: Buffer[] = [];
+      let bytes = 0;
+      let windowElapsed = false;
+      const timer = setTimeout(() => {
+        windowElapsed = true;
+        source.destroy();
+      }, windowMs);
+      try {
+        for await (const chunk of source) {
+          chunks.push(Buffer.from(chunk));
+          bytes += chunk.length;
+          if (bytes >= maxBytes) break;
+        }
+      } catch (error) {
+        // Only the window timer may cut the stream short; anything else is a real failure.
+        if (!windowElapsed) throw error;
+      } finally {
+        clearTimeout(timer);
+        source.destroy();
+      }
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (failed) throw new Error(`HTTP ${response.status} - ${text.slice(0, LOG_STREAM_ERROR_BYTES)}`);
+      return { window_ms: windowMs, truncated: bytes >= maxBytes, events: text };
     } catch (error) {
       throw this.handleError(error, 'Failed to get logs');
     }
@@ -2832,6 +2881,9 @@ export class LangflowClient {
         if (Buffer.isBuffer(val) || val instanceof ArrayBuffer || ArrayBuffer.isView(val)) {
           return '[binary data]';
         }
+
+        // A stream response carries the raw request, including its credential headers.
+        if (typeof val.pipe === 'function') return '[stream]';
 
         // Circular reference detection
         if (seen.has(val)) return '[circular reference]';

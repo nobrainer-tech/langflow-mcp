@@ -1250,3 +1250,26 @@ describe('Consolidated handler dispatch', () => {
     expect(client.getExtensionEvents).toHaveBeenCalledWith({ since: 5 });
   });
 });
+
+describe('Deprecated consolidated actions', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('refuses the deprecated build actions when ENABLE_DEPRECATED_TOOLS is false', async () => {
+    vi.stubEnv('ENABLE_DEPRECATED_TOOLS', 'false');
+    const server = new LangflowMCPServerConsolidated();
+    const client = { buildVertices: vi.fn(), streamVertexBuild: vi.fn(), getTaskStatus: vi.fn() };
+    (server as any).client = client;
+    const call = (server as any).server._requestHandlers.get('tools/call');
+    const cases = [
+      { action: 'vertices', flow_id: VALID_UUID },
+      { action: 'stream_vertex', flow_id: VALID_UUID, vertex_id: 'vertex-1' },
+      { action: 'task_status', task_id: 'task-1' },
+    ];
+    for (const args of cases) {
+      const result = await call({ method: 'tools/call', params: { name: 'build', arguments: args } }, {});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('ENABLE_DEPRECATED_TOOLS');
+    }
+    for (const method of Object.values(client)) expect(method).not.toHaveBeenCalled();
+  });
+});

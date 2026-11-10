@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LangflowMCPHttpServer } from '../../mcp/http';
 import { LangflowMCPServer } from '../../mcp/server';
@@ -337,6 +338,60 @@ describe('LangflowMCPHttpServer', () => {
     } finally {
       streamController.abort();
       await limitedServer.shutdown();
+    }
+  });
+
+  it('answers an in-flight call and aborts its upstream request when the session is deleted', async () => {
+    let upstreamAborted!: () => void;
+    const aborted = new Promise<void>(resolve => { upstreamAborted = resolve; });
+    let upstreamReached!: () => void;
+    const reached = new Promise<void>(resolve => { upstreamReached = resolve; });
+    const upstream = createServer((req, res) => {
+      upstreamReached();
+      res.on('close', () => { if (!res.writableEnded) upstreamAborted(); });
+    });
+    await new Promise<void>(resolve => upstream.listen(0, '127.0.0.1', resolve));
+    const upstreamAddress = upstream.address();
+    if (!upstreamAddress || typeof upstreamAddress === 'string') throw new Error('No upstream port');
+    process.env.LANGFLOW_BASE_URL = `http://127.0.0.1:${upstreamAddress.port}`;
+
+    const limitedServer = new LangflowMCPHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      authToken: AUTH_TOKEN,
+      maxConcurrentRequests: 2,
+      enableJsonResponse: true,
+      createMcpServer: () => new LangflowMCPServer()
+    });
+    await limitedServer.start();
+
+    try {
+      const address = limitedServer.getAddress();
+      if (!address) throw new Error('Limited server did not expose a listening address');
+      baseUrl = `http://127.0.0.1:${address.port}`;
+
+      const sessionId = (await post(initializeRequest)).headers.get('mcp-session-id');
+      if (!sessionId) throw new Error('Initialize response did not include a session ID');
+      await post({ jsonrpc: '2.0', method: 'notifications/initialized' }, sessionId);
+
+      const call = post({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'get_version', arguments: {} } }, sessionId);
+      await reached;
+      const deleted = await fetch(`${baseUrl}/mcp`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${AUTH_TOKEN}`, 'Mcp-Session-Id': sessionId }
+      });
+      expect(deleted.status).toBe(200);
+
+      const pending = await call;
+      expect(pending.status).toBe(404);
+      await aborted;
+
+      // Both request slots are free again.
+      expect((await post(initializeRequest)).status).toBe(200);
+    } finally {
+      await limitedServer.shutdown();
+      upstream.closeAllConnections();
+      await new Promise<void>(resolve => upstream.close(() => resolve()));
     }
   });
 

@@ -46,6 +46,7 @@ interface McpSession {
   lastActivityAt: number;
   activeRequests: number;
   phase: SessionPhase;
+  closed: AbortController;
   closePromise?: Promise<void>;
 }
 
@@ -525,7 +526,8 @@ export class LangflowMCPHttpServer {
       transport,
       lastActivityAt: Date.now(),
       activeRequests: 0,
-      phase: 'reserved'
+      phase: 'reserved',
+      closed: new AbortController()
     };
     this.reservedSessions.add(session);
 
@@ -571,8 +573,43 @@ export class LangflowMCPHttpServer {
     if (next === 'open' && sessionId) {
       this.sessions.set(sessionId, session);
       session.lastActivityAt = Date.now();
+    } else {
+      session.closed.abort();
     }
     return true;
+  }
+
+  /**
+   * In JSON response mode the SDK drops a pending response when its transport closes,
+   * so a request still waiting at that point is answered here instead of hanging forever.
+   */
+  private async handleUntilClosed(
+    session: McpSession,
+    request: IncomingMessage,
+    response: ServerResponse,
+    body?: unknown
+  ): Promise<void> {
+    const handled = session.transport.handleRequest(request, response, body);
+    // The DELETE that closes the session always completes with its own response.
+    if (request.method === 'DELETE') return handled;
+
+    const signal = session.closed.signal;
+    let onClosed!: () => void;
+    const closed = new Promise<'closed'>(resolve => {
+      onClosed = () => resolve('closed');
+      signal.addEventListener('abort', onClosed, { once: true });
+    });
+    try {
+      if (await Promise.race([handled, closed]) !== 'closed') return;
+    } finally {
+      signal.removeEventListener('abort', onClosed);
+    }
+
+    // Let a response that was already resolved reach the socket first.
+    await new Promise(resolve => setImmediate(resolve));
+    if (response.headersSent) return handled;
+    void handled.catch(() => undefined);
+    this.sendError(response, 404, -32001, 'Session terminated');
   }
 
   private async closeSession(session: McpSession): Promise<void> {
@@ -683,7 +720,7 @@ export class LangflowMCPHttpServer {
     session.lastActivityAt = Date.now();
     if (isStream) this.activeStreams += 1;
     try {
-      await session.transport.handleRequest(request, response, body);
+      await this.handleUntilClosed(session, request, response, body);
     } finally {
       if (isStream) this.activeStreams -= 1;
       session.activeRequests -= 1;

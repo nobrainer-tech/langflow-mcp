@@ -152,15 +152,16 @@ export async function requestApi(client: AxiosInstance, baseURL: string, raw: Ap
     });
     const bytes = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data || '');
     let body: unknown;
-    if (input.response_format === 'base64') body = bytes.toString('base64');
-    else if (input.response_format === 'text') body = bytes.toString('utf8');
+    let encoding = input.response_format;
+    if (encoding === 'base64') body = bytes.toString('base64');
+    else if (encoding === 'text') body = bytes.toString('utf8');
     else if (bytes.length === 0) body = null;
     else {
+      // The request already succeeded, so a non-JSON body is returned as text rather than as an error.
       try { body = JSON.parse(bytes.toString('utf8')); }
-      catch { throw new Error('Response is not JSON; choose text or base64 before calling (do not automatically retry writes)'); }
+      catch { body = bytes.toString('utf8'); encoding = 'text'; }
     }
-    return { status: response.status, content_type: response.headers['content-type'],
-      encoding: input.response_format, body };
+    return { status: response.status, content_type: response.headers['content-type'], encoding, body };
   } catch (error) {
     throwApiError(error);
   }

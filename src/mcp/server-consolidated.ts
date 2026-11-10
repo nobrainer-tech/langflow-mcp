@@ -13,6 +13,7 @@ import {
 import { ZodError } from 'zod';
 import { consolidatedTools } from './tools-consolidated';
 import { logger } from '../utils/logger';
+import { DEFAULT_LANGFLOW_TIMEOUT_MS, resolveLangflowTimeout } from '../utils/timeout';
 import { LangflowClient } from '../services/langflow-client';
 import { LangflowConfig } from '../types';
 import { langflowPrompts, getPromptMessages } from './prompts';
@@ -49,6 +50,12 @@ import {
   GovernanceToolSchema
 } from './validation-consolidated';
 
+function assertDeprecatedToolsEnabled(action: string): void {
+  if (process.env.ENABLE_DEPRECATED_TOOLS === 'false') {
+    throw new Error(`Deprecated action "${action}" is disabled by ENABLE_DEPRECATED_TOOLS=false`);
+  }
+}
+
 export class LangflowMCPServerConsolidated {
   private server: Server;
   private client: LangflowClient | null = null;
@@ -73,17 +80,9 @@ export class LangflowMCPServerConsolidated {
       if (apiKey.length < 10) {
         throw new Error('LANGFLOW_API_KEY appears to be invalid (too short)');
       }
-
-      const DEFAULT_TIMEOUT = 30000;
-      const MIN_TIMEOUT = 1000;
-      const MAX_TIMEOUT = 300000;
-
-      const timeoutStr = process.env.LANGFLOW_TIMEOUT || String(DEFAULT_TIMEOUT);
-      let timeout = parseInt(timeoutStr, 10);
-
-      if (isNaN(timeout) || timeout < MIN_TIMEOUT || timeout > MAX_TIMEOUT) {
-        logger.warn(`Invalid LANGFLOW_TIMEOUT: ${timeoutStr}, using default: ${DEFAULT_TIMEOUT}`);
-        timeout = DEFAULT_TIMEOUT;
+      const timeout = resolveLangflowTimeout();
+      if (process.env.LANGFLOW_TIMEOUT && parseInt(process.env.LANGFLOW_TIMEOUT, 10) !== timeout) {
+        logger.warn(`Invalid LANGFLOW_TIMEOUT: ${process.env.LANGFLOW_TIMEOUT}, using default: ${DEFAULT_LANGFLOW_TIMEOUT_MS}`);
       }
 
       const config: LangflowConfig = { baseUrl, apiKey, timeout };
@@ -515,15 +514,18 @@ export class LangflowMCPServerConsolidated {
         return this.formatSuccessResponse(result);
       }
       case 'vertices': {
+        assertDeprecatedToolsEnabled(validated.action);
         const { action: _, flow_id, ...request } = validated;
         const result = await this.client!.buildVertices(flow_id, request);
         return this.formatSuccessResponse(result);
       }
       case 'stream_vertex': {
+        assertDeprecatedToolsEnabled(validated.action);
         const result = await this.client!.streamVertexBuild({ flow_id: validated.flow_id, vertex_id: validated.vertex_id });
         return this.formatSuccessResponse(result);
       }
       case 'task_status': {
+        assertDeprecatedToolsEnabled(validated.action);
         const result = await this.client!.getTaskStatus(validated.task_id);
         return this.formatSuccessResponse(result);
       }
@@ -1713,6 +1715,7 @@ export class LangflowMCPServerConsolidated {
 
   async shutdown(): Promise<void> {
     logger.info('Shutting down Langflow MCP server');
+    this.client?.close();
     await this.server.close();
   }
 }
