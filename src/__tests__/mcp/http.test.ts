@@ -395,6 +395,52 @@ describe('LangflowMCPHttpServer', () => {
     }
   });
 
+  it('accepts a DELETE that frees slots while every request slot is taken', async () => {
+    let upstreamReached!: () => void;
+    const reached = new Promise<void>(resolve => { upstreamReached = resolve; });
+    const upstream = createServer(() => upstreamReached());
+    await new Promise<void>(resolve => upstream.listen(0, '127.0.0.1', resolve));
+    const upstreamAddress = upstream.address();
+    if (!upstreamAddress || typeof upstreamAddress === 'string') throw new Error('No upstream port');
+    process.env.LANGFLOW_BASE_URL = `http://127.0.0.1:${upstreamAddress.port}`;
+
+    const limitedServer = new LangflowMCPHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      authToken: AUTH_TOKEN,
+      maxConcurrentRequests: 1,
+      enableJsonResponse: true,
+      createMcpServer: () => new LangflowMCPServer()
+    });
+    await limitedServer.start();
+
+    try {
+      const address = limitedServer.getAddress();
+      if (!address) throw new Error('Limited server did not expose a listening address');
+      baseUrl = `http://127.0.0.1:${address.port}`;
+
+      const sessionId = (await post(initializeRequest)).headers.get('mcp-session-id');
+      if (!sessionId) throw new Error('Initialize response did not include a session ID');
+      await post({ jsonrpc: '2.0', method: 'notifications/initialized' }, sessionId);
+
+      const call = post({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'get_version', arguments: {} } }, sessionId);
+      await reached;
+      expect((await post({ jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} }, sessionId)).status).toBe(429);
+
+      const deleted = await fetch(`${baseUrl}/mcp`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${AUTH_TOKEN}`, 'Mcp-Session-Id': sessionId }
+      });
+      expect(deleted.status).toBe(200);
+      expect((await call).status).toBe(404);
+      expect((await post(initializeRequest)).status).toBe(200);
+    } finally {
+      await limitedServer.shutdown();
+      upstream.closeAllConnections();
+      await new Promise<void>(resolve => upstream.close(() => resolve()));
+    }
+  });
+
   it('rejects an unsafe aggregate body limit', () => {
     expect(() => new LangflowMCPHttpServer({
       host: '127.0.0.1',

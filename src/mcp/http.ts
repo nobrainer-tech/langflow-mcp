@@ -292,7 +292,8 @@ export class LangflowMCPHttpServer {
       return;
     }
 
-    if (this.activeRequests.size - this.activeStreams >= this.maxConcurrentRequests) {
+    // DELETE ends a session and frees its slots, so it must not wait for a free slot itself.
+    if (request.method !== 'DELETE' && this.activeRequests.size - this.activeStreams >= this.maxConcurrentRequests) {
       request.resume();
       this.sendError(response, 429, -32000, 'Too many concurrent MCP requests', { 'Retry-After': '1' });
       return;
