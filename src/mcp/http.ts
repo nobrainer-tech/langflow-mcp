@@ -292,8 +292,12 @@ export class LangflowMCPHttpServer {
       return;
     }
 
-    // DELETE ends a session and frees its slots, so it must not wait for a free slot itself.
-    if (request.method !== 'DELETE' && this.activeRequests.size - this.activeStreams >= this.maxConcurrentRequests) {
+    // DELETE ends a session and frees its slots, so neither it nor a browser's preflight
+    // for it may wait for a free slot. Origin and authentication checks still apply.
+    const freesSlots = request.method === 'DELETE'
+      || (request.method === 'OPTIONS'
+        && singleHeader(request.headers['access-control-request-method'])?.toUpperCase() === 'DELETE');
+    if (!freesSlots && this.activeRequests.size - this.activeStreams >= this.maxConcurrentRequests) {
       request.resume();
       this.sendError(response, 429, -32000, 'Too many concurrent MCP requests', { 'Retry-After': '1' });
       return;

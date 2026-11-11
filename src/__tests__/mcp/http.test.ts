@@ -395,7 +395,7 @@ describe('LangflowMCPHttpServer', () => {
     }
   });
 
-  it('accepts a DELETE that frees slots while every request slot is taken', async () => {
+  it('accepts a DELETE and its preflight while every request slot is taken', async () => {
     let upstreamReached!: () => void;
     const reached = new Promise<void>(resolve => { upstreamReached = resolve; });
     const upstream = createServer(() => upstreamReached());
@@ -409,6 +409,7 @@ describe('LangflowMCPHttpServer', () => {
       port: 0,
       authToken: AUTH_TOKEN,
       maxConcurrentRequests: 1,
+      allowedOrigins: ['https://app.example'],
       enableJsonResponse: true,
       createMcpServer: () => new LangflowMCPServer()
     });
@@ -426,6 +427,17 @@ describe('LangflowMCPHttpServer', () => {
       const call = post({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'get_version', arguments: {} } }, sessionId);
       await reached;
       expect((await post({ jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} }, sessionId)).status).toBe(429);
+
+      const preflight = await fetch(`${baseUrl}/mcp`, {
+        method: 'OPTIONS',
+        headers: { Origin: 'https://app.example', 'Access-Control-Request-Method': 'DELETE' }
+      });
+      expect(preflight.status).toBe(204);
+      const otherPreflight = await fetch(`${baseUrl}/mcp`, {
+        method: 'OPTIONS',
+        headers: { Origin: 'https://app.example', 'Access-Control-Request-Method': 'POST' }
+      });
+      expect(otherPreflight.status).toBe(429);
 
       const deleted = await fetch(`${baseUrl}/mcp`, {
         method: 'DELETE',
