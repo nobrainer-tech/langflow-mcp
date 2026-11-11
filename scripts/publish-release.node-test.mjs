@@ -191,13 +191,35 @@ test('verifies visibility at 145 seconds, beyond the old 58-second window, with 
   assert.deepEqual(run.waits, Array(29).fill(5000));
 });
 
-test('fails after 30 post-publish 404 readbacks with exactly 29 sleeps', async () => {
-  const run = fixture(Array.from({ length: 31 }, () => response(404)));
-  await assert.rejects(publishRelease(run.options), /missing after 30 readback attempts/);
+test('verifies visibility after nine minutes, beyond the 150-second window that failed 4.13.3', async () => {
+  let elapsedMs = 0;
+  const responses = [];
+  const run = fixture(responses);
+  const fetch = run.options.fetch;
+  const sleep = run.options.sleep;
+  run.options.fetch = (url, settings) => {
+    responses.push(url === ATTESTATION_URL
+      ? response(200, attestationBundle())
+      : response(elapsedMs >= 540_000 ? 200 : 404));
+    return fetch(url, settings);
+  };
+  run.options.sleep = async (ms) => {
+    elapsedMs += ms;
+    await sleep(ms);
+  };
+
+  assert.deepEqual(await publishRelease(run.options), { version: VERSION, sha: SHA, published: true });
+  assert.equal(elapsedMs, 540_000);
   assert.equal(run.publishCount(), 1);
-  assert.equal(run.requests.length, 31);
+});
+
+test('fails after 120 post-publish 404 readbacks with exactly 119 sleeps', async () => {
+  const run = fixture(Array.from({ length: 121 }, () => response(404)));
+  await assert.rejects(publishRelease(run.options), /missing after 120 readback attempts/);
+  assert.equal(run.publishCount(), 1);
+  assert.equal(run.requests.length, 121);
   assert.ok(run.requests.every(({ url }) => url === REGISTRY_URL));
-  assert.deepEqual(run.waits, Array(29).fill(5000));
+  assert.deepEqual(run.waits, Array(119).fill(5000));
 });
 
 for (const published of [false, true]) {
@@ -212,15 +234,15 @@ for (const published of [false, true]) {
     assert.equal(run.requests.filter(({ url }) => url === ATTESTATION_URL).length, 3);
   });
 
-  test(`${published ? 'post-publish' : 'existing version'} fails closed after 30 missing attestations`, async () => {
+  test(`${published ? 'post-publish' : 'existing version'} fails closed after 120 missing attestations`, async () => {
     const run = fixture([
       ...(published ? [response(404)] : []), response(200),
-      ...Array.from({ length: 30 }, () => response(404)),
+      ...Array.from({ length: 120 }, () => response(404)),
     ]);
     await assert.rejects(publishRelease(run.options), /attestation request returned HTTP 404/);
     assert.equal(run.publishCount(), Number(published));
-    assert.equal(run.requests.filter(({ url }) => url === ATTESTATION_URL).length, 30);
-    assert.deepEqual(run.waits, Array(29).fill(5000));
+    assert.equal(run.requests.filter(({ url }) => url === ATTESTATION_URL).length, 120);
+    assert.deepEqual(run.waits, Array(119).fill(5000));
   });
 }
 
