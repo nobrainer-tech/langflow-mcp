@@ -15,7 +15,7 @@ const REQUEST_TIMEOUT_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 120_000;
 const fixtureApiKey = 'package-smoke-fixture-api-key';
 const fixtureHttpToken = 'package-smoke-fixture-http-token';
-const versionFixture = { version: '1.13.1' };
+const versionFixture = { version: '1.13.2' };
 const policyLists = {
   approved_provider_ids: ['openai'], blocked_component_keys: ['UnsafeComponent'],
   blocked_template_keys: ['UnsafeTemplate'], blocked_model_keys: ['unsafe-model'],
@@ -193,7 +193,7 @@ async function main() {
         }
         if (url.pathname === '/openapi.json') {
           assert.equal(request.method, 'GET');
-          response.end(JSON.stringify({ openapi: '3.1.0', info: { version: '1.13.1' }, paths: {
+          response.end(JSON.stringify({ openapi: '3.1.0', info: { version: '1.13.2' }, paths: {
             '/api/v1/triggers/{trigger_id}/enable': { post: { summary: 'Enable Trigger' } },
           } }));
           return;
@@ -345,7 +345,7 @@ async function main() {
         if (mode === 'http') {
           await deadline(transport.terminateSession(), `${label} session termination`);
         }
-        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.13.1 fixture, policy preservation, audit and history/list filters OK`);
+        console.log(`${label}: ${tools.length} tools, package ${pkg.version}, ping, Langflow 1.13.2 fixture, policy preservation, audit and history/list filters OK`);
       } catch (error) {
         throw new Error(`${label}: ${error.message}\n${diagnostics}`);
       } finally {
