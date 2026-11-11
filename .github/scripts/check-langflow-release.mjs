@@ -62,17 +62,16 @@ async function fetchLatestLangflowRelease() {
   return sanitizeTag(json.tag_name);
 }
 
-async function upgradePrExists(repoOwner, repoName, branchName, baseBranch, githubToken) {
+export function upgradeIssueTitle(version) {
+  return `Langflow API ${version} upgrade`;
+}
+
+async function upgradeIssueExists(repoOwner, repoName, title, githubToken) {
   if (!githubToken) return false;
 
-  const params = new URLSearchParams({
-    // A closed or merged kickoff PR also counts: the version was already announced.
-    state: 'all',
-    head: `${repoOwner}:${branchName}`,
-    base: baseBranch
-  });
-
-  const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pulls?${params.toString()}`, {
+  // Any state counts: a closed issue means the version was already announced.
+  const query = `repo:${repoOwner}/${repoName} is:issue in:title "${title}"`;
+  const response = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(query)}&per_page=20`, {
     headers: {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${githubToken}`,
@@ -82,11 +81,11 @@ async function upgradePrExists(repoOwner, repoName, branchName, baseBranch, gith
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to check existing PRs: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to check existing upgrade issues: ${response.status} ${response.statusText}`);
   }
 
-  const pulls = await response.json();
-  return Array.isArray(pulls) && pulls.length > 0;
+  const result = await response.json();
+  return Array.isArray(result.items) && result.items.some(item => item.title === title);
 }
 
 async function main() {
@@ -96,33 +95,24 @@ async function main() {
 
   const repository = process.env.GITHUB_REPOSITORY || '';
   const [repoOwner, repoName] = repository.split('/');
-  const baseBranch = process.env.GITHUB_BASE_REF || process.env.DEFAULT_BRANCH || 'master';
-  const upgradeBranch = `ra/langflow-api-upgrade-v${latestVersion}`;
+  const issueTitle = upgradeIssueTitle(latestVersion);
 
-  let prAlreadyOpen = false;
+  let alreadyAnnounced = false;
   if (hasUpdate && repoOwner && repoName) {
-    prAlreadyOpen = await upgradePrExists(
-      repoOwner,
-      repoName,
-      upgradeBranch,
-      baseBranch,
-      process.env.GITHUB_TOKEN || ''
-    );
+    alreadyAnnounced = await upgradeIssueExists(repoOwner, repoName, issueTitle, process.env.GITHUB_TOKEN || '');
   }
 
   setOutput('supported_version', supportedVersion);
   setOutput('latest_version', latestVersion);
   setOutput('has_update', String(hasUpdate));
-  setOutput('upgrade_branch', upgradeBranch);
-  setOutput('pr_already_open', String(prAlreadyOpen));
-  setOutput('base_branch', baseBranch);
+  setOutput('issue_title', issueTitle);
+  setOutput('already_announced', String(alreadyAnnounced));
 
   console.log(`supported_version=${supportedVersion}`);
   console.log(`latest_version=${latestVersion}`);
   console.log(`has_update=${hasUpdate}`);
-  console.log(`upgrade_branch=${upgradeBranch}`);
-  console.log(`pr_already_open=${prAlreadyOpen}`);
-  console.log(`base_branch=${baseBranch}`);
+  console.log(`issue_title=${issueTitle}`);
+  console.log(`already_announced=${alreadyAnnounced}`);
 }
 
 main().catch((error) => {

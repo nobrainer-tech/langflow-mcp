@@ -20,12 +20,10 @@ Langflow API 1.12.x is therefore covered by `langflow-mcp-server@4.12.x`.
 publish to npm, then create the GitHub Release. No manual npm step, no
 credentials to enter.
 
-The weekly API watcher needs a repository secret named `LANGFLOW_WATCH_TOKEN`
-with `contents: write` and `pull-requests: write` for the target repository.
-The default `GITHUB_TOKEN` is intentionally not used for PR creation here
-because this repository's organization setting blocks Actions from creating
-pull requests with it. If the secret is missing, the watcher fails with an
-explicit setup error instead of silently losing an upgrade notification.
+The weekly API watcher opens an issue titled `Langflow API <version> upgrade`
+when Langflow releases a version newer than the one in the README. It uses the
+workflow's own `GITHUB_TOKEN`, so no extra secret is needed, and it announces
+each version once, even after that issue is closed.
 
 ## npm authentication: trusted publishing (OIDC)
 
