@@ -22,9 +22,11 @@
 
 You are the owner and long-term maintainer of this codebase, and its design is up to you. Before you report, review the diff, not your own summary.
 
-The public contract is: MCP tool names and input schemas, resource URIs, environment variables, CLI behavior and documented responses. Engineering rule 1 below applies to internal code only. Change the public contract only with the owner's approval and the matching version bump.
+The public contract is: MCP tool names and input schemas, resource URIs, environment variables, CLI behavior, documented responses, and the library exports of `src/index.ts` (`LangflowClient`, the server classes and the types), published through `main`, `types` and `exports`. Engineering rule 1 below applies to internal code only. Change the public contract only with the owner's approval and the matching version bump.
 
 ## Commands
+
+Develop on Node.js 22.12 or newer in the 22.x line, or 24.x: the Vitest 5 toolchain needs it. The published package still runs on Node.js 20 or newer.
 
 ```bash
 npm ci
@@ -65,19 +67,21 @@ npm run dev:http                                # HTTP server with reload (MCP_M
   4. Test the request shape on the wire (a local `node:http` server, as in `src/__tests__/services/*-wire.test.ts`) or with `axios-mock-adapter`.
 - **A Langflow upgrade:**
   1. Compare `vOLD...vNEW` in `langflow-ai/langflow` against the endpoints the client calls.
-  2. Update the README "API Compatibility" paragraph. Keep the phrase `targets Langflow API version **X.Y.Z**`, because the weekly API watch parses it.
-  3. Update the `package.json` description and the version fixtures in `scripts/smoke-package.mjs`, `src/__tests__/mcp/discovery.test.ts` and `src/__tests__/services/api-access.test.ts`.
-  4. Bump the version.
+  2. Update the client methods and their request-shape tests for every changed endpoint the client calls.
+  3. Update the README "API Compatibility" paragraph. Keep the phrase `targets Langflow API version **X.Y.Z**`, because the weekly API watch parses it.
+  4. Update the `package.json` description and the version fixtures in `scripts/smoke-package.mjs`, `src/__tests__/mcp/discovery.test.ts` and `src/__tests__/services/api-access.test.ts`.
+  5. Bump the version.
 - **Stdout belongs to the stdio JSON-RPC stream.** Log through `logger` only. A `console.log` in `src/` breaks stdio clients.
 - **Errors and logs never carry credentials.** Send errors through `handleError`, which replaces streams with `[stream]` and redacts known secret keys. A stream error once leaked the `x-api-key` header; it was fixed in 4.13.3.
 
 ## Releases
 
 - **Versioning:** npm `4.<langflow_minor>.<patch>` targets Langflow `1.<langflow_minor>.x`.
+- **Before tagging:** run `node .github/scripts/check-langflow-release.mjs` and confirm the README target is the latest stable Langflow.
 - **Publishing:** publish only by pushing a `v*` tag that matches `package.json` on `master`. The tag runs `.github/workflows/publish.yml`, which uses npm trusted publishing, has no npm token and waits up to 10 minutes for registry readback. Never move a tag.
 - **Recovery:** re-run the failed job on the same tag. Do not publish again.
 - **Afterwards, verify:** `npm view langflow-mcp-server@X version gitHead dist.attestations.provenance.predicateType`, then `dist-tags.latest`, the GitHub Release and CI on `master`.
-- **API watch:** `.github/workflows/langflow-api-watch.yml` runs every Monday. It opens one issue per new Langflow release with the workflow `GITHUB_TOKEN`.
+- **API watch:** `.github/workflows/langflow-api-watch.yml` runs every Monday. It compares the README target with Langflow's latest release only, and opens one issue for that release (never twice) with the workflow `GITHUB_TOKEN`. A release published and superseded between two runs is not announced.
 - **Codex:** `AGENTS.md` serves Codex sessions. Keep its release facts in line with this file.
 
 ## Approvals
