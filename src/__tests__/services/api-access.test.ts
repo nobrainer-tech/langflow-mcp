@@ -4,9 +4,9 @@ import MockAdapter from 'axios-mock-adapter';
 import { LangflowClient } from '../../services/langflow-client';
 import { logger, setLogLevel } from '../../utils/logger';
 
-// Shapes from Langflow v1.13.2 (8b42952d), docs/openapi/openapi.json.
+// Shapes from Langflow v1.13.3 (55c43983), docs/openapi/openapi.json.
 const spec = {
-  openapi: '3.1.0', info: { version: '1.13.2' },
+  openapi: '3.1.0', info: { version: '1.13.3' },
   paths: {
     '/api/v1/connections': { get: { summary: 'List Connections', responses: { '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/Connection' } } } } } } },
     '/api/v1/triggers/{trigger_id}/enable': { post: { summary: 'Enable Trigger', parameters: [{ name: 'trigger_id', in: 'path', required: true, schema: { type: 'string' } }] } },
